@@ -5,8 +5,9 @@
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.6",
-    "@repo/shared": "*",
     "@repo/database": "*",
+    "@repo/shared": "*",
+    "ethers": "^6.16.0",
     "hono": "^4.11.7"
   },
   "devDependencies": {

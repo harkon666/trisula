@@ -32,6 +32,11 @@ auth.post('/register', zValidator('json', RegisterUserSchema), async (c) => {
                 status: 'active',
             }).returning();
 
+            const receipt = await BlockchainService.bindReferral(
+                payload.walletAddress,
+                payload.agentAddress
+            );
+
             await tx.insert(pointsBalance).values({
                 userId: newUser.id,
                 balance: 0,

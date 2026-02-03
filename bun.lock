@@ -21,6 +21,7 @@
       "name": "api",
       "dependencies": {
         "@hono/zod-validator": "^0.7.6",
+        "@repo/database": "*",
         "@repo/shared": "*",
         "hono": "^4.11.7",
       },

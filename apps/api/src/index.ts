@@ -1,20 +1,27 @@
-import { Hono } from 'hono'
-import { zValidator } from '@hono/zod-validator'
-import { AdjustPointsSchema } from '@repo/shared'
+import { Hono } from 'hono';
+import { logger } from 'hono/logger';
+import { cors } from 'hono/cors';
+import authRoutes from './routes/auth';
 
-const app = new Hono()
+const app = new Hono();
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
+// --- MIDDLEWARES ---
+app.use('*', logger()); // Monitoring request yang masuk
+app.use('*', cors());   // Mengizinkan akses dari Frontend (Next.js)
 
-app.post('/points/adjust',
-  zValidator('json', AdjustPointsSchema),
-  (c) => {
-    const data = c.req.valid('json')
-    // Data di sini sudah divalidasi dan memiliki tipe data yang benar
-    return c.json({ message: `Berhasil menyesuaikan ${data.amount} poin` })
-  }
-)
+// --- ROUTES ---
+app.get('/', (c) => c.text('TRISULA API Orchestrator v1.0.0 (Bun Runtime)'));
 
-export default app
+// Daftarkan route auth dengan prefix /api/v1
+app.route('/api/v1/auth', authRoutes);
+
+// --- ERROR HANDLING ---
+app.onError((err, c) => {
+  console.error(`${err}`);
+  return c.json({ success: false, message: 'Internal Server Error' }, 500);
+});
+
+export default {
+  port: 3000,
+  fetch: app.fetch,
+};

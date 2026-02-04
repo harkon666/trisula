@@ -1,0 +1,6 @@
+{
+    "framework": "nextjs",
+    "buildCommand": "cd ../.. && npx turbo run build --filter=web",
+    "ignoreCommand": "bash -c 'if [ \"$VERCEL_ENV\" == \"production\" ]; then npx turbo-ignore; else exit 1; fi'",
+    "installCommand": "cd ../.. && bun install"
+}

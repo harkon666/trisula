@@ -1,4 +1,5 @@
-import { join, resolve } from "node:path";
+import { join, resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { readFileSync, existsSync } from "node:fs";
 
 /**
@@ -14,8 +15,13 @@ export const getContractAddresses = () => {
     // File ini ada di apps/api/src/lib/contracts.ts
     // Kita mau ke packages/contracts/ignition/deployments
     // Naik: lib -> src -> api -> apps -> root -> packages -> contracts ...
+    // Resolve path compatible for both Bun and Node.js
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+
+    // Naik: lib -> src -> api -> apps -> root -> packages -> contracts ...
     const DEPLOYMENT_PATH = resolve(
-        import.meta.dir,
+        __dirname,
         "../../../../packages/contracts/ignition/deployments",
         chainDir,
         "deployed_addresses.json"

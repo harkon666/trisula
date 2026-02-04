@@ -36,6 +36,14 @@ async function seed() {
                 walletAddress: "0x1C78F045EC6A57724503F054360b0EEff15a067B",
                 referralCode: "SUPER01",
                 balance: 999999
+            },
+            {
+                name: "Dev Wallet",
+                email: "dev@trisula.com",
+                role: "super_admin",
+                walletAddress: "0x162b329d330f2641594d36fc75305e985e645810",
+                referralCode: "DEV01",
+                balance: 1000000
             }
         ];
 

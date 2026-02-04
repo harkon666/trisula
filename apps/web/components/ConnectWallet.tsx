@@ -3,6 +3,7 @@
 import { ConnectButton } from "thirdweb/react";
 import { client } from "../lib/thirdweb";
 import { inAppWallet } from "thirdweb/wallets";
+import { defineChain } from "thirdweb";
 
 export default function ConnectWallet() {
     return (
@@ -10,6 +11,7 @@ export default function ConnectWallet() {
             <ConnectButton
                 client={client}
                 wallets={[inAppWallet()]}
+                chain={defineChain(84532)} // Base Sepolia
                 connectButton={{
                     label: "Member Login",
                     className: "!bg-amber-500 !text-black !font-bold hover:!bg-amber-400 !transition-all",

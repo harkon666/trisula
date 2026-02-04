@@ -95,25 +95,26 @@ redeem.post('/request', zValidator('json', RedeemInputSchema), async (c) => {
                 .where(eq(pointsBalance.userId, userId));
 
             // 4. Log to Blockchain (Audit Trail)
-            // Using try-catch so if blockchain fails, we can still proceed or decide to rollback.
-            // Requirement says "record", usually implies it should succeed. But for UX speed, let's keep it sync.
             let txHash = null;
-            if (userData.walletAddress) {
+            console.log(`🔗 Blockchain log attempt for user wallet: ${userData.walletAddress}`);
+
+            if (userData.walletAddress && userData.walletAddress !== "0x0000000000000000000000000000000000000000") {
                 try {
+                    console.log("📡 Calling BlockchainService.logRedemption...");
                     const receipt = await BlockchainService.logRedemption(
                         userData.walletAddress,
                         catalogId,
                         item.pointsRequired
                     );
                     txHash = receipt.hash;
-                } catch (bcError) {
-                    console.error("Blockchain Logging Failed:", bcError);
-                    // Decide: Fail the whole request? Or just log error?
-                    // For "On-Chain Loyalty", it should probably be strict.
-                    // But for demo stability, let's just log error but continue DB transaction with warning?
-                    // "masih belum implementasi pencatatan" implies it's desired.
-                    // Let's attach it but not block if hardhat/network is flaky.
+                    console.log(`✅ On-chain log success! Hash: ${txHash}`);
+                } catch (bcError: any) {
+                    console.error("❌ Blockchain Logging Failed:", bcError.message || bcError);
+                    // We continue because we don't want to block the user if blockchain is slow/down
+                    // but we log it for admin investigation.
                 }
+            } else {
+                console.warn("⚠️ Skipping blockchain log: No valid wallet address found for user.");
             }
 
             // 5. Create Ledger Entry
@@ -134,6 +135,8 @@ redeem.post('/request', zValidator('json', RedeemInputSchema), async (c) => {
                 status: 'pending',
                 onchainTx: txHash,
             }).returning();
+
+            console.log(`🎁 Redeem request created in DB with ID: ${request.id}`);
 
             return c.json({ success: true, message: "Redeem requested successfully", data: request }, 201);
         });

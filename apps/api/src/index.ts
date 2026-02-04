@@ -7,6 +7,7 @@ import redeemRoutes from './routes/redeem';
 import adminRoutes from './routes/admin';
 
 const app = new Hono();
+console.log(`🚀 API STARTED AT: ${new Date().toISOString()}`);
 
 // --- MIDDLEWARES ---
 app.use('*', logger()); // Monitoring request yang masuk

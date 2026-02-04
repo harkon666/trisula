@@ -1,11 +1,21 @@
 import { ethers } from "ethers";
 import { getContractAddresses } from "../lib/contracts";
 
+console.log(`📦 Initializing BlockchainService...`);
+console.log(`   RPC: ${process.env.RPC_URL || "Hardhat local"}`);
 const addresses = getContractAddresses();
+if (addresses) {
+    console.log(`   Contracts: Registry=${addresses.registry}, Ledger=${addresses.ledger}, Redeem=${addresses.redeem}`);
+} else {
+    console.error(`   ❌ Failed to load contract addresses!`);
+}
 
 // Provider & Wallet menggunakan Private Key dari .env (OPERATOR_ROLE)
+const rawPk = process.env.PRIVATE_KEY_OPERATOR!;
+console.log(`   DEBUG: PK Profile - Length: ${rawPk.length}, Starts with: ${rawPk.substring(0, 6)}...`);
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || "http://127.0.0.1:8545");
-const operatorWallet = new ethers.Wallet(process.env.PRIVATE_KEY_OPERATOR!, provider);
+const operatorWallet = new ethers.Wallet(rawPk, provider);
+console.log(`   Operator Wallet Address: ${operatorWallet.address}`);
 
 /**
  * Service untuk melakukan sinkronisasi data ke Blockchain.

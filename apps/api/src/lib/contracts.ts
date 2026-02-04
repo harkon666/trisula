@@ -27,8 +27,11 @@ export const getContractAddresses = () => {
         "deployed_addresses.json"
     );
 
+    console.log(`[Contracts] Attempting to load from: ${DEPLOYMENT_PATH}`);
+
     if (!existsSync(DEPLOYMENT_PATH)) {
         console.warn(`⚠️ File deployment tidak ditemukan di ${DEPLOYMENT_PATH}. Pastikan sudah menjalankan 'ignition deploy' untuk chain ${chainId}.`);
+        // Fallback or Return Null without crashing
         return null;
     }
 

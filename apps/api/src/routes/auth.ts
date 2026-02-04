@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import argon2 from 'argon2';
+import bcrypt from 'bcryptjs';
 import { zValidator } from '@hono/zod-validator';
 import { RegisterUserSchema } from '@repo/shared';
 import { db, users, pointsBalance, pointsLedger, agents, referrals } from '@repo/database';
@@ -43,11 +43,8 @@ auth.post('/register', zValidator('json', RegisterUserSchema), async (c) => {
 
         // 2. Hash password (or generate random if Smart Onboarding)
         const passwordToHash = password || crypto.randomUUID();
-        const passwordHash = await argon2.hash(passwordToHash, {
-            type: argon2.argon2id,
-            memoryCost: 65536,
-            timeCost: 2,
-        });
+        const salt = await bcrypt.genSalt(12);
+        const passwordHash = await bcrypt.hash(passwordToHash, salt);
 
         // 3. Transaction: User & Balance harus dibuat bersamaan
         const result = await db.transaction(async (tx) => {

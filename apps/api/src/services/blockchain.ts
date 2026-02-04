@@ -11,11 +11,26 @@ if (addresses) {
 }
 
 // Provider & Wallet menggunakan Private Key dari .env (OPERATOR_ROLE)
-const rawPk = process.env.PRIVATE_KEY_OPERATOR!;
-console.log(`   DEBUG: PK Profile - Length: ${rawPk.length}, Starts with: ${rawPk.substring(0, 6)}...`);
+// Provider & Wallet menggunakan Private Key dari .env (OPERATOR_ROLE)
+const rawPk = process.env.PRIVATE_KEY_OPERATOR || "";
+
+if (rawPk) {
+    console.log(`   DEBUG: PK Profile - Length: ${rawPk.length}, Starts with: ${rawPk.substring(0, 6)}...`);
+} else {
+    console.error(`   ❌ FATAL: PRIVATE_KEY_OPERATOR is missing in .env!`);
+}
+
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || "http://127.0.0.1:8545");
-const operatorWallet = new ethers.Wallet(rawPk, provider);
-console.log(`   Operator Wallet Address: ${operatorWallet.address}`);
+
+let operatorWallet: ethers.Wallet | null = null;
+try {
+    if (rawPk) {
+        operatorWallet = new ethers.Wallet(rawPk, provider);
+        console.log(`   Operator Wallet Address: ${operatorWallet.address}`);
+    }
+} catch (error: any) {
+    console.error(`   ❌ Invalid Private Key: ${error.message}`);
+}
 
 /**
  * Service untuk melakukan sinkronisasi data ke Blockchain.
@@ -25,6 +40,7 @@ export const BlockchainService = {
     // Bind User ke Agent secara Immutable di Blockchain
     async bindReferral(userAddress: string, agentAddress: string) {
         if (!addresses?.registry) throw new Error("Contract address not found");
+        if (!operatorWallet) throw new Error("Operator wallet not initialized");
 
         const contract = new ethers.Contract(
             addresses.registry,
@@ -39,6 +55,7 @@ export const BlockchainService = {
     // Catat penambahan poin sebagai audit trail (Event-only)
     async logPointsAdded(userAddress: string, amount: bigint, reason: string) {
         if (!addresses?.ledger) throw new Error("Contract address not found");
+        if (!operatorWallet) throw new Error("Operator wallet not initialized");
 
         const contract = new ethers.Contract(
             addresses.ledger,
@@ -53,6 +70,7 @@ export const BlockchainService = {
     // Catat redeem request ke Blockchain (Audit Trail)
     async logRedemption(userAddress: string, catalogId: number, pointsUsed: number) {
         if (!addresses?.redeem) throw new Error("Contract address not found for RedeemLog");
+        if (!operatorWallet) throw new Error("Operator wallet not initialized");
 
         const contract = new ethers.Contract(
             addresses.redeem,

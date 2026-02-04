@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { readFileSync, existsSync } from "node:fs";
 
 /**
@@ -6,15 +6,23 @@ import { readFileSync, existsSync } from "node:fs";
  * Ini memastikan Orchestrator selalu menggunakan "Source of Truth" terbaru.
  */
 export const getContractAddresses = () => {
-    // Lokasi folder deployment Ignition (asumsi network localhost/31337)
-    // Sesuaikan ID chain jika mendeploy ke network lain (misal: chain-11155111 untuk Sepolia)
-    const DEPLOYMENT_PATH = join(
-        process.cwd(),
-        "../../packages/contracts/ignition/deployments/chain-31337/deployed_addresses.json"
+    // Default fallback to localhost if not set
+    const chainId = process.env.CHAIN_ID || "31337";
+    const chainDir = `chain-${chainId}`;
+
+    // Resolve path relative to this file location provided by Bun
+    // File ini ada di apps/api/src/lib/contracts.ts
+    // Kita mau ke packages/contracts/ignition/deployments
+    // Naik: lib -> src -> api -> apps -> root -> packages -> contracts ...
+    const DEPLOYMENT_PATH = resolve(
+        import.meta.dir,
+        "../../../../packages/contracts/ignition/deployments",
+        chainDir,
+        "deployed_addresses.json"
     );
 
     if (!existsSync(DEPLOYMENT_PATH)) {
-        console.warn("⚠️ File deployment tidak ditemukan. Pastikan sudah menjalankan 'ignition deploy'.");
+        console.warn(`⚠️ File deployment tidak ditemukan di ${DEPLOYMENT_PATH}. Pastikan sudah menjalankan 'ignition deploy' untuk chain ${chainId}.`);
         return null;
     }
 

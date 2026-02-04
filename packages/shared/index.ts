@@ -13,6 +13,9 @@ export const UserSchema = z.object({
     name: z.string().min(2, "Nama terlalu pendek"),
     phone: z.string().min(10, "Nomor telepon tidak valid"),
     city: z.string().optional(),
+    walletAddress: z
+        .string()
+        .regex(/^0x[a-fA-F0-9]{40}$/, "Format wallet address Base tidak valid"),
     role: UserRole.default("user"),
     status: UserStatus.default("pending"),
     createdAt: z.date().optional(),
@@ -24,7 +27,8 @@ export const RegisterUserSchema = UserSchema.omit({
     id: true,
     status: true,
     createdAt: true,
-    updatedAt: true
+    updatedAt: true,
+    role: true,
 }).extend({
     password: z.string().min(8, "Password minimal 8 karakter"),
     referralCode: z.string().optional(),

@@ -1,0 +1,21 @@
+{
+    "name": "Trisula Sultan App",
+    "short_name": "Trisula",
+    "description": "Exclusive Referral & Loyalty Platform for Base Network",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#f59e0b",
+    "icons": [
+        {
+            "src": "/icon.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

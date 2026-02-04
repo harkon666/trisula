@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import authRoutes from './routes/auth';
+import userRoutes from './routes/user';
 
 const app = new Hono();
 
@@ -14,6 +15,7 @@ app.get('/', (c) => c.text('TRISULA API Orchestrator v1.0.0 (Bun Runtime)'));
 
 // Daftarkan route auth dengan prefix /api/v1
 app.route('/api/v1/auth', authRoutes);
+app.route('/api/v1/user', userRoutes);
 
 // --- ERROR HANDLING ---
 app.onError((err, c) => {

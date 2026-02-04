@@ -5,6 +5,8 @@
     "jsxImportSource": "hono/jsx",
     "target": "esnext",
     "module": "esnext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "noEmit": true
   }
 }

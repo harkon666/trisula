@@ -19,7 +19,8 @@
       "outputs": [
         ".next/**",
         "!.next/cache/**",
-        "dist/**"
+        "dist/**",
+        ".vercel/output/**"
       ],
       "env": [
         "NEXT_PUBLIC_THIRDWEB_CLIENT_ID",

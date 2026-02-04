@@ -1,11 +1,14 @@
 {
-    "buildCommand": "cd ../.. && npx turbo run build --filter=api",
-    "ignoreCommand": "bash -c 'if [ \"$VERCEL_ENV\" == \"production\" ]; then npx turbo-ignore; else exit 1; fi'",
-    "installCommand": "cd ../.. && bun install",
     "rewrites": [
         {
             "source": "/(.*)",
             "destination": "/api"
         }
-    ]
+    ],
+    "functions": {
+        "api/index.ts": {
+            "memory": 1024,
+            "maxDuration": 30
+        }
+    }
 }

@@ -28,9 +28,5 @@ app.onError((err, c) => {
   return c.json({ success: false, message: 'Internal Server Error' }, 500);
 });
 
-export { app };
-
-export default {
-  port: 3000,
-  fetch: app.fetch,
-};
+// Export for Vercel Serverless (default export)
+export default app;

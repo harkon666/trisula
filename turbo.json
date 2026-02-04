@@ -1,7 +1,10 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "globalEnv": [
-    "DATABASE_URL"
+    "DATABASE_URL",
+    "PRIVATE_KEY_OPERATOR",
+    "RPC_URL",
+    "CHAIN_ID"
   ],
   "ui": "tui",
   "tasks": {
@@ -16,6 +19,12 @@
       "outputs": [
         ".next/**",
         "!.next/cache/**"
+      ],
+      "env": [
+        "NEXT_PUBLIC_THIRDWEB_CLIENT_ID",
+        "NEXT_PUBLIC_CHAIN_ID",
+        "NEXT_PUBLIC_API_URL",
+        "SECRET_KEY"
       ]
     },
     "lint": {

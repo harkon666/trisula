@@ -1,31 +1,33 @@
-import dotenv from 'dotenv';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
-
-
-
-// Resolve path compatible for both Bun and Node.js
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load .env dari root monorepo (Hanya untuk Development Local)
-const envPath = join(__dirname, '../../../.env');
-if (existsSync(envPath)) {
-    dotenv.config({ path: envPath });
-}
-import { drizzle } from 'drizzle-orm/postgres-js';
+import { drizzle, PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './db/schema';
 
-const connectionString = process.env.DATABASE_URL;
+// Environment variables are automatically available in Vercel serverless
+// For local development, use: bun --env-file=../../.env run dev
 
-if (!connectionString) {
-    throw new Error("❌ DATABASE_URL tidak ditemukan di environment variables!");
-}
+let _db: PostgresJsDatabase<typeof schema> | null = null;
 
-const client = postgres(connectionString);
-export const db = drizzle(client, { schema });
+export const getDb = () => {
+    if (_db) return _db;
 
-// JANGAN panggil fungsi main() di sini!
+    const connectionString = process.env.DATABASE_URL;
+
+    if (!connectionString) {
+        console.error("❌ DATABASE_URL tidak ditemukan di environment variables!");
+        throw new Error("DATABASE_URL is not configured");
+    }
+
+    console.log("📦 Initializing database connection...");
+    const client = postgres(connectionString);
+    _db = drizzle(client, { schema });
+    return _db;
+};
+
+// For backward compatibility - lazy proxy
+export const db = new Proxy({} as PostgresJsDatabase<typeof schema>, {
+    get(_, prop) {
+        return (getDb() as any)[prop];
+    }
+});
+
 export * from "./db/schema";

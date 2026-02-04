@@ -1,4 +1,6 @@
 {
+    "buildCommand": "cd ../.. && turbo run build --filter=@repo/database --filter=@repo/shared",
+    "outputDirectory": "",
     "rewrites": [
         {
             "source": "/(.*)",

@@ -1,13 +1,19 @@
 import dotenv from 'dotenv';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
+
+
 
 // Resolve path compatible for both Bun and Node.js
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load .env dari root monorepo
-dotenv.config({ path: join(__dirname, '../../../.env') });
+// Load .env dari root monorepo (Hanya untuk Development Local)
+const envPath = join(__dirname, '../../../.env');
+if (existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+}
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './db/schema';

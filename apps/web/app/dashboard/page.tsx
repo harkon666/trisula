@@ -68,13 +68,13 @@ export default function DashboardPage() {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white">
                 <ConnectWallet />
-                <p className="mt-4 text-zinc-500">Access Restricted. Sultan Only.</p>
+                <p className="mt-4 text-zinc-500">Access Restricted. Members Only.</p>
             </div>
         );
     }
 
     if (loading) {
-        return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-amber-500 animate-pulse">Loading Sultan Data...</div>;
+        return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-amber-500 animate-pulse">Loading Member Data...</div>;
     }
 
     return (
@@ -87,7 +87,7 @@ export default function DashboardPage() {
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
                     <div>
                         <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-600 bg-clip-text text-transparent">
-                            Sultan Dashboard
+                            Member Dashboard
                         </h1>
                         <p className="text-zinc-400 mt-2">Welcome back, {profile?.name || "Member"}</p>
                     </div>
@@ -123,8 +123,11 @@ export default function DashboardPage() {
                             <span className="text-xl capitalize">{profile?.status}</span>
                         </div>
                         <div className="mt-auto">
-                            <button className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-sm font-medium">
-                                View Benefits
+                            <button
+                                onClick={() => router.push('/dashboard/redeem')}
+                                className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-sm font-medium"
+                            >
+                                Redeem Rewards
                             </button>
                         </div>
                     </div>

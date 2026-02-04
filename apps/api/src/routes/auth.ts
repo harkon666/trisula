@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { RegisterUserSchema } from '@repo/shared';
-import { db, users, pointsBalance, agents } from '@repo/database';
+import { db, users, pointsBalance, agents, referrals } from '@repo/database';
 import { eq } from 'drizzle-orm';
 import { BlockchainService } from '../services/blockchain';
 
@@ -17,16 +17,21 @@ auth.post('/register', zValidator('json', RegisterUserSchema), async (c) => {
     try {
         // 1. Resolve Agent Address from Referral Code
         let agentWalletAddress = "0x0000000000000000000000000000000000000000"; // Default / Null address
+        let agentData: { id: string; userId: string; walletAddress: string | null; } | undefined;
 
         if (referralCode) {
             // Find agent by referral code using explicit JOIN
-            const [agentData] = await db.select({
+            const [fetchedAgent] = await db.select({
+                id: agents.id,
+                userId: agents.userId,
                 walletAddress: users.walletAddress
             })
                 .from(agents)
                 .leftJoin(users, eq(agents.userId, users.id))
                 .where(eq(agents.referralCode, referralCode))
                 .limit(1);
+
+            agentData = fetchedAgent;
 
             if (agentData && agentData.walletAddress) {
                 agentWalletAddress = agentData.walletAddress;
@@ -35,8 +40,9 @@ auth.post('/register', zValidator('json', RegisterUserSchema), async (c) => {
             }
         }
 
-        // 2. Hash password dengan Argon2id (Standar emas 2026)
-        const passwordHash = await Bun.password.hash(password, {
+        // 2. Hash password (or generate random if Smart Onboarding)
+        const passwordToHash = password || crypto.randomUUID();
+        const passwordHash = await Bun.password.hash(passwordToHash, {
             algorithm: "argon2id",
             memoryCost: 65536,
             timeCost: 2,
@@ -56,27 +62,36 @@ auth.post('/register', zValidator('json', RegisterUserSchema), async (c) => {
             }).returning();
 
             // Bind to blockchain if agent exists/valid
-            // Note: bindReferral might need to handle 0x0 address if allow no referral?
-            // Or only bind if agentWalletAddress != 0x0...
-            // Assuming bindReferral handles it or we only call if valid.
             // Requirement: "Hubungan referral harus terkunci".
-            if (agentWalletAddress !== "0x0000000000000000000000000000000000000000") {
+            if (agentData && agentData.id && agentWalletAddress !== "0x0000000000000000000000000000000000000000") {
                 try {
-                    const receipt = await BlockchainService.bindReferral(
+                    // Add 5s timeout to prevent hanging backend if blockchain is stuck
+                    const bindPromise = BlockchainService.bindReferral(
                         walletAddress,
                         agentWalletAddress
                     );
 
-                    // TODO: Simpan txHash ke tabel referrals (Requirement Phase 2)
-                    // But 'referrals' table needs agentId. We need agentRecord.id.
-                    // This implies we loop back or have agentId available.
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error("Blockchain timeout")), 5000)
+                    );
+
+                    const receipt: any = await Promise.race([bindPromise, timeoutPromise]);
+
+                    // Simpan history referral ke database
+                    if (receipt) {
+                        await tx.insert(referrals).values({
+                            userId: newUser.id,
+                            agentId: agentData.id,
+                            txHash: receipt.hash,
+                            blockNumber: receipt.blockNumber,
+                        });
+                    }
 
                 } catch (bcError) {
-                    console.error("Blockchain binding failed:", bcError);
-                    // Don't rollback user creation? Or rollback? 
+                    console.error("Blockchain binding passed/failed (Non-blocking):", bcError);
                     // PRD: "Event-based Ledger". "Result txHash disimpan di Supabase".
-                    // If blockchain fails, maybe we should warn but allow user creation?
-                    // For now, let's log error but proceed, or throw to rollback if critical.
+                    // Continuing without failing the user registration, but logging the error.
+                    // If timeout, user is still registered.
                 }
             }
 

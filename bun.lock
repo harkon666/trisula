@@ -25,6 +25,7 @@
         "@repo/shared": "*",
         "ethers": "^6.16.0",
         "hono": "^4.11.7",
+        "zod": "^4.3.6",
       },
       "devDependencies": {
         "@types/bun": "latest",

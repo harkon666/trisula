@@ -30,7 +30,7 @@ export const RegisterUserSchema = UserSchema.omit({
     updatedAt: true,
     role: true,
 }).extend({
-    password: z.string().min(8, "Password minimal 8 karakter"),
+    password: z.string().min(8, "Password minimal 8 karakter").optional(),
     referralCode: z.string().optional(),
 });
 

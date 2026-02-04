@@ -1,11 +1,13 @@
 "use client";
 
-import { useActiveAccount } from "thirdweb/react";
+import { useActiveAccount, useActiveWallet } from "thirdweb/react";
+import { getUserEmail } from "thirdweb/wallets/in-app";
+import { client } from "../../../lib/thirdweb";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RegisterUserSchema } from "@repo/shared";
 import { z } from "zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ConnectWallet from "../../../components/ConnectWallet";
 
@@ -17,6 +19,7 @@ export default function RegisterPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isEmailFromWallet, setIsEmailFromWallet] = useState(false);
 
     const {
         register,
@@ -35,6 +38,26 @@ export default function RegisterPage() {
     if (account && account.address) {
         setValue("walletAddress", account.address);
     }
+
+    // Attempt to fetch email from Thirdweb In-App Wallet
+    const wallet = useActiveWallet();
+    useEffect(() => {
+        const fetchEmail = async () => {
+            if (wallet && wallet.id === "inApp") {
+                try {
+                    // getUserEmail generally works with the client and infers session/wallet logic
+                    const email = await getUserEmail({ client });
+                    if (email) {
+                        setValue("email", email);
+                        setIsEmailFromWallet(true);
+                    }
+                } catch (e) {
+                    console.log("Could not fetch email from wallet", e);
+                }
+            }
+        };
+        fetchEmail();
+    }, [wallet, setValue]);
 
     const onSubmit = async (data: RegisterFormData) => {
         setIsSubmitting(true);
@@ -60,7 +83,7 @@ export default function RegisterPage() {
             }
 
             // Redirect ke Dashboard (nanti)
-            alert("Registrasi Berhasil! Selamat datang Sultan.");
+            alert("Registrasi Berhasil! Selamat datang di Trisula.");
             router.push("/dashboard");
 
         } catch (err: any) {
@@ -87,8 +110,8 @@ export default function RegisterPage() {
     return (
         <div className="min-h-screen p-4 md:p-8 bg-zinc-950 text-white flex items-center justify-center">
             <div className="w-full max-w-2xl bg-white/5 border border-white/10 backdrop-blur-xl p-8 rounded-3xl shadow-2xl">
-                <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Pendaftaran Sultan</h1>
-                <p className="mb-6 text-zinc-400">Lengkapi data diri Anda untuk mengaktifkan akses eksklusif.</p>
+                <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Complete Profile</h1>
+                <p className="mb-6 text-zinc-400">Final step to activate your Premium Account.</p>
 
                 <div className="mb-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-black font-bold text-lg">
@@ -109,40 +132,40 @@ export default function RegisterPage() {
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Nama Lengkap</label>
-                            <input {...register("name")} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all placeholder:text-zinc-600" placeholder="Jhon Doe" />
+                            <label className="text-sm font-medium text-zinc-300">Full Name</label>
+                            <input {...register("name")} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all placeholder:text-zinc-600" placeholder="John Doe" />
                             {errors.name && <p className="text-red-400 text-xs">{errors.name.message}</p>}
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Email</label>
-                            <input {...register("email")} type="email" className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all placeholder:text-zinc-600" placeholder="sultan@mail.com" />
+                            <label className="text-sm font-medium text-zinc-300">Email Address</label>
+                            <input
+                                {...register("email")}
+                                type="email"
+                                disabled={isEmailFromWallet}
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all placeholder:text-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                placeholder="sultan@mail.com"
+                            />
                             {errors.email && <p className="text-red-400 text-xs">{errors.email.message}</p>}
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        {/* Password field removed for Smart Onboarding */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Password</label>
-                            <input {...register("password")} type="password" className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all placeholder:text-zinc-600" placeholder="••••••••" />
-                            {errors.password && <p className="text-red-400 text-xs">{errors.password.message}</p>}
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Nomor HP</label>
+                            <label className="text-sm font-medium text-zinc-300">Phone Number</label>
                             <input {...register("phone")} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all placeholder:text-zinc-600" placeholder="628123456789" />
                             {errors.phone && <p className="text-red-400 text-xs">{errors.phone.message}</p>}
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Kota Domisili</label>
+                            <label className="text-sm font-medium text-zinc-300">City</label>
                             <input {...register("city")} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all placeholder:text-zinc-600" placeholder="Jakarta Selatan" />
                             {errors.city && <p className="text-red-400 text-xs">{errors.city.message}</p>}
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Kode Referral (Opsional)</label>
-                            <input {...register("referralCode")} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all placeholder:text-zinc-600" placeholder="SULTAN01" />
-                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-zinc-300">Referral Code (Optional)</label>
+                        <input {...register("referralCode")} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all placeholder:text-zinc-600" placeholder="SULTAN01" />
                     </div>
 
                     <div className="pt-4">
@@ -151,7 +174,7 @@ export default function RegisterPage() {
                             disabled={isSubmitting}
                             className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-black font-bold py-4 rounded-xl shadow-lg transform transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isSubmitting ? "Memproses..." : "Aktifkan Akun Sultan"}
+                            {isSubmitting ? "Processing..." : "Complete Registration"}
                         </button>
                     </div>
                 </form>

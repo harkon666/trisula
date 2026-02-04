@@ -17,7 +17,7 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Trisula - Sultan Experience",
+  title: "Trisula - Premium Experience",
   description: "Exclusive Referral & Loyalty Platform",
   manifest: "/manifest.json",
   appleWebApp: {

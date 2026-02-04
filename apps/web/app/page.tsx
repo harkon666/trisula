@@ -40,19 +40,19 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-amber-300 text-xs md:text-sm font-medium mb-8">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            Exclusive Access for Priority Customers
+            Premium Rewards for Dedicated Users
           </div>
 
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6">
-            Unlock the <br className="hidden md:block" />
+            Unlock Your <br className="hidden md:block" />
             <span className="bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-600 bg-clip-text text-transparent drop-shadow-2xl">
-              Sultan Lifestyle
+              Premium Experience
             </span>
           </h1>
 
           <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Join the most exclusive referral and loyalty platform on Base.
-            Earn crypto rewards, unlock priority perks, and experience luxury on-chain.
+            Join the most rewarding referral and loyalty platform on Base.
+            Earn crypto rewards, unlock premium perks, and experience seamless growth on-chain.
           </p>
 
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
@@ -71,8 +71,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { title: "Gasless Transactions", desc: "Experience Web3 without the hassle. We cover the gas fees for all priority members.", icon: "⛽" },
-              { title: "Instant Rewards", desc: "Refer friends and earn points instantly. Convert points to exclusive tokens and perks.", icon: "💎" },
+              { title: "Gasless Transactions", desc: "Experience Web3 without the hassle. We cover the gas fees for all active members.", icon: "⛽" },
+              { title: "Instant Rewards", desc: "Refer friends and earn points instantly. Convert points to exclusive tokens and benefits.", icon: "💎" },
               { title: "Secure & Private", desc: "Built on Base Network with account abstraction for maximum security and ease.", icon: "🛡️" }
             ].map((feature, i) => (
               <div key={i} className="p-8 rounded-3xl bg-white/5 border border-white/5 hover:border-amber-500/30 transition-all group">

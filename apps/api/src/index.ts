@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
-import authRoutes from './routes/auth';
-import userRoutes from './routes/user';
-import redeemRoutes from './routes/redeem';
-import adminRoutes from './routes/admin';
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/user.js';
+import redeemRoutes from './routes/redeem.js';
+import adminRoutes from './routes/admin.js';
 
 const app = new Hono();
 console.log(`🚀 API STARTED AT: ${new Date().toISOString()}`);

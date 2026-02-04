@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { getContractAddresses } from "../lib/contracts";
+import { getContractAddresses } from "../lib/contracts.js";
 
 console.log(`📦 Initializing BlockchainService...`);
 console.log(`   RPC: ${process.env.RPC_URL || "Hardhat local"}`);

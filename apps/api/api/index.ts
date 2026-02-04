@@ -1,9 +1,9 @@
 import { handle } from 'hono/vercel';
-import app from '../src/index';
+import app from '../src/index.js';
 
 // Vercel Serverless Function Configuration
 export const config = {
-    runtime: 'edge',
+    runtime: 'nodejs',
 };
 
 // Export handler for Vercel

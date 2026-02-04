@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { db, redeemCatalog, redeemRequests, pointsBalance, pointsLedger, users } from '@repo/database';
-import { BlockchainService } from '../services/blockchain';
+import { BlockchainService } from '../services/blockchain.js';
 import { RedeemRequestSchema } from '@repo/shared';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';

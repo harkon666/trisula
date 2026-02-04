@@ -4,7 +4,7 @@ import { zValidator } from '@hono/zod-validator';
 import { RegisterUserSchema } from '@repo/shared';
 import { db, users, pointsBalance, pointsLedger, agents, referrals } from '@repo/database';
 import { eq, sql } from 'drizzle-orm';
-import { BlockchainService } from '../services/blockchain';
+import { BlockchainService } from '../services/blockchain.js';
 
 const auth = new Hono();
 

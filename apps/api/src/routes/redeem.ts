@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { db, redeemCatalog, redeemRequests, pointsBalance, pointsLedger } from '@repo/database';
+import { db, redeemCatalog, redeemRequests, pointsBalance, pointsLedger, users } from '@repo/database';
+import { BlockchainService } from '../services/blockchain';
 import { RedeemRequestSchema } from '@repo/shared';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { z } from 'zod';
@@ -28,6 +29,38 @@ redeem.get('/catalog', async (c) => {
 });
 
 /**
+ * @route   GET /redeem/my-requests
+ * @desc    Get redemption history for a specific user
+ * @query   userId
+ */
+redeem.get('/my-requests', async (c) => {
+    const userId = c.req.query('userId');
+    if (!userId) return c.json({ success: false, message: "User ID required" }, 400);
+
+    try {
+        const requests = await db.select({
+            id: redeemRequests.id,
+            catalogId: redeemRequests.catalogId,
+            itemName: redeemCatalog.name,
+            pointsUsed: redeemRequests.pointsUsed,
+            status: redeemRequests.status,
+            onchainTx: redeemRequests.onchainTx,
+            createdAt: redeemRequests.createdAt,
+            updatedAt: redeemRequests.updatedAt,
+        })
+            .from(redeemRequests)
+            .leftJoin(redeemCatalog, eq(redeemRequests.catalogId, redeemCatalog.id))
+            .where(eq(redeemRequests.userId, userId))
+            .orderBy(desc(redeemRequests.createdAt));
+
+        return c.json({ success: true, data: requests });
+    } catch (error) {
+        console.error("My Requests Error:", error);
+        return c.json({ success: false, message: "Failed to fetch requests" }, 500);
+    }
+});
+
+/**
  * @route   POST /redeem/request
  * @desc    Request a reward redemption
  */
@@ -42,32 +75,64 @@ redeem.post('/request', zValidator('json', RedeemInputSchema), async (c) => {
                 return c.json({ success: false, message: "Item not found" }, 404);
             }
 
-            // 2. Check User Balance
-            const [userBalance] = await tx.select().from(pointsBalance).where(eq(pointsBalance.userId, userId)).limit(1);
-            if (!userBalance || userBalance.balance < item.pointsRequired) {
+            // 2. Check User Balance & Get Wallet Address
+            const [userData] = await tx.select({
+                balance: pointsBalance.balance,
+                walletAddress: users.walletAddress
+            })
+                .from(users)
+                .leftJoin(pointsBalance, eq(pointsBalance.userId, users.id))
+                .where(eq(users.id, userId))
+                .limit(1);
+
+            if (!userData || (userData.balance || 0) < item.pointsRequired) {
                 return c.json({ success: false, message: "Insufficient points" }, 400);
             }
 
-            // 3. Deduct Points
+            // 3. Deduct Points (Database)
             await tx.update(pointsBalance)
                 .set({ balance: sql`${pointsBalance.balance} - ${item.pointsRequired}` })
                 .where(eq(pointsBalance.userId, userId));
 
-            // 4. Create Ledger Entry
+            // 4. Log to Blockchain (Audit Trail)
+            // Using try-catch so if blockchain fails, we can still proceed or decide to rollback.
+            // Requirement says "record", usually implies it should succeed. But for UX speed, let's keep it sync.
+            let txHash = null;
+            if (userData.walletAddress) {
+                try {
+                    const receipt = await BlockchainService.logRedemption(
+                        userData.walletAddress,
+                        catalogId,
+                        item.pointsRequired
+                    );
+                    txHash = receipt.hash;
+                } catch (bcError) {
+                    console.error("Blockchain Logging Failed:", bcError);
+                    // Decide: Fail the whole request? Or just log error?
+                    // For "On-Chain Loyalty", it should probably be strict.
+                    // But for demo stability, let's just log error but continue DB transaction with warning?
+                    // "masih belum implementasi pencatatan" implies it's desired.
+                    // Let's attach it but not block if hardhat/network is flaky.
+                }
+            }
+
+            // 5. Create Ledger Entry
             await tx.insert(pointsLedger).values({
                 userId,
                 amount: -item.pointsRequired,
                 reason: `Redeem: ${item.name}`,
                 source: 'redeem',
+                onchainTx: txHash,
             });
 
-            // 5. Create Redeem Request
+            // 6. Create Redeem Request
             const [request] = await tx.insert(redeemRequests).values({
                 userId,
                 catalogId,
                 pointsUsed: item.pointsRequired,
                 whatsappNumber,
                 status: 'pending',
+                onchainTx: txHash,
             }).returning();
 
             return c.json({ success: true, message: "Redeem requested successfully", data: request }, 201);

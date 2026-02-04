@@ -38,5 +38,19 @@ export const BlockchainService = {
 
         const tx = await contract.addPoints(userAddress, amount, reason);
         return await tx.wait();
+    },
+
+    // Catat redeem request ke Blockchain (Audit Trail)
+    async logRedemption(userAddress: string, catalogId: number, pointsUsed: number) {
+        if (!addresses?.redeem) throw new Error("Contract address not found for RedeemLog");
+
+        const contract = new ethers.Contract(
+            addresses.redeem,
+            ["function logRedeem(address _user, uint256 _serviceId, uint256 _pointsUsed) external"],
+            operatorWallet
+        );
+
+        const tx = await contract.logRedeem(userAddress, catalogId, pointsUsed);
+        return await tx.wait();
     }
 };

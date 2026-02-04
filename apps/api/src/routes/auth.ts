@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { RegisterUserSchema } from '@repo/shared';
-import { db, users, pointsBalance, agents, referrals } from '@repo/database';
-import { eq } from 'drizzle-orm';
+import { db, users, pointsBalance, pointsLedger, agents, referrals } from '@repo/database';
+import { eq, sql } from 'drizzle-orm';
 import { BlockchainService } from '../services/blockchain';
 
 const auth = new Hono();
@@ -95,9 +95,36 @@ auth.post('/register', zValidator('json', RegisterUserSchema), async (c) => {
                 }
             }
 
+            // 4. Distribute Rewards
+            // A. Referral Reward for Agent (50 Poin)
+            if (agentData && agentData.userId) {
+                console.log(`[Auth] Distributing Referral Reward to Agent: ${agentData.userId}`);
+                await tx.update(pointsBalance)
+                    .set({ balance: sql`${pointsBalance.balance} + 50` })
+                    .where(eq(pointsBalance.userId, agentData.userId));
+
+                await tx.insert(pointsLedger).values({
+                    userId: agentData.userId,
+                    amount: 50,
+                    source: 'system',
+                    reason: `Referral Reward: ${newUser.name}`,
+                    createdAt: new Date(),
+                });
+            }
+
+            // B. Welcome Bonus for New User (10 Poin)
+            console.log("[Auth] Initializing Points with Welcome Bonus...");
             await tx.insert(pointsBalance).values({
                 userId: newUser.id,
-                balance: 0,
+                balance: 10, // Welcome Bonus
+            });
+
+            await tx.insert(pointsLedger).values({
+                userId: newUser.id,
+                amount: 10,
+                source: 'system',
+                reason: 'Welcome Bonus',
+                createdAt: new Date(),
             });
 
             return newUser;

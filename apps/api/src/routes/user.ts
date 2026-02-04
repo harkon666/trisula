@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { db, users, pointsBalance, pointsLedger, referrals, agents } from '@repo/database';
-import { eq, desc } from 'drizzle-orm';
+import { db, users, pointsBalance, pointsLedger, referrals, agents, redeemCatalog, redeemRequests } from '@repo/database';
+import { eq, desc, sql } from 'drizzle-orm';
 
 const user = new Hono();
 
@@ -71,15 +71,42 @@ user.get('/activity', async (c) => {
         }
 
         // Fetch Points Ledger (History)
-        const history = await db.select()
+        const history = await db.select({
+            id: pointsLedger.id,
+            amount: pointsLedger.amount,
+            reason: pointsLedger.reason,
+            source: pointsLedger.source,
+            onchainTx: pointsLedger.onchainTx,
+            createdAt: pointsLedger.createdAt,
+            status: sql<string>`NULL` // Placeholder for status
+        })
             .from(pointsLedger)
             .where(eq(pointsLedger.userId, userData.id))
             .orderBy(desc(pointsLedger.createdAt))
-            .limit(20);
+            .limit(30);
+
+        // Fetch Redeem Requests to get statuses
+        const redemptions = await db.select({
+            reason: sql<string>`CONCAT('Redeem: ', ${redeemCatalog.name})`,
+            status: redeemRequests.status,
+            createdAt: redeemRequests.createdAt
+        })
+            .from(redeemRequests)
+            .leftJoin(redeemCatalog, eq(redeemRequests.catalogId, redeemCatalog.id))
+            .where(eq(redeemRequests.userId, userData.id));
+
+        // Map status back to history
+        const mergedHistory = history.map(item => {
+            if (item.source === 'redeem') {
+                const match = redemptions.find(r => r.reason === item.reason); // Simple name match
+                return { ...item, status: match?.status || 'completed' };
+            }
+            return item;
+        });
 
         return c.json({
             success: true,
-            data: history
+            data: mergedHistory
         });
 
     } catch (error) {

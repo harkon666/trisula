@@ -4,6 +4,7 @@ import { cors } from 'hono/cors';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/user';
 import redeemRoutes from './routes/redeem';
+import adminRoutes from './routes/admin';
 
 const app = new Hono();
 
@@ -18,6 +19,7 @@ app.get('/', (c) => c.text('TRISULA API Orchestrator v1.0.0 (Bun Runtime)'));
 app.route('/api/v1/auth', authRoutes);
 app.route('/api/v1/user', userRoutes);
 app.route('/api/v1/redeem', redeemRoutes);
+app.route('/api/v1/admin', adminRoutes);
 
 // --- ERROR HANDLING ---
 app.onError((err, c) => {

@@ -11,7 +11,7 @@ export default function ConnectWallet() {
                 client={client}
                 wallets={[inAppWallet()]}
                 connectButton={{
-                    label: "Login Sultan",
+                    label: "Member Login",
                     className: "!bg-amber-500 !text-black !font-bold hover:!bg-amber-400 !transition-all",
                 }}
                 connectModal={{

@@ -22,6 +22,7 @@ interface ActivityLog {
     source: string;
     createdAt: string;
     onchainTx?: string;
+    status?: 'pending' | 'processing' | 'completed' | 'rejected' | null;
 }
 
 export default function DashboardPage() {
@@ -159,10 +160,18 @@ export default function DashboardPage() {
                                             <td className="py-4 pl-4 text-zinc-400">
                                                 {new Date(log.createdAt).toLocaleDateString()}
                                             </td>
-                                            <td className="py-4 font-medium text-white">
+                                            <td className="py-4 font-medium text-white flex items-center gap-2">
                                                 {log.reason}
+                                                {log.status && log.source === 'redeem' && (
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${log.status === 'completed' ? 'bg-green-500/20 border-green-500/30 text-green-300' :
+                                                            log.status === 'rejected' ? 'bg-red-500/20 border-red-500/30 text-red-300' :
+                                                                'bg-amber-500/20 border-amber-500/30 text-amber-300'
+                                                        }`}>
+                                                        {log.status.toUpperCase()}
+                                                    </span>
+                                                )}
                                                 {log.onchainTx && (
-                                                    <span className="ml-2 px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[10px] border border-blue-500/30">
+                                                    <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[10px] border border-blue-500/30">
                                                         On-chain
                                                     </span>
                                                 )}

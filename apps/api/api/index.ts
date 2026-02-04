@@ -3,7 +3,7 @@ import app from '../src/index';
 
 // Vercel Serverless Function Configuration
 export const config = {
-    runtime: 'nodejs',
+    runtime: 'edge',
 };
 
 // Export handler for Vercel

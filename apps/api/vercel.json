@@ -1,5 +1,5 @@
 {
-    "buildCommand": "cd ../.. && turbo run build --filter=@repo/database --filter=@repo/shared",
+    "buildCommand": "cd ../.. && turbo run build --filter=api",
     "outputDirectory": "",
     "rewrites": [
         {

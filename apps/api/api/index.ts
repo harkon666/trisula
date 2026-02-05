@@ -1,5 +1,5 @@
 import { getRequestListener } from '@hono/node-server';
-import app from '../src/index.js';
+import app from '../dist/index.js';
 
 // Vercel Serverless Function Configuration
 export const config = {

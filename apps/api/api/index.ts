@@ -1,6 +1,6 @@
 import { getRequestListener } from '@hono/node-server';
-// @ts-ignore - this file is generated at build time
-import app from '../dist/index.js';
+// @ts-ignore
+import app from './_build/index.js';
 
 // Vercel Serverless Function Configuration
 export const config = {

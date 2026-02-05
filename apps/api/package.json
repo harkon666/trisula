@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "build": "tsup",
-    "start": "node dist/index.js",
+    "start": "node api/_build/index.js",
     "check-types": "tsc --noEmit",
     "lint": "eslint ."
   },

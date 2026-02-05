@@ -9,7 +9,7 @@
     ],
     "functions": {
         "api/index.ts": {
-            "includeFiles": "../dist/**"
+            "includeFiles": "_build/**"
         }
     }
 }

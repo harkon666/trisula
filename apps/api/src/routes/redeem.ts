@@ -223,12 +223,12 @@ redeem.post('/:id/cancel', zValidator('json', CancelInputSchema), async (c) => {
                 .set({ balance: sql`${pointsBalance.balance} + ${request.pointsUsed}` })
                 .where(eq(pointsBalance.userId, userId));
 
-            await tx.insert(pointsLedger).values({
+            const [ledgerEntry] = await tx.insert(pointsLedger).values({
                 userId,
                 amount: request.pointsUsed,
                 source: 'system',
                 reason: `Refund: Pembatalan oleh pengguna`,
-            });
+            }).returning({ id: pointsLedger.id });
 
             // 5. Update Status to Cancelled
             await tx.update(redeemRequests)
@@ -238,6 +238,28 @@ redeem.post('/:id/cancel', zValidator('json', CancelInputSchema), async (c) => {
                     metadata: { ...request.metadata as object, cancelledBy: 'user', cancelledAt: new Date().toISOString() }
                 })
                 .where(eq(redeemRequests.id, requestId));
+
+            // 6. Get user wallet for blockchain logging
+            const [userRecord] = await tx.select({ walletAddress: users.walletAddress })
+                .from(users).where(eq(users.id, userId)).limit(1);
+
+            // 7. Log refund to blockchain (async, after transaction commits)
+            if (userRecord?.walletAddress) {
+                BlockchainService.logPointsAdded(
+                    userRecord.walletAddress,
+                    BigInt(request.pointsUsed),
+                    `Refund: Cancelled by user`
+                ).then(async (tx) => {
+                    if (tx?.hash) {
+                        await db.update(pointsLedger)
+                            .set({ txHash: tx.hash })
+                            .where(eq(pointsLedger.id, ledgerEntry.id));
+                        console.log(`✅ Cancel Refund logged on-chain: ${tx.hash}`);
+                    }
+                }).catch((err) => {
+                    console.error(`⚠️ Blockchain cancel refund log failed: ${err.message}`);
+                });
+            }
 
             return c.json({
                 success: true,

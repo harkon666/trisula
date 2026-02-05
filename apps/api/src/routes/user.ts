@@ -118,11 +118,30 @@ user.get('/activity', async (c) => {
             .leftJoin(redeemCatalog, eq(redeemRequests.rewardId, redeemCatalog.id))
             .where(eq(redeemRequests.userId, userData.id));
 
-        // Map status back to history
+        // Map status back to history by matching reason AND closest timestamp
         const mergedHistory = history.map(item => {
+            // Refund entries get special 'refund' status
+            if (item.reason.startsWith('Refund:')) {
+                return { ...item, status: 'refund' };
+            }
+
             if (item.source === 'redeem') {
-                const match = redemptions.find(r => r.reason === item.reason); // Simple name match
-                return { ...item, status: match?.status || 'completed' };
+                // Find redemption with same reason AND closest createdAt
+                const matchingRedemptions = redemptions.filter(r => r.reason === item.reason);
+
+                if (matchingRedemptions.length === 0) {
+                    return { ...item, status: 'pending' };
+                }
+
+                // Find the one with closest timestamp (within 5 seconds tolerance)
+                const itemTime = new Date(item.createdAt).getTime();
+                const closest = matchingRedemptions.reduce((prev, curr) => {
+                    const prevDiff = Math.abs(new Date(prev.createdAt).getTime() - itemTime);
+                    const currDiff = Math.abs(new Date(curr.createdAt).getTime() - itemTime);
+                    return currDiff < prevDiff ? curr : prev;
+                });
+
+                return { ...item, status: closest.status };
             }
             return item;
         });

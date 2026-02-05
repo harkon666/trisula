@@ -32,7 +32,7 @@ interface ActivityLog {
     source: string;
     createdAt: string;
     txHash?: string;
-    status?: 'pending' | 'processing' | 'completed' | 'rejected' | null;
+    status?: 'pending' | 'processing' | 'ready' | 'completed' | 'cancelled' | 'rejected' | 'refund' | null;
 }
 
 export default function DashboardPage() {
@@ -227,17 +227,22 @@ export default function DashboardPage() {
                                             </td>
                                             <td className="py-4 font-medium text-white flex items-center gap-2">
                                                 {log.reason}
-                                                {log.status && log.source === 'redeem' && (
+                                                {log.status && (
                                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${log.status === 'completed' ? 'bg-green-500/20 border-green-500/30 text-green-300' :
-                                                        log.status === 'rejected' ? 'bg-red-500/20 border-red-500/30 text-red-300' :
-                                                            'bg-amber-500/20 border-amber-500/30 text-amber-300'
+                                                            log.status === 'rejected' ? 'bg-red-500/20 border-red-500/30 text-red-300' :
+                                                                log.status === 'cancelled' ? 'bg-zinc-500/20 border-zinc-500/30 text-zinc-300' :
+                                                                    log.status === 'ready' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300' :
+                                                                        log.status === 'processing' ? 'bg-blue-500/20 border-blue-500/30 text-blue-300' :
+                                                                            log.status === 'refund' ? 'bg-purple-500/20 border-purple-500/30 text-purple-300' :
+                                                                                'bg-amber-500/20 border-amber-500/30 text-amber-300'
                                                         }`}>
-                                                        {log.status.toUpperCase()}
-                                                    </span>
-                                                )}
-                                                {log.txHash && (
-                                                    <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[10px] border border-blue-500/30">
-                                                        On-chain
+                                                        {log.status === 'cancelled' ? 'DIBATALKAN' :
+                                                            log.status === 'rejected' ? 'DITOLAK' :
+                                                                log.status === 'ready' ? 'SIAP DIAMBIL' :
+                                                                    log.status === 'completed' ? 'SELESAI' :
+                                                                        log.status === 'processing' ? 'DIPROSES' :
+                                                                            log.status === 'refund' ? 'DIKEMBALIKAN' :
+                                                                                'MENUNGGU'}
                                                     </span>
                                                 )}
                                             </td>

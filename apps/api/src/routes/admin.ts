@@ -3,6 +3,7 @@ import { zValidator } from '@hono/zod-validator';
 import { db, users, redeemRequests, pointsBalance, pointsLedger, redeemCatalog } from '@repo/database';
 import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { BlockchainService } from '../services/blockchain.js';
 
 const admin = new Hono();
 
@@ -98,13 +99,35 @@ admin.patch('/redeem/:id', zValidator('json', UpdateRedeemStatusSchema), async (
                     .set({ balance: sql`${pointsBalance.balance} + ${request.pointsUsed}` })
                     .where(eq(pointsBalance.userId, request.userId));
 
-                await tx.insert(pointsLedger).values({
+                const [ledgerEntry] = await tx.insert(pointsLedger).values({
                     userId: request.userId,
                     amount: request.pointsUsed,
                     source: 'admin',
                     reason: `Refund: Ditolak Admin - ${reason}`,
                     createdAt: new Date(),
-                });
+                }).returning({ id: pointsLedger.id });
+
+                // Log refund to blockchain (async, don't block)
+                const [user] = await tx.select({ walletAddress: users.walletAddress })
+                    .from(users).where(eq(users.id, request.userId)).limit(1);
+
+                if (user?.walletAddress) {
+                    BlockchainService.logPointsAdded(
+                        user.walletAddress,
+                        BigInt(request.pointsUsed),
+                        `Refund: Rejected - ${reason}`
+                    ).then(async (tx) => {
+                        if (tx?.hash) {
+                            // Update ledger with txHash
+                            await db.update(pointsLedger)
+                                .set({ txHash: tx.hash })
+                                .where(eq(pointsLedger.id, ledgerEntry.id));
+                            console.log(`✅ Refund logged on-chain: ${tx.hash}`);
+                        }
+                    }).catch((err) => {
+                        console.error(`⚠️ Blockchain refund log failed: ${err.message}`);
+                    });
+                }
             }
 
             // 4. Update Status with metadata

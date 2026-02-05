@@ -14,9 +14,10 @@ type StatusTrackerProps = {
     status: 'pending' | 'processing' | 'ready' | 'completed' | 'cancelled' | 'rejected';
     txHash?: string | null;
     updatedAt: string;
+    rejectedReason?: string | null;
 };
 
-export default function StatusTracker({ status, txHash, updatedAt }: StatusTrackerProps) {
+export default function StatusTracker({ status, txHash, updatedAt, rejectedReason }: StatusTrackerProps) {
     const steps = useMemo(() => {
         const allSteps = [
             { id: 'pending', label: 'Requested', icon: '📝' },
@@ -39,12 +40,31 @@ export default function StatusTracker({ status, txHash, updatedAt }: StatusTrack
         }));
     }, [status]);
 
-    if (status === 'cancelled' || status === 'rejected') {
+    if (status === 'cancelled') {
         return (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
-                <span className="text-2xl block mb-2">❌</span>
-                <p className="text-red-300 font-medium">Order {status === 'cancelled' ? 'Cancelled' : 'Rejected'}</p>
-                <p className="text-xs text-red-400/60 mt-1">Points have been refunded.</p>
+            <div className="p-6 bg-zinc-800/50 border border-zinc-700 rounded-xl text-center">
+                <span className="text-3xl block mb-3">🚫</span>
+                <p className="text-zinc-300 font-medium">Pesanan Dibatalkan</p>
+                <p className="text-sm text-zinc-500 mt-2">
+                    Pembatalan berhasil. Poin telah dikembalikan ke saldo Anda.
+                </p>
+            </div>
+        );
+    }
+
+    if (status === 'rejected') {
+        return (
+            <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
+                <span className="text-3xl block mb-3">😔</span>
+                <p className="text-red-300 font-medium">Mohon Maaf, Permintaan Ditolak</p>
+                <p className="text-sm text-red-400/70 mt-2">
+                    Permintaan Anda belum bisa kami penuhi saat ini. Poin telah dikembalikan.
+                </p>
+                {rejectedReason && (
+                    <p className="text-xs text-red-500/60 mt-3 bg-red-500/10 p-2 rounded-lg inline-block">
+                        Alasan: {rejectedReason}
+                    </p>
+                )}
             </div>
         );
     }

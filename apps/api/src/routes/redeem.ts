@@ -171,4 +171,74 @@ redeem.post('/', zValidator('json', RedeemInputSchema), async (c) => {
     }
 });
 
+// Schema for Cancel Request
+const CancelInputSchema = z.object({
+    userId: z.string().uuid(),
+});
+
+/**
+ * @route   POST /:id/cancel
+ * @desc    Cancel a redemption request (User-initiated)
+ * @access  Private (Owner only)
+ */
+redeem.post('/:id/cancel', zValidator('json', CancelInputSchema), async (c) => {
+    const requestId = c.req.param('id');
+    const { userId } = c.req.valid('json');
+
+    try {
+        return await db.transaction(async (tx) => {
+            // 1. Get Request
+            const [request] = await tx.select().from(redeemRequests).where(eq(redeemRequests.id, requestId)).limit(1);
+
+            if (!request) {
+                return c.json({ success: false, message: "Request not found" }, 404);
+            }
+
+            // 2. Ownership Check
+            if (request.userId !== userId) {
+                return c.json({ success: false, message: "Unauthorized" }, 403);
+            }
+
+            // 3. State Machine: Only allow cancel from pending/processing
+            const CANCELLABLE_STATES = ['pending', 'processing'];
+            if (!CANCELLABLE_STATES.includes(request.status)) {
+                return c.json({
+                    success: false,
+                    message: `Pesanan dengan status "${request.status}" tidak dapat dibatalkan.`
+                }, 400);
+            }
+
+            // 4. Refund Points
+            await tx.update(pointsBalance)
+                .set({ balance: sql`${pointsBalance.balance} + ${request.pointsUsed}` })
+                .where(eq(pointsBalance.userId, userId));
+
+            await tx.insert(pointsLedger).values({
+                userId,
+                amount: request.pointsUsed,
+                source: 'system',
+                reason: `Refund: Pembatalan oleh pengguna`,
+            });
+
+            // 5. Update Status to Cancelled
+            await tx.update(redeemRequests)
+                .set({
+                    status: 'cancelled',
+                    updatedAt: new Date(),
+                    metadata: { ...request.metadata as object, cancelledBy: 'user', cancelledAt: new Date().toISOString() }
+                })
+                .where(eq(redeemRequests.id, requestId));
+
+            return c.json({
+                success: true,
+                message: "Pembatalan berhasil. Poin telah dikembalikan ke saldo Anda."
+            });
+        });
+
+    } catch (error: any) {
+        console.error("Cancel Error:", error);
+        return c.json({ success: false, message: "Gagal membatalkan pesanan" }, 500);
+    }
+});
+
 export default redeem;

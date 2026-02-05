@@ -6,12 +6,15 @@ import { z } from 'zod';
 
 const admin = new Hono();
 
-// Schema for Verify Request
+// Schema for Verify Request - Updated to include 'rejected' status
 const UpdateRedeemStatusSchema = z.object({
-    status: z.enum(['processing', 'ready', 'completed', 'cancelled']),
-    adminWallet: z.string(), // Ideally this comes from JWT/Auth middleware, but using body for now as per previous pattern
-    reason: z.string().optional(),
+    status: z.enum(['processing', 'ready', 'completed', 'rejected']),
+    adminWallet: z.string(),
+    reason: z.string().optional(), // Required for rejected
 });
+
+// Final states that cannot be changed
+const FINAL_STATES = ['completed', 'cancelled', 'rejected'];
 
 // Middleware helper (simplified) to check admin role
 async function isAdmin(walletAddress: string) {
@@ -22,7 +25,7 @@ async function isAdmin(walletAddress: string) {
 
 /**
  * @route   GET /redeem/pending
- * @desc    List all pending/processing redeem requests
+ * @desc    List all pending/processing/ready redeem requests
  */
 admin.get('/redeem/pending', async (c) => {
     const adminWallet = c.req.query('adminWallet');
@@ -44,7 +47,7 @@ admin.get('/redeem/pending', async (c) => {
             .from(redeemRequests)
             .leftJoin(users, eq(redeemRequests.userId, users.id))
             .leftJoin(redeemCatalog, eq(redeemRequests.rewardId, redeemCatalog.id))
-            .where(sql`${redeemRequests.status} IN ('pending', 'processing')`)
+            .where(sql`${redeemRequests.status} IN ('pending', 'processing', 'ready')`)
             .orderBy(sql`${redeemRequests.createdAt} DESC`);
 
         return c.json({ success: true, data: requests });
@@ -56,7 +59,7 @@ admin.get('/redeem/pending', async (c) => {
 
 /**
  * @route   PATCH /redeem/:id
- * @desc    Update redemption status (Fulfillment / Cancellation)
+ * @desc    Update redemption status (Fulfillment / Rejection by Admin)
  */
 admin.patch('/redeem/:id', zValidator('json', UpdateRedeemStatusSchema), async (c) => {
     const requestId = c.req.param('id');
@@ -64,6 +67,11 @@ admin.patch('/redeem/:id', zValidator('json', UpdateRedeemStatusSchema), async (
 
     if (!await isAdmin(adminWallet)) {
         return c.json({ success: false, message: "Unauthorized" }, 401);
+    }
+
+    // Require reason for rejected status
+    if (status === 'rejected' && !reason) {
+        return c.json({ success: false, message: "Alasan penolakan wajib diisi" }, 400);
     }
 
     try {
@@ -74,13 +82,17 @@ admin.patch('/redeem/:id', zValidator('json', UpdateRedeemStatusSchema), async (
                 return c.json({ success: false, message: "Request not found" }, 404);
             }
 
-            if (request.status === 'cancelled' || request.status === 'completed' || request.status === 'rejected') {
-                return c.json({ success: false, message: `Request is already ${request.status}` }, 400);
+            // 2. State Machine: Block changes from final states
+            if (FINAL_STATES.includes(request.status)) {
+                return c.json({
+                    success: false,
+                    message: `Pesanan dengan status "${request.status}" tidak dapat diubah.`
+                }, 400);
             }
 
-            if (status === 'cancelled') {
-                // REFUND LOGIC
-                console.log(`🔄 Refunding ${request.pointsUsed} points to user ${request.userId}`);
+            // 3. Refund Logic for REJECTED
+            if (status === 'rejected') {
+                console.log(`🔄 Refunding ${request.pointsUsed} points to user ${request.userId} (Admin Rejection)`);
 
                 await tx.update(pointsBalance)
                     .set({ balance: sql`${pointsBalance.balance} + ${request.pointsUsed}` })
@@ -89,18 +101,31 @@ admin.patch('/redeem/:id', zValidator('json', UpdateRedeemStatusSchema), async (
                 await tx.insert(pointsLedger).values({
                     userId: request.userId,
                     amount: request.pointsUsed,
-                    source: 'system', // or admin
-                    reason: `Refunding Redeem: ${reason || 'Admin Cancel'}`,
+                    source: 'admin',
+                    reason: `Refund: Ditolak Admin - ${reason}`,
                     createdAt: new Date(),
                 });
             }
 
-            // UPDATE STATUS
+            // 4. Update Status with metadata
+            const updatedMetadata = {
+                ...request.metadata as object,
+                ...(status === 'rejected' ? { rejectedReason: reason, rejectedAt: new Date().toISOString(), rejectedBy: 'admin' } : {}),
+            };
+
             await tx.update(redeemRequests)
-                .set({ status, updatedAt: new Date() })
+                .set({
+                    status,
+                    updatedAt: new Date(),
+                    metadata: updatedMetadata
+                })
                 .where(eq(redeemRequests.id, requestId));
 
-            return c.json({ success: true, message: `Request updated to ${status}` });
+            const successMessage = status === 'rejected'
+                ? `Permintaan ditolak. Poin telah dikembalikan ke nasabah.`
+                : `Status diperbarui ke ${status}`;
+
+            return c.json({ success: true, message: successMessage });
         });
 
     } catch (error) {

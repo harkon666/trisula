@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import RedeemButton from "../../../components/RedeemButton";
 import StatusTracker from "../../../components/StatusTracker";
+import CancelButton from "../../../components/CancelButton";
 
 interface CatalogItem {
     id: number;
@@ -77,7 +78,7 @@ export default function RedeemPage() {
         fetchData();
     }, [account]);
 
-    const handleRedeemSuccess = (requestId: string) => {
+    const handleRedeemSuccess = () => {
         // Refresh data to show new balance and new request in list
         fetchData();
     };
@@ -116,8 +117,16 @@ export default function RedeemPage() {
                                 <h3 className="text-xl font-bold text-white">Lacak Pesanan: {activeRequest.itemName}</h3>
                                 <p className="text-sm text-zinc-400">Order ID: #{activeRequest.id.substring(0, 8)}</p>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right flex flex-col items-end gap-2">
                                 <span className="text-amber-500 font-bold">{activeRequest.pointsUsed.toLocaleString()} Pts</span>
+                                {userId && (
+                                    <CancelButton
+                                        requestId={activeRequest.id}
+                                        userId={userId}
+                                        status={activeRequest.status}
+                                        onSuccess={handleRedeemSuccess}
+                                    />
+                                )}
                             </div>
                         </div>
 
@@ -189,9 +198,9 @@ export default function RedeemPage() {
                                             </td>
                                             <td className="py-4">
                                                 <span className={`px-2 py-1 rounded-md text-[10px] uppercase font-bold border ${req.status === 'completed' ? 'bg-green-500/20 border-green-500/30 text-green-400' :
-                                                        req.status === 'ready' ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
-                                                            req.status === 'rejected' || req.status === 'cancelled' ? 'bg-red-500/20 border-red-500/30 text-red-400' :
-                                                                'bg-amber-500/20 border-amber-500/30 text-amber-400'
+                                                    req.status === 'ready' ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
+                                                        req.status === 'rejected' || req.status === 'cancelled' ? 'bg-red-500/20 border-red-500/30 text-red-400' :
+                                                            'bg-amber-500/20 border-amber-500/30 text-amber-400'
                                                     }`}>
                                                     {req.status}
                                                 </span>

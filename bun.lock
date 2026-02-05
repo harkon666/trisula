@@ -4,11 +4,6 @@
   "workspaces": {
     "": {
       "name": "trisula",
-      "dependencies": {
-        "dotenv": "^17.2.3",
-        "drizzle-orm": "^0.45.1",
-        "postgres": "^3.4.8",
-      },
       "devDependencies": {
         "drizzle-kit": "^0.31.8",
         "prettier": "^3.7.4",
@@ -30,9 +25,12 @@
         "zod": "^4.3.6",
       },
       "devDependencies": {
+        "@repo/eslint-config": "*",
+        "@repo/typescript-config": "*",
         "@types/bcryptjs": "^3.0.0",
         "@types/bun": "latest",
         "@types/node": "^22.15.3",
+        "eslint": "^9.39.1",
         "typescript": "^5.9.3",
       },
     },
@@ -87,6 +85,7 @@
         "postgres": "^3.4.8",
       },
       "devDependencies": {
+        "@repo/typescript-config": "*",
         "@types/bun": "latest",
         "drizzle-kit": "^0.31.8",
         "tsup": "^8.5.1",
@@ -2629,6 +2628,8 @@
     "@reown/appkit-utils/@walletconnect/universal-provider": ["@walletconnect/universal-provider@2.21.0", "", { "dependencies": { "@walletconnect/events": "1.0.1", "@walletconnect/jsonrpc-http-connection": "1.0.8", "@walletconnect/jsonrpc-provider": "1.0.14", "@walletconnect/jsonrpc-types": "1.0.4", "@walletconnect/jsonrpc-utils": "1.0.8", "@walletconnect/keyvaluestorage": "1.1.1", "@walletconnect/logger": "2.1.2", "@walletconnect/sign-client": "2.21.0", "@walletconnect/types": "2.21.0", "@walletconnect/utils": "2.21.0", "es-toolkit": "1.33.0", "events": "3.3.0" } }, "sha512-mtUQvewt+X0VBQay/xOJBvxsB3Xsm1lTwFjZ6WUwSOTR1X+FNb71hSApnV5kbsdDIpYPXeQUbGt2se1n5E5UBg=="],
 
     "@reown/appkit-wallet/zod": ["zod@3.22.4", "", {}, "sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg=="],
+
+    "@repo/eslint-config/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@rollup/plugin-babel/rollup": ["rollup@2.79.2", "", { "optionalDependencies": { "fsevents": "~2.3.2" }, "bin": { "rollup": "dist/bin/rollup" } }, "sha512-fS6iqSPZDs3dr/y7Od6y5nha8dW1YnbgtsyotCVvoFGKbERG++CVRFv1meyGDE1SNItQA8BrnCw7ScdAhRJ3XQ=="],
 

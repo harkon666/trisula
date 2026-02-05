@@ -31,7 +31,7 @@ rewardsRoutes.post("/reset-claim", async (c) => {
 
     if (!user) return c.json({ error: "User not found" }, 404);
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0] ?? "";
 
     await db.delete(dailyYieldLogs)
         .where(and(

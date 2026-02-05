@@ -48,7 +48,7 @@ export const BlockchainService = {
             operatorWallet
         );
 
-        const tx = await contract.bindReferral(userAddress, agentAddress);
+        const tx = await (contract as any).bindReferral(userAddress, agentAddress);
         return await tx.wait();
     },
 
@@ -67,7 +67,7 @@ export const BlockchainService = {
         const nonce = await operatorWallet.getNonce("pending");
 
         // Manual override options
-        const tx = await contract.addPoints(userAddress, amount, reason, { nonce });
+        const tx = await (contract as any).addPoints(userAddress, amount, reason, { nonce });
         // Return tx immediately for faster processing (Fire & Forget)
         return tx;
     },
@@ -87,7 +87,7 @@ export const BlockchainService = {
         const timeoutMs = 15000;
 
         try {
-            const txPromise = contract.logRedeem(userAddress, catalogId, pointsUsed);
+            const txPromise = (contract as any).logRedeem(userAddress, catalogId, pointsUsed);
             const tx = await Promise.race([
                 txPromise,
                 new Promise((_, reject) =>

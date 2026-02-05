@@ -43,7 +43,7 @@ export const RewardService = {
      * Triggered when user views dashboard/profile
      */
     async checkAndClaimYield(userId: string) {
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const today = new Date().toISOString().split('T')[0] ?? ""; // YYYY-MM-DD
 
         // 1. Check if already claimed today
         const existingLog = await db.query.dailyYieldLogs.findFirst({

@@ -59,7 +59,9 @@ export const WealthAggregatorService = {
         const totalAum = fiatBalance + cryptoBalance;
 
         // Determine Tier
-        let currentTier = DEFAULT_TIERS[0];
+        const defaultTier = DEFAULT_TIERS[0];
+        if (!defaultTier) throw new Error("Default tiers configuration error");
+        let currentTier = defaultTier;
         for (const tier of DEFAULT_TIERS) {
             if (totalAum >= tier.minAum) {
                 currentTier = tier;
@@ -96,7 +98,9 @@ export const WealthAggregatorService = {
         const totalAum = fiatBalance + cryptoBalance;
 
         // Determine Tier
-        let currentTier = DEFAULT_TIERS[0];
+        const defaultTier = DEFAULT_TIERS[0];
+        if (!defaultTier) throw new Error("Default tiers configuration error");
+        let currentTier = defaultTier;
 
         for (const tier of DEFAULT_TIERS) {
             if (totalAum >= tier.minAum) {

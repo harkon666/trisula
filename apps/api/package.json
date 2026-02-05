@@ -3,7 +3,9 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
@@ -19,6 +21,9 @@
     "@types/bcryptjs": "^3.0.0",
     "@types/bun": "latest",
     "@types/node": "^22.15.3",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@repo/typescript-config": "*",
+    "@repo/eslint-config": "*",
+    "eslint": "^9.39.1"
   }
 }

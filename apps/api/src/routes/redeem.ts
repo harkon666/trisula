@@ -104,6 +104,8 @@ redeem.post('/', zValidator('json', RedeemInputSchema), async (c) => {
                 source: 'redeem',
             }).returning({ id: pointsLedger.id });
 
+            if (!ledgerEntry) throw new Error("Failed to create ledger entry");
+
             // E. Create Request (PENDING)
             const [request] = await tx.insert(redeemRequests).values({
                 userId,
@@ -113,6 +115,8 @@ redeem.post('/', zValidator('json', RedeemInputSchema), async (c) => {
                 status: 'pending',
                 metadata: { itemName: item.name, price: item.pointsRequired } // Store snapshot
             }).returning({ id: redeemRequests.id });
+
+            if (!request) throw new Error("Failed to create redeem request");
 
             return {
                 requestId: request.id,
@@ -229,6 +233,8 @@ redeem.post('/:id/cancel', zValidator('json', CancelInputSchema), async (c) => {
                 source: 'system',
                 reason: `Refund: Pembatalan oleh pengguna`,
             }).returning({ id: pointsLedger.id });
+
+            if (!ledgerEntry) throw new Error("Failed to create ledger entry");
 
             // 5. Update Status to Cancelled
             await tx.update(redeemRequests)

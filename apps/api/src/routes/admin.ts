@@ -107,6 +107,8 @@ admin.patch('/redeem/:id', zValidator('json', UpdateRedeemStatusSchema), async (
                     createdAt: new Date(),
                 }).returning({ id: pointsLedger.id });
 
+                if (!ledgerEntry) throw new Error("Failed to create ledger entry");
+
                 // Log refund to blockchain (async, don't block)
                 const [user] = await tx.select({ walletAddress: users.walletAddress })
                     .from(users).where(eq(users.id, request.userId)).limit(1);

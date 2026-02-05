@@ -59,6 +59,8 @@ auth.post('/register', zValidator('json', RegisterUserSchema), async (c) => {
                 status: 'active',
             }).returning();
 
+            if (!newUser) throw new Error("Failed to create user");
+
             // Bind to blockchain if agent exists/valid
             // Requirement: "Hubungan referral harus terkunci".
             if (agentData && agentData.id && agentWalletAddress !== "0x0000000000000000000000000000000000000000") {

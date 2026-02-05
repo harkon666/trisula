@@ -69,7 +69,7 @@ declare const PointsLedgerSchema: z.ZodObject<{
         redeem: "redeem";
     }>;
     adminId: z.ZodNullable<z.ZodUUID>;
-    onchainTx: z.ZodNullable<z.ZodString>;
+    txHash: z.ZodNullable<z.ZodString>;
 }, z.core.$strip>;
 declare const AdjustPointsSchema: z.ZodObject<{
     userId: z.ZodUUID;
@@ -79,7 +79,7 @@ declare const AdjustPointsSchema: z.ZodObject<{
 declare const RedeemRequestSchema: z.ZodObject<{
     id: z.ZodUUID;
     userId: z.ZodUUID;
-    catalogId: z.ZodNumber;
+    rewardId: z.ZodNumber;
     pointsUsed: z.ZodNumber;
     whatsappNumber: z.ZodString;
     status: z.ZodDefault<z.ZodEnum<{
@@ -88,7 +88,7 @@ declare const RedeemRequestSchema: z.ZodObject<{
         completed: "completed";
         rejected: "rejected";
     }>>;
-    onchainTx: z.ZodNullable<z.ZodString>;
+    txHash: z.ZodNullable<z.ZodString>;
 }, z.core.$strip>;
 type User = z.infer<typeof UserSchema>;
 type Agent = z.infer<typeof AgentSchema>;

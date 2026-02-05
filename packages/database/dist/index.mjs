@@ -44,7 +44,7 @@ import {
 var roleEnum = pgEnum("user_role", ["user", "agent", "admin", "super_admin"]);
 var statusEnum = pgEnum("user_status", ["pending", "active", "suspended"]);
 var pointsSourceEnum = pgEnum("points_source", ["system", "admin", "redeem", "yield", "transaction"]);
-var redeemStatusEnum = pgEnum("redeem_status", ["pending", "processing", "completed", "rejected"]);
+var redeemStatusEnum = pgEnum("redeem_status", ["pending", "processing", "ready", "completed", "cancelled", "rejected"]);
 var contentTypeEnum = pgEnum("content_type", ["news", "promo", "testimonial"]);
 var users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -125,11 +125,12 @@ var redeemCatalog = pgTable("redeem_catalog", {
 var redeemRequests = pgTable("redeem_requests", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => users.id).notNull(),
-  catalogId: integer("catalog_id").references(() => redeemCatalog.id).notNull(),
+  rewardId: integer("reward_id").references(() => redeemCatalog.id).notNull(),
   pointsUsed: integer("points_used").notNull(),
   whatsappNumber: varchar("whatsapp_number", { length: 20 }).notNull(),
   status: redeemStatusEnum("status").default("pending").notNull(),
-  onchainTx: varchar("onchain_tx", { length: 100 }),
+  txHash: varchar("tx_hash", { length: 100 }),
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });

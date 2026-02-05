@@ -5,7 +5,7 @@ import * as drizzle_orm_pg_core from 'drizzle-orm/pg-core';
 declare const roleEnum: drizzle_orm_pg_core.PgEnum<["user", "agent", "admin", "super_admin"]>;
 declare const statusEnum: drizzle_orm_pg_core.PgEnum<["pending", "active", "suspended"]>;
 declare const pointsSourceEnum: drizzle_orm_pg_core.PgEnum<["system", "admin", "redeem", "yield", "transaction"]>;
-declare const redeemStatusEnum: drizzle_orm_pg_core.PgEnum<["pending", "processing", "completed", "rejected"]>;
+declare const redeemStatusEnum: drizzle_orm_pg_core.PgEnum<["pending", "processing", "ready", "completed", "cancelled", "rejected"]>;
 declare const contentTypeEnum: drizzle_orm_pg_core.PgEnum<["news", "promo", "testimonial"]>;
 declare const users: drizzle_orm_pg_core.PgTableWithColumns<{
     name: "users";
@@ -1069,8 +1069,8 @@ declare const redeemRequests: drizzle_orm_pg_core.PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        catalogId: drizzle_orm_pg_core.PgColumn<{
-            name: "catalog_id";
+        rewardId: drizzle_orm_pg_core.PgColumn<{
+            name: "reward_id";
             tableName: "redeem_requests";
             dataType: "number";
             columnType: "PgInteger";
@@ -1127,20 +1127,20 @@ declare const redeemRequests: drizzle_orm_pg_core.PgTableWithColumns<{
             tableName: "redeem_requests";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "pending" | "processing" | "completed" | "rejected";
+            data: "pending" | "processing" | "ready" | "completed" | "cancelled" | "rejected";
             driverParam: string;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: ["pending", "processing", "completed", "rejected"];
+            enumValues: ["pending", "processing", "ready", "completed", "cancelled", "rejected"];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        onchainTx: drizzle_orm_pg_core.PgColumn<{
-            name: "onchain_tx";
+        txHash: drizzle_orm_pg_core.PgColumn<{
+            name: "tx_hash";
             tableName: "redeem_requests";
             dataType: "string";
             columnType: "PgVarchar";
@@ -1158,6 +1158,23 @@ declare const redeemRequests: drizzle_orm_pg_core.PgTableWithColumns<{
         }, {}, {
             length: 100;
         }>;
+        metadata: drizzle_orm_pg_core.PgColumn<{
+            name: "metadata";
+            tableName: "redeem_requests";
+            dataType: "json";
+            columnType: "PgJsonb";
+            data: unknown;
+            driverParam: unknown;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         createdAt: drizzle_orm_pg_core.PgColumn<{
             name: "created_at";
             tableName: "redeem_requests";

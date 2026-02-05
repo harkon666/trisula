@@ -99,7 +99,7 @@ user.get('/activity', async (c) => {
             amount: pointsLedger.amount,
             reason: pointsLedger.reason,
             source: pointsLedger.source,
-            onchainTx: pointsLedger.onchainTx,
+            txHash: pointsLedger.txHash,
             createdAt: pointsLedger.createdAt,
             status: sql<string>`NULL` // Placeholder for status
         })
@@ -115,7 +115,7 @@ user.get('/activity', async (c) => {
             createdAt: redeemRequests.createdAt
         })
             .from(redeemRequests)
-            .leftJoin(redeemCatalog, eq(redeemRequests.catalogId, redeemCatalog.id))
+            .leftJoin(redeemCatalog, eq(redeemRequests.rewardId, redeemCatalog.id))
             .where(eq(redeemRequests.userId, userData.id));
 
         // Map status back to history

@@ -103,7 +103,7 @@ export const RewardService = {
                 amount: yieldData.finalPoints,
                 source: 'yield',
                 reason: `Daily Yield for ${yieldData.tier} Tier (AUM: ${yieldData.totalAum})`,
-                onchainTx: txHash,
+                txHash: txHash,
             });
 
             // Log History (Prevent double claim)

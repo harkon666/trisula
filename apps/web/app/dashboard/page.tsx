@@ -31,7 +31,7 @@ interface ActivityLog {
     reason: string;
     source: string;
     createdAt: string;
-    onchainTx?: string;
+    txHash?: string;
     status?: 'pending' | 'processing' | 'completed' | 'rejected' | null;
 }
 
@@ -235,7 +235,7 @@ export default function DashboardPage() {
                                                         {log.status.toUpperCase()}
                                                     </span>
                                                 )}
-                                                {log.onchainTx && (
+                                                {log.txHash && (
                                                     <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[10px] border border-blue-500/30">
                                                         On-chain
                                                     </span>

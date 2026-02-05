@@ -96,13 +96,13 @@ redeem.post('/', zValidator('json', RedeemInputSchema), async (c) => {
                 .set({ balance: sql`${pointsBalance.balance} - ${item.pointsRequired}` })
                 .where(eq(pointsBalance.userId, userId));
 
-            // D. Ledger Entry
-            await tx.insert(pointsLedger).values({
+            // D. Ledger Entry (return ID for later txHash update)
+            const [ledgerEntry] = await tx.insert(pointsLedger).values({
                 userId,
                 amount: -item.pointsRequired,
                 reason: `Redeem: ${item.name}`,
                 source: 'redeem',
-            });
+            }).returning({ id: pointsLedger.id });
 
             // E. Create Request (PENDING)
             const [request] = await tx.insert(redeemRequests).values({
@@ -114,7 +114,12 @@ redeem.post('/', zValidator('json', RedeemInputSchema), async (c) => {
                 metadata: { itemName: item.name, price: item.pointsRequired } // Store snapshot
             }).returning({ id: redeemRequests.id });
 
-            return { requestId: request.id, walletAddress: userBalance?.walletAddress, pointsUsed: item.pointsRequired };
+            return {
+                requestId: request.id,
+                ledgerId: ledgerEntry.id,
+                walletAddress: userBalance?.walletAddress,
+                pointsUsed: item.pointsRequired
+            };
         });
 
         // 2. Blockchain Orchestration (Outside DB Transaction)
@@ -146,6 +151,11 @@ redeem.post('/', zValidator('json', RedeemInputSchema), async (c) => {
                             updatedAt: new Date()
                         })
                         .where(eq(redeemRequests.id, redeemRequestId.requestId));
+
+                    // 4. Update Ledger Entry with TxHash (for consistency)
+                    await db.update(pointsLedger)
+                        .set({ txHash: txHash })
+                        .where(eq(pointsLedger.id, redeemRequestId.ledgerId));
                 }
             } catch (bcError: any) {
                 console.error(`⚠️ Blockchain Audit Warning (Request ${redeemRequestId.requestId}):`, bcError.message);

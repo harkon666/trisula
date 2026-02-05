@@ -83,7 +83,25 @@ export const BlockchainService = {
             operatorWallet
         );
 
-        const tx = await contract.logRedeem(userAddress, catalogId, pointsUsed);
-        return await tx.wait();
+        // Send transaction with timeout (15 seconds for submission, don't wait for confirmation)
+        const timeoutMs = 15000;
+
+        try {
+            const txPromise = contract.logRedeem(userAddress, catalogId, pointsUsed);
+            const tx = await Promise.race([
+                txPromise,
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error("Transaction submission timeout")), timeoutMs)
+                )
+            ]) as ethers.ContractTransactionResponse;
+
+            // Return immediately with tx hash (Fire & Forget - don't wait for confirmation)
+            // Confirmation can be slow on testnet, but tx is already submitted
+            console.log(`   ⏱️ Tx submitted: ${tx.hash} (not waiting for confirmation)`);
+            return tx;
+        } catch (error: any) {
+            console.error(`   ❌ Blockchain submission failed: ${error.message}`);
+            throw error;
+        }
     }
 };

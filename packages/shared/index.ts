@@ -50,7 +50,7 @@ export const PointsLedgerSchema = z.object({
     reason: z.string().min(5, "Alasan harus jelas"),
     source: PointsSource,
     adminId: z.uuid().nullable(),
-    onchainTx: z.string().nullable(),
+    txHash: z.string().nullable(),
 });
 
 // Input untuk menambah/mengurangi poin oleh Admin
@@ -66,11 +66,11 @@ export const AdjustPointsSchema = PointsLedgerSchema.pick({
 export const RedeemRequestSchema = z.object({
     id: z.uuid(),
     userId: z.uuid(),
-    catalogId: z.number().int(),
+    rewardId: z.number().int(),
     pointsUsed: z.number().int().positive(),
     whatsappNumber: z.string(),
     status: RedeemStatus.default("pending"),
-    onchainTx: z.string().nullable(),
+    txHash: z.string().nullable(),
 });
 
 // --- TYPES INFERENCE ---

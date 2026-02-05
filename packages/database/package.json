@@ -12,8 +12,10 @@
   "private": true,
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --outDir dist",
-    "seed": "bun src/seed.ts",
-    "reset": "bun src/reset.ts"
+    "seed": "bun --env-file=../../.env src/seed.ts",
+    "reset": "bun --env-file=../../.env src/reset.ts",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {
     "@types/bun": "latest",

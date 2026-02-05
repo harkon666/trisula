@@ -1,12 +1,12 @@
 import {
     pgTable, uuid, varchar, text, integer,
-    timestamp, boolean, pgEnum, jsonb
+    timestamp, boolean, pgEnum, jsonb, bigint, numeric
 } from "drizzle-orm/pg-core";
 
 // --- ENUMS ---
 export const roleEnum = pgEnum("user_role", ["user", "agent", "admin", "super_admin"]);
 export const statusEnum = pgEnum("user_status", ["pending", "active", "suspended"]);
-export const pointsSourceEnum = pgEnum("points_source", ["system", "admin", "redeem"]);
+export const pointsSourceEnum = pgEnum("points_source", ["system", "admin", "redeem", "yield", "transaction"]);
 export const redeemStatusEnum = pgEnum("redeem_status", ["pending", "processing", "completed", "rejected"]);
 export const contentTypeEnum = pgEnum("content_type", ["news", "promo", "testimonial"]);
 
@@ -63,7 +63,36 @@ export const pointsLedger = pgTable("points_ledger", {
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// 6️⃣ REDEEM CATALOG
+// 6️⃣ FIAT ACCOUNTS (SIMULATED BANKING)
+export const fiatAccounts = pgTable("fiat_accounts", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").references(() => users.id).notNull().unique(),
+    balance: numeric("balance", { precision: 20, scale: 2 }).default('0').notNull(),
+    currency: varchar("currency", { length: 10 }).default("IDR").notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// 7️⃣ LOYALTY TIERS CONFIG
+export const loyaltyTiers = pgTable("loyalty_tiers", {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    name: varchar("name", { length: 50 }).notNull(), // Bronze, Silver, Gold, Platinum
+    minAum: numeric("min_aum", { precision: 20, scale: 2 }).notNull(),
+    yieldMultiplier: numeric("yield_multiplier", { precision: 5, scale: 2 }).notNull(),
+    description: text("description"),
+});
+
+// 8️⃣ DAILY YIELD LOGS
+export const dailyYieldLogs = pgTable("daily_yield_logs", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").references(() => users.id).notNull(),
+    date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+    totalAum: numeric("total_aum", { precision: 20, scale: 2 }).notNull(),
+    yieldEarned: integer("yield_earned").notNull(),
+    tierAtTime: varchar("tier_at_time", { length: 50 }).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// 9️⃣ REDEEM CATALOG
 export const redeemCatalog = pgTable("redeem_catalog", {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     name: varchar("name", { length: 255 }).notNull(),
@@ -72,7 +101,7 @@ export const redeemCatalog = pgTable("redeem_catalog", {
     isActive: boolean("is_active").default(true).notNull(),
 });
 
-// 7️⃣ REDEEM REQUESTS
+// 🔟 REDEEM REQUESTS
 export const redeemRequests = pgTable("redeem_requests", {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id").references(() => users.id).notNull(),
@@ -85,18 +114,18 @@ export const redeemRequests = pgTable("redeem_requests", {
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// 8️⃣ ADMIN ACTIONS (AUDIT LOG)
+// 1️⃣1️⃣ ADMIN ACTIONS (AUDIT LOG)
 export const adminActions = pgTable("admin_actions", {
     id: uuid("id").primaryKey().defaultRandom(),
     adminId: uuid("admin_id").references(() => users.id).notNull(),
-    actionType: varchar("action_type", { length: 100 }).notNull(), // e.g., 'ADJUST_POINTS', 'BAN_USER'
-    entity: varchar("entity", { length: 50 }).notNull(), // e.g., 'users', 'points'
+    actionType: varchar("action_type", { length: 100 }).notNull(),
+    entity: varchar("entity", { length: 50 }).notNull(),
     entityId: uuid("entity_id").notNull(),
     payload: jsonb("payload"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// 9️⃣ CONTENT POSTS (CMS)
+// 1️⃣2️⃣ CONTENT POSTS (CMS)
 export const contentPosts = pgTable("content_posts", {
     id: uuid("id").primaryKey().defaultRandom(),
     title: varchar("title", { length: 255 }).notNull(),

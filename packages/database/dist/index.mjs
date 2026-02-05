@@ -15,6 +15,9 @@ __export(schema_exports, {
   agents: () => agents,
   contentPosts: () => contentPosts,
   contentTypeEnum: () => contentTypeEnum,
+  dailyYieldLogs: () => dailyYieldLogs,
+  fiatAccounts: () => fiatAccounts,
+  loyaltyTiers: () => loyaltyTiers,
   pointsBalance: () => pointsBalance,
   pointsLedger: () => pointsLedger,
   pointsSourceEnum: () => pointsSourceEnum,
@@ -35,11 +38,12 @@ import {
   timestamp,
   boolean,
   pgEnum,
-  jsonb
+  jsonb,
+  numeric
 } from "drizzle-orm/pg-core";
 var roleEnum = pgEnum("user_role", ["user", "agent", "admin", "super_admin"]);
 var statusEnum = pgEnum("user_status", ["pending", "active", "suspended"]);
-var pointsSourceEnum = pgEnum("points_source", ["system", "admin", "redeem"]);
+var pointsSourceEnum = pgEnum("points_source", ["system", "admin", "redeem", "yield", "transaction"]);
 var redeemStatusEnum = pgEnum("redeem_status", ["pending", "processing", "completed", "rejected"]);
 var contentTypeEnum = pgEnum("content_type", ["news", "promo", "testimonial"]);
 var users = pgTable("users", {
@@ -86,6 +90,31 @@ var pointsLedger = pgTable("points_ledger", {
   onchainTx: varchar("onchain_tx", { length: 100 }),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
+var fiatAccounts = pgTable("fiat_accounts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull().unique(),
+  balance: numeric("balance", { precision: 20, scale: 2 }).default("0").notNull(),
+  currency: varchar("currency", { length: 10 }).default("IDR").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
+var loyaltyTiers = pgTable("loyalty_tiers", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  name: varchar("name", { length: 50 }).notNull(),
+  // Bronze, Silver, Gold, Platinum
+  minAum: numeric("min_aum", { precision: 20, scale: 2 }).notNull(),
+  yieldMultiplier: numeric("yield_multiplier", { precision: 5, scale: 2 }).notNull(),
+  description: text("description")
+});
+var dailyYieldLogs = pgTable("daily_yield_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  date: varchar("date", { length: 10 }).notNull(),
+  // YYYY-MM-DD
+  totalAum: numeric("total_aum", { precision: 20, scale: 2 }).notNull(),
+  yieldEarned: integer("yield_earned").notNull(),
+  tierAtTime: varchar("tier_at_time", { length: 50 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
 var redeemCatalog = pgTable("redeem_catalog", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -108,9 +137,7 @@ var adminActions = pgTable("admin_actions", {
   id: uuid("id").primaryKey().defaultRandom(),
   adminId: uuid("admin_id").references(() => users.id).notNull(),
   actionType: varchar("action_type", { length: 100 }).notNull(),
-  // e.g., 'ADJUST_POINTS', 'BAN_USER'
   entity: varchar("entity", { length: 50 }).notNull(),
-  // e.g., 'users', 'points'
   entityId: uuid("entity_id").notNull(),
   payload: jsonb("payload"),
   createdAt: timestamp("created_at").defaultNow().notNull()
@@ -149,8 +176,11 @@ export {
   agents,
   contentPosts,
   contentTypeEnum,
+  dailyYieldLogs,
   db,
+  fiatAccounts,
   getDb,
+  loyaltyTiers,
   pointsBalance,
   pointsLedger,
   pointsSourceEnum,

@@ -580,8 +580,8 @@ declare const pointsLedger: drizzle_orm_pg_core.PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        onchainTx: drizzle_orm_pg_core.PgColumn<{
-            name: "onchain_tx";
+        txHash: drizzle_orm_pg_core.PgColumn<{
+            name: "tx_hash";
             tableName: "points_ledger";
             dataType: "string";
             columnType: "PgVarchar";

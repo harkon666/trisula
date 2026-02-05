@@ -87,7 +87,7 @@ var pointsLedger = pgTable("points_ledger", {
   source: pointsSourceEnum("source").notNull(),
   adminId: uuid("admin_id").references(() => users.id),
   // Nullable if system
-  onchainTx: varchar("onchain_tx", { length: 100 }),
+  txHash: varchar("tx_hash", { length: 100 }),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 var fiatAccounts = pgTable("fiat_accounts", {

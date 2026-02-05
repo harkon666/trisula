@@ -1,28 +1,28 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { db, users, redeemRequests, pointsBalance, pointsLedger, redeemCatalog } from '@repo/database';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 const admin = new Hono();
 
 // Schema for Verify Request
-const VerifyRedeemSchema = z.object({
-    adminWallet: z.string(),
-    requestId: z.string().uuid(),
-    action: z.enum(['approve', 'reject']),
+const UpdateRedeemStatusSchema = z.object({
+    status: z.enum(['processing', 'ready', 'completed', 'cancelled']),
+    adminWallet: z.string(), // Ideally this comes from JWT/Auth middleware, but using body for now as per previous pattern
     reason: z.string().optional(),
 });
 
 // Middleware helper (simplified) to check admin role
 async function isAdmin(walletAddress: string) {
+    if (!walletAddress) return false;
     const [user] = await db.select().from(users).where(eq(users.walletAddress, walletAddress)).limit(1);
     return user && (user.role === 'admin' || user.role === 'super_admin');
 }
 
 /**
  * @route   GET /redeem/pending
- * @desc    List all pending redeem requests
+ * @desc    List all pending/processing redeem requests
  */
 admin.get('/redeem/pending', async (c) => {
     const adminWallet = c.req.query('adminWallet');
@@ -38,12 +38,14 @@ admin.get('/redeem/pending', async (c) => {
             pointsUsed: redeemRequests.pointsUsed,
             whatsapp: redeemRequests.whatsappNumber,
             status: redeemRequests.status,
+            txHash: redeemRequests.txHash,
             createdAt: redeemRequests.createdAt,
         })
             .from(redeemRequests)
             .leftJoin(users, eq(redeemRequests.userId, users.id))
-            .leftJoin(redeemCatalog, eq(redeemRequests.catalogId, redeemCatalog.id))
-            .where(eq(redeemRequests.status, 'pending'));
+            .leftJoin(redeemCatalog, eq(redeemRequests.rewardId, redeemCatalog.id))
+            .where(sql`${redeemRequests.status} IN ('pending', 'processing')`)
+            .orderBy(sql`${redeemRequests.createdAt} DESC`);
 
         return c.json({ success: true, data: requests });
     } catch (error) {
@@ -53,11 +55,12 @@ admin.get('/redeem/pending', async (c) => {
 });
 
 /**
- * @route   POST /redeem/verify
- * @desc    Approve or Reject a redemption
+ * @route   PATCH /redeem/:id
+ * @desc    Update redemption status (Fulfillment / Cancellation)
  */
-admin.post('/redeem/verify', zValidator('json', VerifyRedeemSchema), async (c) => {
-    const { adminWallet, requestId, action, reason } = c.req.valid('json');
+admin.patch('/redeem/:id', zValidator('json', UpdateRedeemStatusSchema), async (c) => {
+    const requestId = c.req.param('id');
+    const { status, adminWallet, reason } = c.req.valid('json');
 
     if (!await isAdmin(adminWallet)) {
         return c.json({ success: false, message: "Unauthorized" }, 401);
@@ -71,20 +74,14 @@ admin.post('/redeem/verify', zValidator('json', VerifyRedeemSchema), async (c) =
                 return c.json({ success: false, message: "Request not found" }, 404);
             }
 
-            if (request.status !== 'pending') {
-                return c.json({ success: false, message: "Request already processed" }, 400);
+            if (request.status === 'cancelled' || request.status === 'completed' || request.status === 'rejected') {
+                return c.json({ success: false, message: `Request is already ${request.status}` }, 400);
             }
 
-            if (action === 'approve') {
-                // UPDATE STATUS ONLY
-                await tx.update(redeemRequests)
-                    .set({ status: 'completed', updatedAt: new Date() })
-                    .where(eq(redeemRequests.id, requestId));
+            if (status === 'cancelled') {
+                // REFUND LOGIC
+                console.log(`🔄 Refunding ${request.pointsUsed} points to user ${request.userId}`);
 
-                // TODO: Send WhatsApp Message (Optional Integration)
-
-            } else if (action === 'reject') {
-                // REFUND POINTS
                 await tx.update(pointsBalance)
                     .set({ balance: sql`${pointsBalance.balance} + ${request.pointsUsed}` })
                     .where(eq(pointsBalance.userId, request.userId));
@@ -92,22 +89,23 @@ admin.post('/redeem/verify', zValidator('json', VerifyRedeemSchema), async (c) =
                 await tx.insert(pointsLedger).values({
                     userId: request.userId,
                     amount: request.pointsUsed,
-                    source: 'system',
-                    reason: `Redeem Refused: ${reason || 'Admin Rejection'}`,
+                    source: 'system', // or admin
+                    reason: `Refunding Redeem: ${reason || 'Admin Cancel'}`,
                     createdAt: new Date(),
                 });
-
-                await tx.update(redeemRequests)
-                    .set({ status: 'rejected', updatedAt: new Date() })
-                    .where(eq(redeemRequests.id, requestId));
             }
 
-            return c.json({ success: true, message: `Request ${action}ed successfully` });
+            // UPDATE STATUS
+            await tx.update(redeemRequests)
+                .set({ status, updatedAt: new Date() })
+                .where(eq(redeemRequests.id, requestId));
+
+            return c.json({ success: true, message: `Request updated to ${status}` });
         });
 
     } catch (error) {
-        console.error("Admin Verify Error:", error);
-        return c.json({ success: false, message: "Failed to process verification" }, 500);
+        console.error("Admin Update Error:", error);
+        return c.json({ success: false, message: "Failed to process update" }, 500);
     }
 });
 

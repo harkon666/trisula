@@ -3,7 +3,8 @@
 import { useActiveAccount } from "thirdweb/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import ConnectWallet from "../../../components/ConnectWallet";
+import RedeemButton from "../../../components/RedeemButton";
+import StatusTracker from "../../../components/StatusTracker";
 
 interface CatalogItem {
     id: number;
@@ -17,9 +18,10 @@ interface RedemptionRequest {
     id: string;
     itemName: string;
     pointsUsed: number;
-    status: 'pending' | 'processing' | 'completed' | 'rejected';
+    status: 'pending' | 'processing' | 'ready' | 'completed' | 'cancelled' | 'rejected';
     createdAt: string;
-    onchainTx?: string;
+    updatedAt: string;
+    txHash?: string | null;
 }
 
 export default function RedeemPage() {
@@ -28,13 +30,11 @@ export default function RedeemPage() {
     const [catalog, setCatalog] = useState<CatalogItem[]>([]);
     const [myRequests, setMyRequests] = useState<RedemptionRequest[]>([]);
     const [loading, setLoading] = useState(true);
-    const [processing, setProcessing] = useState<number | null>(null);
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [userPoints, setUserPoints] = useState(0);
-    const [whatsapp, setWhatsapp] = useState("");
-    const [useRegisteredPhone, setUseRegisteredPhone] = useState(true);
-    const [registeredPhone, setRegisteredPhone] = useState("");
     const [userId, setUserId] = useState<string | null>(null);
+
+    // activeRequest is the most recent incomplete request to show in the Tracker
+    const activeRequest = myRequests.find(r => ['pending', 'processing', 'ready'].includes(r.status));
 
     // Fetch All Data
     const fetchData = async () => {
@@ -77,54 +77,9 @@ export default function RedeemPage() {
         fetchData();
     }, [account]);
 
-    const handleRedeem = async (item: CatalogItem) => {
-        if (!account || !userId) return;
-
-        const finalWhatsapp = useRegisteredPhone ? registeredPhone : whatsapp;
-
-        if (!finalWhatsapp || finalWhatsapp.length < 10) {
-            setMessage({ type: 'error', text: "Mohon masukkan nomor WhatsApp yang valid!" });
-            return;
-        }
-        if (userPoints < item.pointsRequired) {
-            setMessage({ type: 'error', text: "Poin Anda tidak mencukupi!" });
-            return;
-        }
-
-        const confirm = window.confirm(`Redeem ${item.name} for ${item.pointsRequired} points?`);
-        if (!confirm) return;
-
-        setProcessing(item.id);
-        setMessage(null);
-
-        try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
-            const response = await fetch(`${apiUrl}/api/v1/redeem/request`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    userId,
-                    catalogId: item.id,
-                    whatsappNumber: finalWhatsapp,
-                }),
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                setMessage({ type: 'success', text: "Redeem berhasil! Admin akan segera memproses permintaan Anda." });
-                setUserPoints(prev => prev - item.pointsRequired);
-                fetchData(); // Refresh history
-            } else {
-                setMessage({ type: 'error', text: result.message || "Gagal redeem." });
-            }
-
-        } catch (error) {
-            setMessage({ type: 'error', text: "Terjadi kesalahan sistem." });
-        } finally {
-            setProcessing(null);
-        }
+    const handleRedeemSuccess = (requestId: string) => {
+        // Refresh data to show new balance and new request in list
+        fetchData();
     };
 
     if (loading) {
@@ -153,56 +108,24 @@ export default function RedeemPage() {
                     </div>
                 </header>
 
-                <div className="mb-12 max-w-md bg-zinc-900/50 p-6 rounded-2xl border border-white/5">
-                    <h3 className="text-lg font-bold mb-4">Informasi Kontak</h3>
-
-                    {registeredPhone && (
-                        <div className="mb-4">
-                            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/10">
-                                <input
-                                    type="radio"
-                                    checked={useRegisteredPhone}
-                                    onChange={() => setUseRegisteredPhone(true)}
-                                    className="w-5 h-5 text-amber-500 focus:ring-amber-500"
-                                />
-                                <div>
-                                    <span className="block font-medium text-white">Gunakan Nomor Terdaftar</span>
-                                    <span className="block text-sm text-zinc-500">{registeredPhone}</span>
-                                </div>
-                            </label>
+                {/* Status Tracker for Active Order */}
+                {activeRequest && (
+                    <div className="mb-12 bg-zinc-900/50 p-8 rounded-3xl border border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+                        <div className="flex justify-between items-start mb-8">
+                            <div>
+                                <h3 className="text-xl font-bold text-white">Lacak Pesanan: {activeRequest.itemName}</h3>
+                                <p className="text-sm text-zinc-400">Order ID: #{activeRequest.id.substring(0, 8)}</p>
+                            </div>
+                            <div className="text-right">
+                                <span className="text-amber-500 font-bold">{activeRequest.pointsUsed.toLocaleString()} Pts</span>
+                            </div>
                         </div>
-                    )}
 
-                    <div className="mb-2">
-                        <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/10">
-                            <input
-                                type="radio"
-                                checked={!useRegisteredPhone}
-                                onChange={() => setUseRegisteredPhone(false)}
-                                className="w-5 h-5 text-amber-500 focus:ring-amber-500"
-                            />
-                            <span className="font-medium text-white">Gunakan Nomor WhatsApp Lain</span>
-                        </label>
-                    </div>
-
-                    {!useRegisteredPhone && (
-                        <div className="ml-2 mt-2 pl-6 border-l-2 border-white/10">
-                            <input
-                                type="tel"
-                                value={whatsapp}
-                                onChange={(e) => setWhatsapp(e.target.value)}
-                                placeholder="Contoh: 08123456789"
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:border-amber-500 outline-none transition-all"
-                            />
-                        </div>
-                    )}
-
-                    <p className="text-xs text-zinc-600 mt-4 italic">*Admin akan menghubungi nomor ini untuk proses pengiriman hadiah.</p>
-                </div>
-
-                {message && (
-                    <div className={`mb-8 p-4 rounded-xl border ${message.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-red-500/10 border-red-500/30 text-red-300'}`}>
-                        {message.text}
+                        <StatusTracker
+                            status={activeRequest.status}
+                            txHash={activeRequest.txHash}
+                            updatedAt={activeRequest.updatedAt}
+                        />
                     </div>
                 )}
 
@@ -219,15 +142,16 @@ export default function RedeemPage() {
                                 </div>
                                 <h3 className="text-xl font-bold text-white mb-2">{item.name}</h3>
                                 <p className="text-zinc-400 text-sm mb-4 flex-grow">{item.description}</p>
-                                <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
-                                    <span className="text-amber-400 font-bold">{item.pointsRequired.toLocaleString()} Pts</span>
-                                    <button
-                                        onClick={() => handleRedeem(item)}
-                                        disabled={userPoints < item.pointsRequired || processing === item.id}
-                                        className="px-4 py-2 bg-white text-black font-bold rounded-lg hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        {processing === item.id ? "Processing..." : "Redeem"}
-                                    </button>
+                                <div className="mt-auto pt-6 border-t border-white/5">
+                                    <RedeemButton
+                                        item={item}
+                                        userId={userId!}
+                                        disabled={userPoints < item.pointsRequired}
+                                        onSuccess={handleRedeemSuccess}
+                                    />
+                                    {userPoints < item.pointsRequired && (
+                                        <p className="text-center text-xs text-red-500/50 mt-2">Poin tidak mencukupi</p>
+                                    )}
                                 </div>
                             </div>
                         ))
@@ -238,7 +162,7 @@ export default function RedeemPage() {
                 <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-12">
                     <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
                         <span className="w-1.5 h-6 bg-amber-500 rounded-full" />
-                        Status Penukaran Hadiah
+                        Riwayat Penukaran
                     </h2>
 
                     {myRequests.length === 0 ? (
@@ -265,8 +189,9 @@ export default function RedeemPage() {
                                             </td>
                                             <td className="py-4">
                                                 <span className={`px-2 py-1 rounded-md text-[10px] uppercase font-bold border ${req.status === 'completed' ? 'bg-green-500/20 border-green-500/30 text-green-400' :
-                                                    req.status === 'rejected' ? 'bg-red-500/20 border-red-500/30 text-red-400' :
-                                                        'bg-amber-500/20 border-amber-500/30 text-amber-400'
+                                                        req.status === 'ready' ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
+                                                            req.status === 'rejected' || req.status === 'cancelled' ? 'bg-red-500/20 border-red-500/30 text-red-400' :
+                                                                'bg-amber-500/20 border-amber-500/30 text-amber-400'
                                                     }`}>
                                                     {req.status}
                                                 </span>

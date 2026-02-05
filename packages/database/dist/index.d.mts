@@ -1,4 +1,5 @@
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as drizzle_orm_pg_core from 'drizzle-orm/pg-core';
 
 declare const roleEnum: drizzle_orm_pg_core.PgEnum<["user", "agent", "admin", "super_admin"]>;
@@ -1474,7 +1475,8 @@ declare namespace schema {
   export { schema_adminActions as adminActions, schema_agents as agents, schema_contentPosts as contentPosts, schema_contentTypeEnum as contentTypeEnum, schema_dailyYieldLogs as dailyYieldLogs, schema_fiatAccounts as fiatAccounts, schema_loyaltyTiers as loyaltyTiers, schema_pointsBalance as pointsBalance, schema_pointsLedger as pointsLedger, schema_pointsSourceEnum as pointsSourceEnum, schema_redeemCatalog as redeemCatalog, schema_redeemRequests as redeemRequests, schema_redeemStatusEnum as redeemStatusEnum, schema_referrals as referrals, schema_roleEnum as roleEnum, schema_statusEnum as statusEnum, schema_users as users };
 }
 
-declare const getDb: () => PostgresJsDatabase<typeof schema>;
-declare const db: PostgresJsDatabase<typeof schema>;
+declare const db: PostgresJsDatabase<typeof schema> & {
+    $client: postgres.Sql<{}>;
+};
 
-export { adminActions, agents, contentPosts, contentTypeEnum, dailyYieldLogs, db, fiatAccounts, getDb, loyaltyTiers, pointsBalance, pointsLedger, pointsSourceEnum, redeemCatalog, redeemRequests, redeemStatusEnum, referrals, roleEnum, statusEnum, users };
+export { adminActions, agents, contentPosts, contentTypeEnum, dailyYieldLogs, db, fiatAccounts, loyaltyTiers, pointsBalance, pointsLedger, pointsSourceEnum, redeemCatalog, redeemRequests, redeemStatusEnum, referrals, roleEnum, statusEnum, users };

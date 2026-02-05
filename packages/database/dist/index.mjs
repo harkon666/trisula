@@ -153,24 +153,18 @@ var contentPosts = pgTable("content_posts", {
 });
 
 // src/index.ts
-var _db = null;
-var getDb = () => {
-  if (_db) return _db;
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    console.error("\u274C DATABASE_URL tidak ditemukan di environment variables!");
-    throw new Error("DATABASE_URL is not configured");
-  }
-  console.log("\u{1F4E6} Initializing database connection...");
-  const client = postgres(connectionString);
-  _db = drizzle(client, { schema: schema_exports });
-  return _db;
-};
-var db = new Proxy({}, {
-  get(_, prop) {
-    return getDb()[prop];
-  }
-});
+var connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not configured");
+}
+var globalForDb = globalThis;
+var client = globalForDb.conn ?? postgres(connectionString, { prepare: false });
+if (process.env.NODE_ENV !== "production") {
+  globalForDb.conn = client;
+  console.log("\u{1F4E6} (Re)using database connection...");
+} else {
+}
+var db = drizzle(client, { schema: schema_exports });
 export {
   adminActions,
   agents,
@@ -179,7 +173,6 @@ export {
   dailyYieldLogs,
   db,
   fiatAccounts,
-  getDb,
   loyaltyTiers,
   pointsBalance,
   pointsLedger,

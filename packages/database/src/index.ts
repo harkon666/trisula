@@ -5,29 +5,26 @@ import * as schema from './db/schema';
 // Environment variables are automatically available in Vercel serverless
 // For local development, use: bun --env-file=../../.env run dev
 
-let _db: PostgresJsDatabase<typeof schema> | null = null;
+const connectionString = process.env.DATABASE_URL;
 
-export const getDb = () => {
-    if (_db) return _db;
+if (!connectionString) {
+    throw new Error("DATABASE_URL is not configured");
+}
 
-    const connectionString = process.env.DATABASE_URL;
-
-    if (!connectionString) {
-        console.error("❌ DATABASE_URL tidak ditemukan di environment variables!");
-        throw new Error("DATABASE_URL is not configured");
-    }
-
-    console.log("📦 Initializing database connection...");
-    const client = postgres(connectionString);
-    _db = drizzle(client, { schema });
-    return _db;
+// Global Singleton for HMR/Dev
+const globalForDb = globalThis as unknown as {
+    conn: postgres.Sql | undefined;
 };
 
-// For backward compatibility - lazy proxy
-export const db = new Proxy({} as PostgresJsDatabase<typeof schema>, {
-    get(_, prop) {
-        return (getDb() as any)[prop];
-    }
-});
+const client = globalForDb.conn ?? postgres(connectionString, { prepare: false });
+
+if (process.env.NODE_ENV !== "production") {
+    globalForDb.conn = client;
+    console.log("📦 (Re)using database connection...");
+} else {
+    // console.log("📦 Initializing production database connection...");
+}
+
+export const db = drizzle(client, { schema });
 
 export * from "./db/schema";

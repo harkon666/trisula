@@ -9,7 +9,7 @@ const wealthCalls = new Hono();
 wealthCalls.get("/summary", async (c) => {
     const walletAddress = c.req.query("walletAddress");
     if (!walletAddress) return c.json({ error: "walletAddress is required" }, 400);
-
+    //
     try {
         const profile = await WealthAggregatorService.calculateWealthProfileByWallet(walletAddress);
         return c.json(profile);

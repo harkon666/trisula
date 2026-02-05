@@ -42,6 +42,7 @@ export default function DashboardPage() {
     const [activity, setActivity] = useState<ActivityLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [showYieldModal, setShowYieldModal] = useState(false);
+    const [yieldReward, setYieldReward] = useState<{ points: number } | null>(null);
 
     useEffect(() => {
         if (!account) return;
@@ -57,6 +58,7 @@ export default function DashboardPage() {
                 if (profileJson.success) {
                     setProfile(profileJson.data);
                     if (profileJson.data.dailyYield?.claimed) {
+                        setYieldReward(profileJson.data.dailyYield);
                         setShowYieldModal(true);
                     }
                 }
@@ -78,6 +80,28 @@ export default function DashboardPage() {
 
         fetchData();
     }, [account]);
+
+    const resetDailyCheckIn = async () => {
+        if (!account) return;
+        if (!confirm("Reset daily check-in for testing? This will reload the page.")) return;
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+        try {
+            const res = await fetch(`${apiUrl}/api/v1/rewards/reset-claim`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ walletAddress: account.address })
+            });
+            const json = await res.json();
+            if (json.success) {
+                window.location.reload();
+            } else {
+                alert("Failed: " + json.error);
+            }
+        } catch (e) {
+            alert("Error resetting check-in");
+        }
+    };
 
     if (!account) {
         return (
@@ -230,34 +254,49 @@ export default function DashboardPage() {
                 </div>
             </div>
 
+            {/* Developer Tools (Bottom) */}
+            <div className="mt-12 pt-12 border-t border-dashed border-zinc-800 opacity-50 hover:opacity-100 transition-opacity">
+                <h3 className="text-zinc-500 text-sm font-mono mb-4">🛠️ DEVELOPER TOOLS</h3>
+                <div className="flex gap-4">
+                    <button
+                        onClick={resetDailyCheckIn}
+                        className="bg-red-900/20 hover:bg-red-900/40 border border-red-500/30 text-red-400 px-4 py-2 rounded text-xs font-mono transition-colors"
+                    >
+                        Reset Daily Check-in & Refresh
+                    </button>
+                </div>
+            </div>
+
             {/* Daily Yield Modal */}
-            {showYieldModal && profile?.dailyYield && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-zinc-900 border border-amber-500/50 rounded-3xl p-8 max-w-md w-full relative overflow-hidden shadow-[0_0_50px_rgba(245,158,11,0.2)] animate-in zoom-in-95 duration-300">
-                        {/* Glow Effect */}
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-amber-500/20 blur-[50px] rounded-full pointer-events-none" />
+            {
+                showYieldModal && yieldReward && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                        <div className="bg-zinc-900 border border-amber-500/50 rounded-3xl p-8 max-w-md w-full relative overflow-hidden shadow-[0_0_50px_rgba(245,158,11,0.2)] animate-in zoom-in-95 duration-300">
+                            {/* Glow Effect */}
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-amber-500/20 blur-[50px] rounded-full pointer-events-none" />
 
-                        <div className="text-center relative z-10">
-                            <div className="text-6xl mb-4 animate-bounce">🎉</div>
-                            <h2 className="text-2xl font-bold text-white mb-2">Daily Check-in Complete!</h2>
-                            <p className="text-zinc-400 mb-6">You have earned daily yield rewards based on your asset holdings.</p>
+                            <div className="text-center relative z-10">
+                                <div className="text-6xl mb-4 animate-bounce">🎉</div>
+                                <h2 className="text-2xl font-bold text-white mb-2">Daily Check-in Complete!</h2>
+                                <p className="text-zinc-400 mb-6">You have earned daily yield rewards based on your asset holdings.</p>
 
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
-                                <span className="block text-sm text-zinc-500 uppercase tracking-widest font-semibold mb-1">Yield Earned</span>
-                                <span className="text-5xl font-bold text-amber-500">+{profile.dailyYield.points}</span>
-                                <span className="text-amber-500/50 text-xl font-bold ml-1">PTS</span>
+                                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+                                    <span className="block text-sm text-zinc-500 uppercase tracking-widest font-semibold mb-1">Yield Earned</span>
+                                    <span className="text-5xl font-bold text-amber-500">+{yieldReward?.points}</span>
+                                    <span className="text-amber-500/50 text-xl font-bold ml-1">PTS</span>
+                                </div>
+
+                                <button
+                                    onClick={() => setShowYieldModal(false)}
+                                    className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-all hover:scale-105 active:scale-95"
+                                >
+                                    Awesome!
+                                </button>
                             </div>
-
-                            <button
-                                onClick={() => setShowYieldModal(false)}
-                                className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-all hover:scale-105 active:scale-95"
-                            >
-                                Awesome!
-                            </button>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
         </div>
     );
 }

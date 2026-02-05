@@ -8,6 +8,7 @@ const withPWA = withPWAInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     turbopack: {},
+    transpilePackages: ["@repo/ui", "@repo/shared", "@repo/database"],
 };
 
 export default withPWA(nextConfig);

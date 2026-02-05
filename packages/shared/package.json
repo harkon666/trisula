@@ -1,22 +1,15 @@
 {
   "name": "@repo/shared",
   "version": "0.0.0",
-  "main": "./dist/index.mjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
+  "main": "./index.ts",
+  "types": "./index.ts",
   "exports": {
-    ".": {
-      "import": "./dist/index.mjs",
-      "types": "./dist/index.d.mts"
-    }
+    ".": "./index.ts"
   },
   "private": true,
-  "scripts": {
-    "build": "tsup index.ts --format esm --dts --outDir dist"
-  },
+  "scripts": {},
   "devDependencies": {
-    "@types/bun": "latest",
-    "tsup": "^8.5.1"
+    "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"

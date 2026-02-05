@@ -13,6 +13,11 @@ interface UserProfile {
     status: string;
     referralCode?: string;
     points: number;
+    dailyYield?: {
+        claimed: boolean;
+        points: number;
+        reason?: string;
+    } | null;
 }
 
 interface ActivityLog {
@@ -31,6 +36,7 @@ export default function DashboardPage() {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [activity, setActivity] = useState<ActivityLog[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showYieldModal, setShowYieldModal] = useState(false);
 
     useEffect(() => {
         if (!account) return;
@@ -45,6 +51,9 @@ export default function DashboardPage() {
 
                 if (profileJson.success) {
                     setProfile(profileJson.data);
+                    if (profileJson.data.dailyYield?.claimed) {
+                        setShowYieldModal(true);
+                    }
                 }
 
                 // Fetch Activity
@@ -210,6 +219,35 @@ export default function DashboardPage() {
                     )}
                 </div>
             </div>
+
+            {/* Daily Yield Modal */}
+            {showYieldModal && profile?.dailyYield && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-zinc-900 border border-amber-500/50 rounded-3xl p-8 max-w-md w-full relative overflow-hidden shadow-[0_0_50px_rgba(245,158,11,0.2)] animate-in zoom-in-95 duration-300">
+                        {/* Glow Effect */}
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-amber-500/20 blur-[50px] rounded-full pointer-events-none" />
+
+                        <div className="text-center relative z-10">
+                            <div className="text-6xl mb-4 animate-bounce">🎉</div>
+                            <h2 className="text-2xl font-bold text-white mb-2">Daily Check-in Complete!</h2>
+                            <p className="text-zinc-400 mb-6">You have earned daily yield rewards based on your asset holdings.</p>
+
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
+                                <span className="block text-sm text-zinc-500 uppercase tracking-widest font-semibold mb-1">Yield Earned</span>
+                                <span className="text-5xl font-bold text-amber-500">+{profile.dailyYield.points}</span>
+                                <span className="text-amber-500/50 text-xl font-bold ml-1">PTS</span>
+                            </div>
+
+                            <button
+                                onClick={() => setShowYieldModal(false)}
+                                className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-all hover:scale-105 active:scale-95"
+                            >
+                                Awesome!
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

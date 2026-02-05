@@ -63,8 +63,13 @@ export const BlockchainService = {
             operatorWallet
         );
 
-        const tx = await contract.addPoints(userAddress, amount, reason);
-        return await tx.wait();
+        // Force fetch nonce from pending block to avoid race conditions
+        const nonce = await operatorWallet.getNonce("pending");
+
+        // Manual override options
+        const tx = await contract.addPoints(userAddress, amount, reason, { nonce });
+        // Return tx immediately for faster processing (Fire & Forget)
+        return tx;
     },
 
     // Catat redeem request ke Blockchain (Audit Trail)

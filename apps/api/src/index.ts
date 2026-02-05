@@ -6,6 +6,7 @@ import userRoutes from './routes/user.js';
 import redeemRoutes from './routes/redeem.js';
 import adminRoutes from './routes/admin.js';
 import wealthRoutes from './routes/wealth.js';
+import rewardsRoutes from './routes/rewards.js';
 
 const app = new Hono();
 console.log(`🚀 API STARTED AT: ${new Date().toISOString()}`);
@@ -23,6 +24,7 @@ app.route('/api/v1/user', userRoutes);
 app.route('/api/v1/redeem', redeemRoutes);
 app.route('/api/v1/admin', adminRoutes);
 app.route('/api/v1/wealth', wealthRoutes);
+app.route('/api/v1/rewards', rewardsRoutes);
 
 // --- ERROR HANDLING ---
 app.onError((err, c) => {

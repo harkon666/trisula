@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { db, users, pointsBalance, pointsLedger, referrals, agents, redeemCatalog, redeemRequests } from '@repo/database';
 import { eq, desc, sql } from 'drizzle-orm';
+import { RewardService } from '../services/RewardService';
 
 const user = new Hono();
 
@@ -17,6 +18,18 @@ user.get('/profile', async (c) => {
     }
 
     try {
+        // 1. Get User ID first to trigger Lazy Yield
+        const userShort = await db.query.users.findFirst({
+            where: eq(users.walletAddress, walletAddress),
+            columns: { id: true }
+        });
+
+        let yieldResult = null;
+        if (userShort) {
+            yieldResult = await RewardService.checkAndClaimYield(userShort.id);
+        }
+
+        // 2. Fetch Full Profile (including updated points)
         const [userData] = await db.select({
             id: users.id,
             name: users.name,
@@ -41,7 +54,8 @@ user.get('/profile', async (c) => {
             success: true,
             data: {
                 ...userData,
-                points: userData.points || 0
+                points: userData.points || 0,
+                dailyYield: yieldResult
             }
         });
 

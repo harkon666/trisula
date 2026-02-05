@@ -43,6 +43,21 @@ export default function WealthDashboard() {
         }
     };
 
+    const handleTriggerYield = async () => {
+        setLoading(true);
+        try {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/rewards/daily-yield`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" } // In prod add Auth header
+            });
+            await fetchWealth();
+            alert("Daily Yield Distributed! Check your points.");
+        } catch (e) {
+            console.error(e);
+            setLoading(false);
+        }
+    };
+
     const handleSimulateDeposit = async () => {
         if (!profile?.userId) return;
         setLoading(true);
@@ -155,6 +170,12 @@ export default function WealthDashboard() {
                         onClick={fetchWealth}
                     >
                         🔄 Refresh Data
+                    </button>
+                    <button
+                        className="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 text-xs rounded-lg transition border border-amber-500/50"
+                        onClick={handleTriggerYield}
+                    >
+                        💰 Trigger Daily Yield
                     </button>
                 </div>
             </div>

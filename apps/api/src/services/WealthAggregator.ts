@@ -39,6 +39,46 @@ export const WealthAggregatorService = {
     },
 
     /**
+     * Calculate Total AUM and Determine Tier by User ID
+     * (Wrapper for Backend Services)
+     */
+    async calculateWealthProfile(userId: string) {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId)
+        });
+
+        if (!user) throw new Error("User not found");
+
+        if (user.walletAddress) {
+            return this.calculateWealthProfileByWallet(user.walletAddress);
+        }
+
+        // Fallback for user without wallet
+        const fiatBalance = await this.getFiatBalance(userId);
+        const cryptoBalance = 0;
+        const totalAum = fiatBalance + cryptoBalance;
+
+        // Determine Tier
+        let currentTier = DEFAULT_TIERS[0];
+        for (const tier of DEFAULT_TIERS) {
+            if (totalAum >= tier.minAum) {
+                currentTier = tier;
+            }
+        }
+
+        return {
+            userId,
+            walletAddress: null,
+            fiatBalance,
+            cryptoBalance,
+            totalAum,
+            tier: currentTier.name,
+            multiplier: currentTier.multiplier,
+            nextTier: this.getNextTier(totalAum)
+        };
+    },
+
+    /**
      * Calculate Total AUM and Determine Tier by Wallet Address
      */
     async calculateWealthProfileByWallet(walletAddress: string) {

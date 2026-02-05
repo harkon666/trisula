@@ -27,22 +27,10 @@ export const WealthAggregatorService = {
 
     /**
      * Get User's Crypto Balance from Base Network (Mocked for MVP)
-     * In production, this would query the RPC or Indexer.
      */
-    async getCryptoBalance(userId: string): Promise<number> {
-        // Mock Implementation: Simulate random crypto holdings for demo
-        // In real implementation:
-        // 1. Get walletAddress from users table
-        // 2. Query USDC/ETH balance via ethers provider
-        // 3. Convert to IDR
-
-        const user = await db.query.users.findFirst({
-            where: eq(users.id, userId)
-        });
-
-        if (!user?.walletAddress) return 0;
-
+    async getCryptoBalance(walletAddress: string): Promise<number> {
         // SIMULATION: If wallet address exists, pretend they have 100 USDC + 0.01 ETH
+        // In prod: use ethers provider to check balance of walletAddress
         const usdcBalance = 100;
         const ethBalance = 0.01;
 
@@ -51,16 +39,24 @@ export const WealthAggregatorService = {
     },
 
     /**
-     * Calculate Total AUM and Determine Tier
+     * Calculate Total AUM and Determine Tier by Wallet Address
      */
-    async calculateWealthProfile(userId: string) {
-        const fiatBalance = await this.getFiatBalance(userId);
-        const cryptoBalance = await this.getCryptoBalance(userId);
+    async calculateWealthProfileByWallet(walletAddress: string) {
+        // 1. Find User by Wallet
+        const user = await db.query.users.findFirst({
+            where: eq(users.walletAddress, walletAddress)
+        });
+
+        if (!user) {
+            throw new Error("User not found for this wallet address");
+        }
+
+        const fiatBalance = await this.getFiatBalance(user.id);
+        const cryptoBalance = await this.getCryptoBalance(walletAddress); // Use wallet directly
         const totalAum = fiatBalance + cryptoBalance;
 
         // Determine Tier
         let currentTier = DEFAULT_TIERS[0];
-        // Fetch tiers from DB in production (omitted for speed)
 
         for (const tier of DEFAULT_TIERS) {
             if (totalAum >= tier.minAum) {
@@ -69,7 +65,8 @@ export const WealthAggregatorService = {
         }
 
         return {
-            userId,
+            userId: user.id,
+            walletAddress,
             fiatBalance,
             cryptoBalance,
             totalAum,

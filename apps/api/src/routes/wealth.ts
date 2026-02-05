@@ -7,15 +7,14 @@ const wealthCalls = new Hono();
 
 // GET /wealth/summary - Get Total AUM & Tier
 wealthCalls.get("/summary", async (c) => {
-    // Mock User ID (In prod, get from JWT)
-    const userId = c.req.header("x-user-id");
-    if (!userId) return c.json({ error: "Unauthorized" }, 401);
+    const walletAddress = c.req.query("walletAddress");
+    if (!walletAddress) return c.json({ error: "walletAddress is required" }, 400);
 
     try {
-        const profile = await WealthAggregatorService.calculateWealthProfile(userId);
+        const profile = await WealthAggregatorService.calculateWealthProfileByWallet(walletAddress);
         return c.json(profile);
     } catch (error: any) {
-        return c.json({ error: error.message }, 500);
+        return c.json({ error: error.message }, 500); // 500 or 404 depending on error
     }
 });
 

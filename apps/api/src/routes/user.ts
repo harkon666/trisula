@@ -50,12 +50,21 @@ user.get('/profile', async (c) => {
             return c.json({ success: false, message: "User not found" }, 404);
         }
 
+        // 3. Get Wealth Stats for Dashboard (Net Worth & Estimated Yield)
+        // We reuse the calculation logic (it reads DB + Mock Price)
+        const wealthStats = await RewardService.calculateDailyYield(userData.id);
+
         return c.json({
             success: true,
             data: {
                 ...userData,
                 points: userData.points || 0,
-                dailyYield: yieldResult
+                dailyYield: yieldResult,
+                wealth: {
+                    totalAum: wealthStats.totalAum,
+                    estimatedYield: wealthStats.finalPoints,
+                    tier: wealthStats.tier
+                }
             }
         });
 

@@ -18,6 +18,11 @@ interface UserProfile {
         points: number;
         reason?: string;
     } | null;
+    wealth?: {
+        totalAum: number;
+        estimatedYield: number;
+        tier: string;
+    };
 }
 
 interface ActivityLog {
@@ -139,9 +144,14 @@ export default function DashboardPage() {
                             Net Worth
                             <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                         </h3>
-                        <div className="text-4xl font-bold text-white mb-4">
-                            View Assets
+                        <div className="text-3xl md:text-4xl font-bold text-white mb-2 truncate">
+                            {profile?.wealth?.totalAum
+                                ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(profile.wealth.totalAum)
+                                : "Rp 0"}
                         </div>
+                        <p className="text-zinc-500 text-xs mb-4">
+                            ~{profile?.wealth?.estimatedYield} Pts/Day (Est.)
+                        </p>
                         <div className="flex items-center text-amber-500 text-sm font-medium gap-1 group-hover:translate-x-1 transition-transform">
                             Manage Portfolio &rarr;
                         </div>

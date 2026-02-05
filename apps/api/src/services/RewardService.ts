@@ -5,7 +5,6 @@ import { BlockchainService } from "./blockchain";
 
 // Config: 1 Point for every Rp 500,000 kept
 const YIELD_DIVISOR = 500000;
-let isDistributing = false;
 
 export const RewardService = {
     /**

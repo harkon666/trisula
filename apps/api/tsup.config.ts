@@ -1,10 +1,12 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-    entry: ['src/index.ts'],
+    entry: { index: 'src/vercel.ts' },
     format: ['esm'],
     target: 'node20',
-    outDir: 'api/_build',
-    clean: true,
-    noExternal: ['@repo/shared', '@repo/database'],
+    outDir: 'api', // Output directly to api directory
+    clean: false, // Don't clean api dir
+    bundle: true,
+    noExternal: ['@repo/shared', '@repo/database', 'hono'],
+    minify: true,
 })

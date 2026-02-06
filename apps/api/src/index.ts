@@ -1,12 +1,14 @@
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
+/*
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import redeemRoutes from './routes/redeem.js';
 import adminRoutes from './routes/admin.js';
 import wealthRoutes from './routes/wealth.js';
 import rewardsRoutes from './routes/rewards.js';
+*/
 
 const app = new Hono();
 console.log(`🚀 API STARTED AT: ${new Date().toISOString()}`);
@@ -31,6 +33,7 @@ app.post('/api/v1/ping', async (c) => {
   return c.json({ success: true, message: 'PONG (Sub-Body Response)', echo: body });
 });
 
+/*
 // Daftarkan route auth dengan prefix /api/v1
 app.route('/api/v1/auth', authRoutes);
 app.route('/api/v1/user', userRoutes);
@@ -38,6 +41,7 @@ app.route('/api/v1/redeem', redeemRoutes);
 app.route('/api/v1/admin', adminRoutes);
 app.route('/api/v1/wealth', wealthRoutes);
 app.route('/api/v1/rewards', rewardsRoutes);
+*/
 
 // --- ERROR HANDLING ---
 app.notFound((c) => {

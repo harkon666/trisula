@@ -1,5 +1,7 @@
-// src/vercel.ts
-import { getRequestListener } from "@hono/node-server";
+// ../../node_modules/.bun/hono@4.11.7/node_modules/hono/dist/adapter/vercel/handler.js
+var handle = (app2) => (req) => {
+  return app2.fetch(req);
+};
 
 // ../../node_modules/.bun/hono@4.11.7/node_modules/hono/dist/compose.js
 var compose = (middleware, onError, onNotFound) => {
@@ -2047,7 +2049,7 @@ var src_default = app;
 var config = {
   runtime: "nodejs"
 };
-var vercel_default = getRequestListener(src_default.fetch);
+var vercel_default = handle(src_default);
 export {
   config,
   vercel_default as default

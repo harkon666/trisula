@@ -11399,11 +11399,23 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is not configured");
 }
 var globalForDb = globalThis;
-var client = globalForDb.conn ?? src_default(connectionString, { prepare: false });
+var client = globalForDb.conn ?? src_default(connectionString, {
+  prepare: false,
+  connect_timeout: 10,
+  // 10 seconds timeout
+  ssl: "require",
+  // Force SSL for Supabase
+  debug: (conn, msg) => {
+    if (msg.includes && msg.includes("Error")) {
+      console.error("[DB DEBUG] ", msg);
+    }
+  }
+});
 if (process.env.NODE_ENV !== "production") {
   globalForDb.conn = client;
   console.log("\u{1F4E6} (Re)using database connection...");
 } else {
+  console.log("\u{1F4E6} Initializing production database connection...");
 }
 var db = drizzle(client, { schema: schema_exports });
 

@@ -14,25 +14,28 @@ const app = new Hono();
 console.log(`🚀 API STARTED AT: ${new Date().toISOString()}`);
 
 // --- MIDDLEWARES ---
-// app.use('*', logger()); // Disable logger for testing
-app.use('*', cors());   // Keep CORS enabled
-
-// Debug Middleware - Disable for testing
-/*
-app.use('*', async (c, next) => {
-  console.log(`[DEBUG] Incoming Request: ${c.req.method} ${c.req.url}`);
-  await next();
-});
-*/
+// All middlewares disabled for isolation test
+// app.use('*', logger());
+// app.use('*', cors());
 
 // --- ROUTES ---
-app.get('/', (c) => c.text('TRISULA API Orchestrator v1.0.0 (Bun Runtime)'));
+app.get('/', (c) => c.text('TRISULA API Orchestrator v1.0.0 (Bun Runtime) - Isolation Test'));
 
-// Debug Route to test POST connectivity with body parsing
-app.post('/api/v1/ping', async (c) => {
-  console.log(`[DEBUG] PING POST received (Full App Context)`);
-  const body = await c.req.json().catch((e) => ({ error: e.message }));
-  return c.json({ success: true, message: 'PONG (Sub-Body Response)', echo: body });
+// Version 1: No Body Parsing
+app.post('/api/v1/ping-no-body', async (c) => {
+  console.log(`[DEBUG] PING (No Body) received`);
+  return c.json({ success: true, message: 'PONG (No Body)' });
+});
+
+// Version 2: With Body Parsing
+app.post('/api/v1/ping-with-body', async (c) => {
+  console.log(`[DEBUG] PING (With Body) received`);
+  try {
+    const body = await c.req.json();
+    return c.json({ success: true, message: 'PONG (With Body)', echo: body });
+  } catch (e: any) {
+    return c.json({ success: false, message: 'Body parsing failed', error: e.message });
+  }
 });
 
 /*

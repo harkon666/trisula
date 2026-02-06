@@ -39,6 +39,12 @@ try {
 export const BlockchainService = {
     // Bind User ke Agent secara Immutable di Blockchain
     async bindReferral(userAddress: string, agentAddress: string) {
+        // FAIL SAFE for Vercel: If on Vercel and RPC is localhost/missing, SKIP.
+        if (process.env.VERCEL && (!process.env.RPC_URL || process.env.RPC_URL.includes("localhost") || process.env.RPC_URL.includes("127.0.0.1"))) {
+            console.warn("[BC-SERVICE] SCIPPING bindReferral: RPC_URL not configured on Vercel.");
+            return null;
+        }
+
         if (!addresses?.registry) throw new Error("Contract address not found");
         if (!operatorWallet) throw new Error("Operator wallet not initialized");
 
@@ -74,6 +80,12 @@ export const BlockchainService = {
 
     // Catat redeem request ke Blockchain (Audit Trail)
     async logRedemption(userAddress: string, catalogId: number, pointsUsed: number) {
+        // FAIL SAFE for Vercel: If on Vercel and RPC is localhost/missing, SKIP.
+        if (process.env.VERCEL && (!process.env.RPC_URL || process.env.RPC_URL.includes("localhost") || process.env.RPC_URL.includes("127.0.0.1"))) {
+            console.warn("[BC-SERVICE] SCIPPING logRedemption: RPC_URL not configured on Vercel.");
+            return null;
+        }
+
         if (!addresses?.redeem) throw new Error("Contract address not found for RedeemLog");
         if (!operatorWallet) throw new Error("Operator wallet not initialized");
 

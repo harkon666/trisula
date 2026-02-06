@@ -24,6 +24,13 @@ app.use('*', async (c, next) => {
 // --- ROUTES ---
 app.get('/', (c) => c.text('TRISULA API Orchestrator v1.0.0 (Bun Runtime)'));
 
+// Debug Route to test POST connectivity without DB/Blockchain
+app.post('/api/v1/ping', async (c) => {
+  console.log(`[DEBUG] PING POST received`);
+  const body = await c.req.json().catch(() => ({}));
+  return c.json({ success: true, message: 'PONG', echo: body });
+});
+
 // Daftarkan route auth dengan prefix /api/v1
 app.route('/api/v1/auth', authRoutes);
 app.route('/api/v1/user', userRoutes);

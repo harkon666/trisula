@@ -4,7 +4,14 @@
     "DATABASE_URL",
     "PRIVATE_KEY_OPERATOR",
     "RPC_URL",
-    "CHAIN_ID"
+    "CHAIN_ID",
+    "CONTRACT_REGISTRY",
+    "CONTRACT_LEDGER",
+    "CONTRACT_REDEEM",
+    "SECRET_KEY",
+    "NEXT_PUBLIC_THIRDWEB_CLIENT_ID",
+    "NEXT_PUBLIC_CHAIN_ID",
+    "NEXT_PUBLIC_API_URL"
   ],
   "ui": "tui",
   "tasks": {
@@ -20,9 +27,17 @@
         ".next/**",
         "!.next/cache/**",
         "dist/**",
-        ".vercel/output/**"
+        ".vercel/output/**",
+        "api/**"
       ],
       "env": [
+        "DATABASE_URL",
+        "PRIVATE_KEY_OPERATOR",
+        "RPC_URL",
+        "CHAIN_ID",
+        "CONTRACT_REGISTRY",
+        "CONTRACT_LEDGER",
+        "CONTRACT_REDEEM",
         "NEXT_PUBLIC_THIRDWEB_CLIENT_ID",
         "NEXT_PUBLIC_CHAIN_ID",
         "NEXT_PUBLIC_API_URL",

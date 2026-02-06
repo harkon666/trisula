@@ -9,6 +9,14 @@ const withPWA = withPWAInit({
 const nextConfig = {
     turbopack: {},
     transpilePackages: ["@repo/ui", "@repo/shared", "@repo/database"],
+    images: {
+        localPatterns: [
+            {
+                pathname: "/**",
+                search: "",
+            },
+        ],
+    },
 };
 
 export default withPWA(nextConfig);

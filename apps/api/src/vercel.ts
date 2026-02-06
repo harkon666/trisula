@@ -1,5 +1,5 @@
-import { handle } from 'hono/vercel';
+import { getRequestListener } from '@hono/node-server';
 import app from './index.js';
 
-// This is the entry point for Vercel
-export default handle(app);
+// Use @hono/node-server for Vercel Node.js runtime compatibility
+export default getRequestListener(app.fetch);

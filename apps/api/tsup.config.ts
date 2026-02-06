@@ -8,5 +8,5 @@ export default defineConfig({
     clean: false, // Don't clean api dir
     bundle: true,
     noExternal: ['@repo/shared', '@repo/database', 'hono'],
-    minify: true,
+    minify: false,
 })

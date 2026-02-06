@@ -1,8 +1,9 @@
-import { handle } from 'hono/vercel';
+import { getRequestListener } from '@hono/node-server';
 import app from './index.js';
 
 export const config = {
     runtime: 'nodejs',
 };
 
-export default handle(app);
+// Revert to @hono/node-server as it was more stable for no-body requests
+export default getRequestListener(app.fetch);

@@ -15,6 +15,12 @@ console.log(`🚀 API STARTED AT: ${new Date().toISOString()}`);
 app.use('*', logger()); // Monitoring request yang masuk
 app.use('*', cors());   // Mengizinkan akses dari Frontend (Next.js)
 
+// Debug Middleware to log exact URL and Method seen by Hono
+app.use('*', async (c, next) => {
+  console.log(`[DEBUG] Incoming Request: ${c.req.method} ${c.req.url}`);
+  await next();
+});
+
 // --- ROUTES ---
 app.get('/', (c) => c.text('TRISULA API Orchestrator v1.0.0 (Bun Runtime)'));
 
@@ -27,9 +33,22 @@ app.route('/api/v1/wealth', wealthRoutes);
 app.route('/api/v1/rewards', rewardsRoutes);
 //
 // --- ERROR HANDLING ---
+app.notFound((c) => {
+  console.log(`[DEBUG] 404 Not Found: ${c.req.method} ${c.req.path}`);
+  return c.json({
+    success: false,
+    message: 'Route not found (Custom Handler)',
+    debug: {
+      method: c.req.method,
+      url: c.req.url,
+      path: c.req.path
+    }
+  }, 404);
+});
+
 app.onError((err, c) => {
-  console.error(`${err}`);
-  return c.json({ success: false, message: 'Internal Server Error' }, 500);
+  console.error(`[ERROR] ${err}`);
+  return c.json({ success: false, message: 'Internal Server Error', error: err.message }, 500);
 });
 
 // Export for Vercel Serverless (default export)

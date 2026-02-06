@@ -14,14 +14,16 @@ const app = new Hono();
 console.log(`🚀 API STARTED AT: ${new Date().toISOString()}`);
 
 // --- MIDDLEWARES ---
-app.use('*', logger()); // Monitoring request yang masuk
-app.use('*', cors());   // Mengizinkan akses dari Frontend (Next.js)
+// app.use('*', logger()); // Disable logger for testing
+app.use('*', cors());   // Keep CORS enabled
 
-// Debug Middleware to log exact URL and Method seen by Hono
+// Debug Middleware - Disable for testing
+/*
 app.use('*', async (c, next) => {
   console.log(`[DEBUG] Incoming Request: ${c.req.method} ${c.req.url}`);
   await next();
 });
+*/
 
 // --- ROUTES ---
 app.get('/', (c) => c.text('TRISULA API Orchestrator v1.0.0 (Bun Runtime)'));

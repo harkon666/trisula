@@ -2031,69 +2031,6 @@ var Hono2 = class extends Hono {
   }
 };
 
-// ../../node_modules/.bun/hono@4.11.7/node_modules/hono/dist/utils/color.js
-function getColorEnabled() {
-  const { process, Deno } = globalThis;
-  const isNoColor = typeof Deno?.noColor === "boolean" ? Deno.noColor : process !== void 0 ? (
-    // eslint-disable-next-line no-unsafe-optional-chaining
-    "NO_COLOR" in process?.env
-  ) : false;
-  return !isNoColor;
-}
-async function getColorEnabledAsync() {
-  const { navigator } = globalThis;
-  const cfWorkers = "cloudflare:workers";
-  const isNoColor = navigator !== void 0 && navigator.userAgent === "Cloudflare-Workers" ? await (async () => {
-    try {
-      return "NO_COLOR" in ((await import(cfWorkers)).env ?? {});
-    } catch {
-      return false;
-    }
-  })() : !getColorEnabled();
-  return !isNoColor;
-}
-
-// ../../node_modules/.bun/hono@4.11.7/node_modules/hono/dist/middleware/logger/index.js
-var humanize = (times) => {
-  const [delimiter, separator] = [",", "."];
-  const orderTimes = times.map((v) => v.replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1" + delimiter));
-  return orderTimes.join(separator);
-};
-var time = (start) => {
-  const delta = Date.now() - start;
-  return humanize([delta < 1e3 ? delta + "ms" : Math.round(delta / 1e3) + "s"]);
-};
-var colorStatus = async (status) => {
-  const colorEnabled = await getColorEnabledAsync();
-  if (colorEnabled) {
-    switch (status / 100 | 0) {
-      case 5:
-        return `\x1B[31m${status}\x1B[0m`;
-      case 4:
-        return `\x1B[33m${status}\x1B[0m`;
-      case 3:
-        return `\x1B[36m${status}\x1B[0m`;
-      case 2:
-        return `\x1B[32m${status}\x1B[0m`;
-    }
-  }
-  return `${status}`;
-};
-async function log(fn, prefix, method, path, status = 0, elapsed) {
-  const out = prefix === "<--" ? `${prefix} ${method} ${path}` : `${prefix} ${method} ${path} ${await colorStatus(status)} ${elapsed}`;
-  fn(out);
-}
-var logger = (fn = console.log) => {
-  return async function logger2(c, next) {
-    const { method, url } = c.req;
-    const path = url.slice(url.indexOf("/", 8));
-    await log(fn, "<--", method, path);
-    const start = Date.now();
-    await next();
-    await log(fn, "-->", method, path, c.res.status, time(start));
-  };
-};
-
 // ../../node_modules/.bun/hono@4.11.7/node_modules/hono/dist/middleware/cors/index.js
 var cors = (options) => {
   const defaults = {
@@ -2182,12 +2119,7 @@ var cors = (options) => {
 // src/index.ts
 var app = new Hono2();
 console.log(`\u{1F680} API STARTED AT: ${(/* @__PURE__ */ new Date()).toISOString()}`);
-app.use("*", logger());
 app.use("*", cors());
-app.use("*", async (c, next) => {
-  console.log(`[DEBUG] Incoming Request: ${c.req.method} ${c.req.url}`);
-  await next();
-});
 app.get("/", (c) => c.text("TRISULA API Orchestrator v1.0.0 (Bun Runtime)"));
 app.post("/api/v1/ping", async (c) => {
   console.log(`[DEBUG] PING POST received (Full App Context)`);

@@ -2033,16 +2033,13 @@ var Hono2 = class extends Hono {
 
 // src/index.ts
 var app = new Hono2();
-app.get("/", (c) => c.text("TRISULA API Orchestrator (Minimal Test)"));
-app.post("/api/v1/ping", async (c) => {
-  console.log(`[DEBUG] PING received`);
-  let body = {};
-  try {
-    body = await c.req.json();
-  } catch (e) {
-    console.error("Body parse error:", e.message);
-  }
-  return c.json({ success: true, message: "PONG (Minimal)", echo: body });
+app.get("/", (c) => c.text("TRISULA API Orchestrator (Sync Test)"));
+app.post("/api/v1/ping-sync", (c) => {
+  return c.json({ success: true, message: "Sync PONG" });
+});
+app.post("/api/v1/ping-async", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  return c.json({ success: true, message: "Async PONG", echo: body });
 });
 var src_default = app;
 

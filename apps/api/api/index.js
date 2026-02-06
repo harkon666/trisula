@@ -2034,22 +2034,26 @@ var Hono2 = class extends Hono {
 };
 
 // src/index.ts
-var app = new Hono2();
-app.get("/", (c) => c.text("TRISULA API Orchestrator (Body Fix Test)"));
-app.post("/api/v1/ping-sync", (c) => {
-  return c.json({ success: true, message: "Sync PONG" });
+var app = new Hono2().basePath("/api");
+app.get("/", (c) => c.text("TRISULA API Orchestrator (Vercel Best Practice Test)"));
+app.post("/v1/ping-sync", (c) => {
+  return c.json({ success: true, message: "Sync PONG (Best Practice)" });
 });
-app.post("/api/v1/ping-async", async (c) => {
-  console.log("[DEBUG] Async ping started");
+app.post("/v1/ping-async", async (c) => {
+  console.log("[DEBUG] Async ping started (Best Practice)");
   try {
-    const arrayBuffer = await c.req.arrayBuffer();
-    const text = new TextDecoder().decode(arrayBuffer);
-    const body = text ? JSON.parse(text) : {};
-    console.log("[DEBUG] Body read success");
-    return c.json({ success: true, message: "Async PONG (ArrayBuffer)", echo: body });
+    const body = await c.req.raw.json();
+    console.log("[DEBUG] Body read success (Raw)");
+    return c.json({ success: true, message: "Async PONG (Raw JSON)", echo: body });
   } catch (e) {
-    console.error("[DEBUG] Body read error:", e.message);
-    return c.json({ success: false, message: "Body read failed", error: e.message });
+    try {
+      const body = await c.req.json();
+      console.log("[DEBUG] Body read success (Wrapper)");
+      return c.json({ success: true, message: "Async PONG (Wrapper JSON)", echo: body });
+    } catch (e2) {
+      console.error("[DEBUG] Body read error:", e2.message);
+      return c.json({ success: false, message: "Body read failed", error: e2.message, error1: e.message });
+    }
   }
 });
 var src_default = app;

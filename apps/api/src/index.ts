@@ -1,31 +1,35 @@
 import { Hono } from 'hono';
 
-const app = new Hono();
+// Best Practice: Use basePath if you're rewriting /api/(.*) to this function
+const app = new Hono().basePath('/api');
 
 // --- ROUTES ---
-app.get('/', (c) => c.text('TRISULA API Orchestrator (Body Fix Test)'));
+app.get('/', (c) => c.text('TRISULA API Orchestrator (Vercel Best Practice Test)'));
 
-// SUCCESS: This should work if POST is fine but stream is broken
-app.post('/api/v1/ping-sync', (c) => {
-  return c.json({ success: true, message: 'Sync PONG' });
+// SUCCESS: No body parsing
+app.post('/v1/ping-sync', (c) => {
+  return c.json({ success: true, message: 'Sync PONG (Best Practice)' });
 });
 
-// TEST: Reading body via ArrayBuffer to avoid c.req.json() hang
-app.post('/api/v1/ping-async', async (c) => {
-  console.log("[DEBUG] Async ping started");
+// TEST: Reading body using Hono's standard way with hono/vercel adapter
+app.post('/v1/ping-async', async (c) => {
+  console.log("[DEBUG] Async ping started (Best Practice)");
   try {
-    // ArrayBuffer is often more reliable on Node.js streams
-    const arrayBuffer = await c.req.arrayBuffer();
-    const text = new TextDecoder().decode(arrayBuffer);
-    const body = text ? JSON.parse(text) : {};
-
-    console.log("[DEBUG] Body read success");
-    return c.json({ success: true, message: 'Async PONG (ArrayBuffer)', echo: body });
+    // Try raw request first as it's the most standard-compliant
+    const body = await c.req.raw.json();
+    console.log("[DEBUG] Body read success (Raw)");
+    return c.json({ success: true, message: 'Async PONG (Raw JSON)', echo: body });
   } catch (e: any) {
-    console.error("[DEBUG] Body read error:", e.message);
-    return c.json({ success: false, message: 'Body read failed', error: e.message });
+    try {
+      // Fallback to wrapper
+      const body = await c.req.json();
+      console.log("[DEBUG] Body read success (Wrapper)");
+      return c.json({ success: true, message: 'Async PONG (Wrapper JSON)', echo: body });
+    } catch (e2: any) {
+      console.error("[DEBUG] Body read error:", e2.message);
+      return c.json({ success: false, message: 'Body read failed', error: e2.message, error1: e.message });
+    }
   }
 });
 
-// Export for Vercel
 export default app;

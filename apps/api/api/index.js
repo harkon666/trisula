@@ -2035,13 +2035,22 @@ var Hono2 = class extends Hono {
 
 // src/index.ts
 var app = new Hono2();
-app.get("/", (c) => c.text("TRISULA API Orchestrator (Sync Test)"));
+app.get("/", (c) => c.text("TRISULA API Orchestrator (Body Fix Test)"));
 app.post("/api/v1/ping-sync", (c) => {
   return c.json({ success: true, message: "Sync PONG" });
 });
 app.post("/api/v1/ping-async", async (c) => {
-  const body = await c.req.json().catch(() => ({}));
-  return c.json({ success: true, message: "Async PONG", echo: body });
+  console.log("[DEBUG] Async ping started");
+  try {
+    const arrayBuffer = await c.req.arrayBuffer();
+    const text = new TextDecoder().decode(arrayBuffer);
+    const body = text ? JSON.parse(text) : {};
+    console.log("[DEBUG] Body read success");
+    return c.json({ success: true, message: "Async PONG (ArrayBuffer)", echo: body });
+  } catch (e) {
+    console.error("[DEBUG] Body read error:", e.message);
+    return c.json({ success: false, message: "Body read failed", error: e.message });
+  }
 });
 var src_default = app;
 

@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "build": "tsup",
+    "build": "echo 'Vercel handles build'",
     "start": "node api/index.js",
     "check-types": "tsc --noEmit",
     "lint": "eslint ."

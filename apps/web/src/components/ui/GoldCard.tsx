@@ -10,8 +10,8 @@ export function GoldCard({ children, className, ...props }: GoldCardProps) {
         <div
             className={twMerge(
                 clsx(
-                    'relative overflow-hidden rounded-xl bg-gradient-to-br from-royal-blue to-black p-6 shadow-2xl border border-gold-metallic/30',
-                    'before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_50%_0%,rgba(212,175,55,0.1),transparent)]', // Gold glow
+                    'relative overflow-hidden rounded-xl bg-gradient-to-br from-midnight-900 to-midnight-950 p-6 shadow-2xl border border-trisula-500/30',
+                    'before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_50%_0%,rgba(234,179,8,0.1),transparent)]', // Gold glow
                     className
                 )
             )}

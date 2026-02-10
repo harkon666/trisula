@@ -4,35 +4,72 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/src/hooks/useAuth";
+import gsap from "gsap";
 
 export default function Home() {
   const { user, isAuthenticated, isLoading } = useAuth();
 
+  useEffect(() => {
+    // Simple entrance animation
+    gsap.from(".hero-content", {
+      y: 50,
+      opacity: 0,
+      duration: 1,
+      stagger: 0.2,
+      ease: "power4.out"
+    });
+  }, []);
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-white selection:bg-amber-500/30">
+    <div className="min-h-screen bg-midnight-950 text-white selection:bg-trisula-500/30 font-sans">
+
+      {/* Background Ambience - Water & Deep Ocean Theme */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Deep Ocean Gradient Base */}
+        <div className="absolute inset-0 bg-gradient-to-b from-midnight-950 via-midnight-900 to-midnight-950" />
+
+        {/* 'Trisula' Gold Glow (Top Center) */}
+        <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-trisula-600/10 blur-[130px] rounded-full opacity-60 mix-blend-screen" />
+
+        {/* 'Water' Blue Glow (Bottom Right) */}
+        <div className="absolute bottom-[-10%] right-[-5%] w-[600px] h-[600px] bg-ice-500/10 blur-[150px] rounded-full opacity-40 mix-blend-screen" />
+
+        {/* Grid Overlay for structure */}
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-[0.03]" />
+      </div>
 
       {/* Navbar */}
-      <nav className="fixed top-0 w-full z-50 bg-zinc-950/50 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 md:w-10 md:h-10 relative">
-              <Image src="/icon.png" alt="Trisula" fill className="object-contain" />
+      <nav className="fixed top-0 w-full z-50 bg-midnight-950/70 backdrop-blur-xl border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
+          <div className="flex items-center gap-3 group cursor-pointer">
+            <div className="w-10 h-10 relative transition-transform duration-500 group-hover:rotate-12">
+              <Image src="/icon.png" alt="Trisula" fill className="object-contain drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" />
             </div>
-            <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-amber-200 to-amber-500 bg-clip-text text-transparent">
+            <span className="text-2xl font-bold tracking-tight text-white group-hover:text-trisula-400 transition-colors">
               TRISULA
             </span>
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
-            <Link href="#features" className="hover:text-amber-400 transition-colors">Benefits</Link>
-            <Link href="#how-it-works" className="hover:text-amber-400 transition-colors">How it Works</Link>
+
+          <div className="hidden md:flex items-center gap-10 text-sm font-medium text-zinc-400">
+            {["Benefits", "How it Works", "Testimonials"].map((item) => (
+              <Link
+                key={item}
+                href={`#${item.toLowerCase().replace(/\s/g, '-')}`}
+                className="relative hover:text-white transition-colors after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-px after:bg-trisula-500 hover:after:w-full after:transition-all"
+              >
+                {item}
+              </Link>
+            ))}
           </div>
+
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
-              <Link href="/dashboard" className="px-5 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-sm font-bold hover:bg-zinc-800 transition-all">
+              <Link href="/dashboard" className="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-sm font-bold hover:bg-white/10 hover:border-trisula-500/50 transition-all flex items-center gap-2 group">
                 Dashboard
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
               </Link>
             ) : (
-              <Link href="/login" className="px-5 py-2.5 bg-amber-500 text-black rounded-xl text-sm font-bold hover:bg-amber-400 transition-all">
+              <Link href="/login" className="px-6 py-3 bg-trisula-500 text-midnight-950 rounded-full text-sm font-bold hover:bg-trisula-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.5)]">
                 Sign In
               </Link>
             )}
@@ -41,160 +78,151 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
+      <section className="relative pt-40 pb-32 md:pt-56 md:pb-40 overflow-hidden z-10">
+        <div className="max-w-7xl mx-auto px-6 text-center">
 
-        {/* Background Gradients */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-amber-500/20 blur-[120px] rounded-full opacity-50 pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-purple-900/20 blur-[120px] rounded-full opacity-30 pointer-events-none" />
+          <div className="hero-content inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-sm">
+            <span className="w-2 h-2 rounded-full bg-trisula-500 animate-pulse" />
+            <span className="text-xs font-bold tracking-widest uppercase text-trisula-300">The New Standard of Wealth</span>
+          </div>
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6">
+          <h1 className="hero-content text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-8 leading-[1.1]">
             Unlock Your <br className="hidden md:block" />
-            <span className="bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-600 bg-clip-text text-transparent drop-shadow-2xl">
-              Premium Experience
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-trisula-200 via-trisula-400 to-trisula-600 drop-shadow-sm filter">
+              Premium Legacy
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Join the most rewarding referral and loyalty platform.
-            Earn exclusive rewards, unlock premium perks, and experience seamless growth.
+          <p className="hero-content text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-12 leading-relaxed font-light">
+            Join the most exclusive referral and loyalty ecosystem.
+            Accumulate <span className="text-white font-semibold">Trisula Points</span>, unlock tiered rewards, and build your digital empire.
           </p>
 
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 min-h-[64px]">
+          <div className="hero-content flex flex-col md:flex-row items-center justify-center gap-6">
             {isLoading ? (
-              <div className="flex items-center gap-3 text-amber-500 animate-pulse font-medium">
-                <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                Loading...
-              </div>
+              <div className="h-14 px-8 rounded-full bg-white/5 animate-pulse w-48" />
             ) : isAuthenticated ? (
-              <Link href="/dashboard" className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition-all shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:shadow-[0_0_50px_rgba(245,158,11,0.5)]">
-                Go to Dashboard
+              <Link href="/dashboard" className="group relative px-8 py-4 bg-gradient-to-r from-trisula-500 to-trisula-600 text-midnight-950 font-bold text-lg rounded-full transition-all shadow-[0_0_40px_rgba(234,179,8,0.4)] hover:shadow-[0_0_60px_rgba(234,179,8,0.6)] hover:scale-105 active:scale-95 overflow-hidden">
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                <span className="relative z-10">Enter Dashboard</span>
               </Link>
             ) : (
-              <Link href="/auth/register" className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition-all shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:shadow-[0_0_50px_rgba(245,158,11,0.5)]">
-                Join Waitlist
-              </Link>
+              <>
+                <Link href="/auth/register" className="group relative px-8 py-4 bg-gradient-to-r from-trisula-500 to-trisula-600 text-midnight-950 font-bold text-lg rounded-full transition-all shadow-[0_0_40px_rgba(234,179,8,0.4)] hover:shadow-[0_0_60px_rgba(234,179,8,0.6)] hover:scale-105 active:scale-95 overflow-hidden">
+                  <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                  <span className="relative z-10">Start Your Legacy</span>
+                </Link>
+                <Link href="#how-it-works" className="px-8 py-4 bg-transparent border border-white/10 text-white font-medium text-lg rounded-full hover:bg-white/5 hover:border-white/20 transition-all">
+                  Learn More
+                </Link>
+              </>
             )}
           </div>
         </div>
       </section>
 
-      {/* How it Works Section */}
-      <section id="how-it-works" className="py-24 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-sm uppercase tracking-[0.3em] font-semibold text-amber-500 mb-4 text-center">The Process</h2>
-            <h3 className="text-4xl md:text-5xl font-bold text-white text-center">How it Works</h3>
+      {/* Stats / Social Proof - Glassmorphic Strip */}
+      <section className="border-y border-white/5 bg-white/[0.02] backdrop-blur-sm z-10 relative">
+        <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
+          {[
+            { label: "Active Members", value: "2.5K+" },
+            { label: "Total Asset Value", value: "$4.1M" },
+            { label: "Rewards Distributed", value: "850K" },
+            { label: "Partner Brands", value: "120+" }
+          ].map((stat, i) => (
+            <div key={i} className="text-center group cursor-default">
+              <p className="text-3xl font-bold text-white mb-1 group-hover:text-trisula-400 transition-colors">{stat.value}</p>
+              <p className="text-xs uppercase tracking-widest text-zinc-500 group-hover:text-zinc-400">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Features Grid with Water Motifs */}
+      <section id="benefits" className="py-32 relative z-10">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-6">
+            <div>
+              <h2 className="text-trisula-500 font-bold tracking-widest uppercase text-sm mb-3">Why Trisula</h2>
+              <h3 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+                Designed for the <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-ice-500 to-white">Modern Elite</span>
+              </h3>
+            </div>
+            <p className="text-zinc-400 max-w-sm leading-relaxed">
+              We separate the noise from the value. Trisula offers a sanctuary for wealth growth and premium lifestyle management.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                title: "Create Account",
-                desc: "Join easily with your email or phone number. No complex setup—just a few seconds to start your journey.",
-                icon: (
-                  <svg className="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                )
+                title: "Unified Asset View",
+                desc: "Monitor your entire rewards portfolio and loyalty progress all in one premium interface.",
+                color: "from-trisula-500/20 to-trisula-900/0",
+                icon: "💎"
               },
               {
-                title: "View Insights",
-                desc: "Get an instant overview of your total rewards and status in one high-premium dashboard.",
-                icon: (
-                  <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                )
+                title: "Tiered Point Yield",
+                desc: "Earn points instantly from referrals and receive periodic point yields based on your engagement.",
+                color: "from-ice-500/20 to-ice-900/0",
+                icon: "📈"
               },
               {
-                title: "Earn Daily Yield",
-                desc: "Accumulate points automatically based on your activity and loyalty. The more engaged you are, the more you earn.",
-                icon: (
-                  <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                )
-              },
-              {
-                title: "Redeem Rewards",
-                desc: "Spend your earned points on exclusive lifestyle benefits and premium digital lifestyle vouchers.",
-                icon: (
-                  <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                )
+                title: "Bank-Grade Security",
+                desc: "Built with institutional-grade security for safe and seamless account management.",
+                color: "from-purple-500/20 to-purple-900/0",
+                icon: "🛡️"
               }
-            ].map((step, i) => (
-              <div key={i} className="relative p-8 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-amber-500/30 transition-all hover:-translate-y-2 group">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6 border border-amber-500/20 group-hover:scale-110 transition-transform">
-                  {step.icon}
+            ].map((feature, i) => (
+              <div key={i} className="relative p-10 rounded-[2rem] bg-midnight-900 border border-white/5 overflow-hidden group hover:-translate-y-2 transition-transform duration-500">
+                {/* Gradient Blob */}
+                <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${feature.color} blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full pointer-events-none`} />
+
+                <div className="relative z-10">
+                  <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl mb-8 group-hover:scale-110 transition-transform duration-300">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-trisula-300 transition-colors">{feature.title}</h3>
+                  <p className="text-zinc-400 leading-relaxed group-hover:text-zinc-300">{feature.desc}</p>
                 </div>
-                <h4 className="text-xl font-bold text-white mb-3">{step.title}</h4>
-                <p className="text-zinc-400 text-sm leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section id="features" className="py-24 bg-zinc-900/30 border-y border-white/5 relative overflow-hidden">
-        {/* Subtle background glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/5 blur-[120px] rounded-full pointer-events-none" />
+      {/* CTA Section */}
+      <section className="py-20 relative z-10">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="relative rounded-[3rem] bg-gradient-to-b from-midnight-800 to-midnight-950 border border-white/10 p-12 md:p-20 text-center overflow-hidden">
+            {/* Ambient Glows */}
+            <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-trisula-500 to-transparent opacity-50" />
+            <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-ice-500 to-transparent opacity-30" />
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-sm uppercase tracking-[0.3em] font-semibold text-amber-500 mb-4">Benefits</h2>
-            <h3 className="text-4xl md:text-5xl font-bold text-white">The Trisula Advantage</h3>
-          </div>
+            <div className="relative z-10">
+              <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 tracking-tight">
+                Ready to Ascend?
+              </h2>
+              <p className="text-zinc-400 text-lg mb-10 max-w-xl mx-auto">
+                Join thousands of members who are maximizing their digital lifestyle with Trisula.
+              </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Unified Rewards View",
-                desc: "Monitor your entire rewards portfolio and loyalty progress all in one premium interface.",
-                icon: (
-                  <svg className="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                )
-              },
-              {
-                title: "Tiered Rewards & Yield",
-                desc: "Earn points instantly from referrals and receive periodic point yields based on your engagement and loyalty tier.",
-                icon: (
-                  <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                  </svg>
-                )
-              },
-              {
-                title: "Secure & Private",
-                desc: "Built with institutional-grade security for safe and seamless account management.",
-                icon: (
-                  <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                )
-              }
-            ].map((feature, i) => (
-              <div key={i} className="p-8 rounded-3xl bg-white/[0.03] border border-white/5 hover:border-amber-500/30 transition-all group hover:-translate-y-2">
-                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6 border border-amber-500/20 group-hover:scale-110 group-hover:bg-amber-500/20 transition-all duration-300">
-                  {feature.icon}
-                </div>
-                <h3 className="text-2xl font-bold mb-4 text-white group-hover:text-amber-400 transition-colors">{feature.title}</h3>
-                <p className="text-zinc-400 leading-relaxed text-sm">{feature.desc}</p>
-              </div>
-            ))}
+              <Link href="/auth/register" className="inline-block px-10 py-5 bg-white text-midnight-950 font-bold text-lg rounded-full hover:bg-trisula-400 transition-all shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_0_50px_rgba(234,179,8,0.5)] transform hover:-translate-y-1">
+                Create Free Account
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-white/5 text-center text-zinc-600 text-sm">
-        <p>© 2026 Trisula Platform.</p>
+      <footer className="py-12 border-t border-white/5 bg-midnight-950 text-center text-zinc-600 text-sm relative z-10">
+        <div className="flex items-center justify-center gap-2 mb-4 opacity-50 grayscale hover:grayscale-0 transition-all">
+          <Image src="/icon.png" alt="Trisula" width={24} height={24} />
+          <span className="font-bold text-white">TRISULA</span>
+        </div>
+        <p>&copy; {new Date().getFullYear()} Trisula Platform. Built for the future.</p>
       </footer>
 
     </div>

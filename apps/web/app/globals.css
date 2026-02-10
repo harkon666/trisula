@@ -1,11 +1,72 @@
 @import "tailwindcss";
 
 @theme {
-  --color-royal-blue: #002366;
-  --color-gold-metallic: #D4AF37;
+  /* Midnight Blue Palette - Derived from Trisula Logo */
+  --color-midnight-950: #020410;
+  /* Deepest void blue */
+  --color-midnight-900: #050a1f;
+  /* Deep rich background */
+  --color-midnight-800: #0a112e;
+  /* Surface blue */
+  --color-midnight-700: #141c45;
+  /* Lighter surface */
+
+  /* Trisula Gold Palette - Metallic and Premium */
+  --color-trisula-100: #fefce8;
+  --color-trisula-200: #fff7ed;
+  --color-trisula-300: #fef08a;
+  --color-trisula-400: #facc15;
+  --color-trisula-500: #eab308;
+  --color-trisula-600: #ca8a04;
+  --color-trisula-700: #a16207;
+
+  /* Accent - Ice Blue for 'Water' element glow */
+  --color-ice-500: #0ea5e9;
+
+  --font-display: "Clash Display", sans-serif;
+  --font-body: "Inter", sans-serif;
 }
 
-/* 
-  Legacy @create-next-app styles removed to prevent conflicts.
-  Tailwind v4 Preflight handles the reset.
-*/
+/* Custom Utilities */
+.text-glow {
+  text-shadow: 0 0 20px rgba(234, 179, 8, 0.3);
+}
+
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right,
+      transparent 0%,
+      rgba(255, 255, 255, 0.2) 50%,
+      transparent 100%);
+  transform: skewX(-25deg);
+  transition: 0.5s;
+}
+
+.btn-shine:hover::after {
+  left: 200%;
+  transition: 0.7s ease-in-out;
+}
+
+/* Global Interactivity Reset */
+button,
+a,
+input[type="submit"],
+input[type="button"],
+[role="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled {
+  cursor: not-allowed;
+}

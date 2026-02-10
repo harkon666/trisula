@@ -1,55 +1,49 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { db, users, redeemRequests, pointsBalance, pointsLedger, redeemCatalog } from '@repo/database';
-import { eq, sql } from 'drizzle-orm';
+import { db, users, redeemRequests, pointsLedger, rewards, profiles, roleEnum } from '@repo/database';
+import { eq, inArray, sql, desc } from 'drizzle-orm';
 import { z } from 'zod';
-import { BlockchainService } from '../services/blockchain.js';
+import { rbacMiddleware } from '../middlewares/rbac';
 
 const admin = new Hono();
 
-// Schema for Verify Request - Updated to include 'rejected' status
+// Apply Strict RBAC Middleware
+admin.use('*', rbacMiddleware());
+
+// Schema for Verify Request
 const UpdateRedeemStatusSchema = z.object({
     status: z.enum(['processing', 'ready', 'completed', 'rejected']),
-    adminWallet: z.string(),
     reason: z.string().optional(), // Required for rejected
 });
 
 // Final states that cannot be changed
 const FINAL_STATES = ['completed', 'cancelled', 'rejected'];
 
-// Middleware helper (simplified) to check admin role
-async function isAdmin(walletAddress: string) {
-    if (!walletAddress) return false;
-    const [user] = await db.select().from(users).where(eq(users.walletAddress, walletAddress)).limit(1);
-    return user && (user.role === 'admin' || user.role === 'super_admin');
-}
-
 /**
  * @route   GET /redeem/pending
  * @desc    List all pending/processing/ready redeem requests
+ * @access  Super Admin, Admin View
  */
 admin.get('/redeem/pending', async (c) => {
-    const adminWallet = c.req.query('adminWallet');
-    if (!adminWallet || !await isAdmin(adminWallet)) {
-        return c.json({ success: false, message: "Unauthorized" }, 401);
-    }
+    // RBAC Middleware handles role checks (Admin View & Super Admin allowed for GET)
 
     try {
         const requests = await db.select({
             id: redeemRequests.id,
-            userName: users.name,
-            itemName: redeemCatalog.name,
-            pointsUsed: redeemRequests.pointsUsed,
-            whatsapp: redeemRequests.whatsappNumber,
+            userName: profiles.fullName, // Get name from profiles
+            itemName: rewards.title,     // Get title from rewards
+            pointsUsed: rewards.requiredPoints,
+            whatsapp: profiles.whatsapp, // Get WA from profiles
             status: redeemRequests.status,
-            txHash: redeemRequests.txHash,
             createdAt: redeemRequests.createdAt,
+            // txHash: pointsLedger.txHash, // Optional: join with ledger if needed
         })
             .from(redeemRequests)
-            .leftJoin(users, eq(redeemRequests.userId, users.id))
-            .leftJoin(redeemCatalog, eq(redeemRequests.rewardId, redeemCatalog.id))
-            .where(sql`${redeemRequests.status} IN ('pending', 'processing', 'ready')`)
-            .orderBy(sql`${redeemRequests.createdAt} DESC`);
+            .leftJoin(users, eq(redeemRequests.nasabahId, users.id))
+            .leftJoin(profiles, eq(users.id, profiles.userId))
+            .leftJoin(rewards, eq(redeemRequests.rewardId, rewards.id))
+            .where(inArray(redeemRequests.status, ['pending', 'processing', 'ready']))
+            .orderBy(desc(redeemRequests.createdAt));
 
         return c.json({ success: true, data: requests });
     } catch (error) {
@@ -61,14 +55,13 @@ admin.get('/redeem/pending', async (c) => {
 /**
  * @route   PATCH /redeem/:id
  * @desc    Update redemption status (Fulfillment / Rejection by Admin)
+ * @access  Super Admin (Admin Input is POST only, Admin View is GET only)
  */
 admin.patch('/redeem/:id', zValidator('json', UpdateRedeemStatusSchema), async (c) => {
     const requestId = c.req.param('id');
-    const { status, adminWallet, reason } = c.req.valid('json');
+    const { status, reason } = c.req.valid('json');
 
-    if (!await isAdmin(adminWallet)) {
-        return c.json({ success: false, message: "Unauthorized" }, 401);
-    }
+    // RBAC: Only Super Admin can PATCH (Admin Input restricted to POST)
 
     // Require reason for rejected status
     if (status === 'rejected' && !reason) {
@@ -77,14 +70,25 @@ admin.patch('/redeem/:id', zValidator('json', UpdateRedeemStatusSchema), async (
 
     try {
         return await db.transaction(async (tx) => {
-            // 1. Get Request
-            const [request] = await tx.select().from(redeemRequests).where(eq(redeemRequests.id, requestId)).limit(1);
+            // 1. Get Request with Reward details for points calculation
+            const [request] = await tx.select({
+                id: redeemRequests.id,
+                status: redeemRequests.status,
+                userId: redeemRequests.nasabahId,
+                pointsRequired: rewards.requiredPoints,
+                metadata: redeemRequests.metadata
+            })
+                .from(redeemRequests)
+                .leftJoin(rewards, eq(redeemRequests.rewardId, rewards.id))
+                .where(eq(redeemRequests.id, requestId))
+                .limit(1);
+
             if (!request) {
                 return c.json({ success: false, message: "Request not found" }, 404);
             }
 
             // 2. State Machine: Block changes from final states
-            if (FINAL_STATES.includes(request.status)) {
+            if (request.status && FINAL_STATES.includes(request.status)) {
                 return c.json({
                     success: false,
                     message: `Pesanan dengan status "${request.status}" tidak dapat diubah.`
@@ -93,48 +97,26 @@ admin.patch('/redeem/:id', zValidator('json', UpdateRedeemStatusSchema), async (
 
             // 3. Refund Logic for REJECTED
             if (status === 'rejected') {
-                console.log(`🔄 Refunding ${request.pointsUsed} points to user ${request.userId} (Admin Rejection)`);
+                const pointsToRefund = request.pointsRequired || 0;
+                console.log(`🔄 Refunding ${pointsToRefund} points to user ${request.userId} (Admin Rejection)`);
 
-                await tx.update(pointsBalance)
-                    .set({ balance: sql`${pointsBalance.balance} + ${request.pointsUsed}` })
-                    .where(eq(pointsBalance.userId, request.userId));
+                await tx.update(users) // Update users table (pointsBalance)
+                    .set({ pointsBalance: sql`${users.pointsBalance} + ${pointsToRefund}` })
+                    .where(eq(users.id, request.userId));
 
-                const [ledgerEntry] = await tx.insert(pointsLedger).values({
+                await tx.insert(pointsLedger).values({
                     userId: request.userId,
-                    amount: request.pointsUsed,
-                    source: 'admin',
-                    reason: `Refund: Ditolak Admin - ${reason}`,
+                    amount: pointsToRefund,
+                    source: 'refund', // Source: refund
+                    description: `Refund: Ditolak Admin - ${reason}`,
                     createdAt: new Date(),
-                }).returning({ id: pointsLedger.id });
-
-                if (!ledgerEntry) throw new Error("Failed to create ledger entry");
-
-                // Log refund to blockchain (async, don't block)
-                const [user] = await tx.select({ walletAddress: users.walletAddress })
-                    .from(users).where(eq(users.id, request.userId)).limit(1);
-
-                if (user?.walletAddress) {
-                    BlockchainService.logPointsAdded(
-                        user.walletAddress,
-                        BigInt(request.pointsUsed),
-                        `Refund: Rejected - ${reason}`
-                    ).then(async (tx) => {
-                        if (tx?.hash) {
-                            // Update ledger with txHash
-                            await db.update(pointsLedger)
-                                .set({ txHash: tx.hash })
-                                .where(eq(pointsLedger.id, ledgerEntry.id));
-                            console.log(`✅ Refund logged on-chain: ${tx.hash}`);
-                        }
-                    }).catch((err) => {
-                        console.error(`⚠️ Blockchain refund log failed: ${err.message}`);
-                    });
-                }
+                });
             }
 
             // 4. Update Status with metadata
+            const currentMetadata = request.metadata as Record<string, any> || {};
             const updatedMetadata = {
-                ...request.metadata as object,
+                ...currentMetadata,
                 ...(status === 'rejected' ? { rejectedReason: reason, rejectedAt: new Date().toISOString(), rejectedBy: 'admin' } : {}),
             };
 

@@ -1,70 +1,48 @@
 import { Hono } from 'hono';
-import { db, users, pointsBalance, pointsLedger, referrals, agents, redeemCatalog, redeemRequests } from '@repo/database';
+import { db, users, pointsLedger, profiles, agentActivationCodes } from '@repo/database';
 import { eq, desc, sql } from 'drizzle-orm';
-import { RewardService } from '../services/RewardService';
+import { rbacMiddleware } from '../middlewares/rbac';
+import { AuthUser } from '../types/hono';
 
-const user = new Hono();
+const user = new Hono<{ Variables: { user: AuthUser } }>();
+
+// Apply Auth Middleware
+user.use('*', rbacMiddleware());
 
 /**
  * @route   GET /api/v1/user/profile
  * @desc    Get user profile and points balance
- * @query   walletAddress
+ * @access  Private (User)
  */
 user.get('/profile', async (c) => {
-    const walletAddress = c.req.query('walletAddress');
-
-    if (!walletAddress) {
-        return c.json({ success: false, message: "Wallet address required" }, 400);
-    }
+    const contextUser = c.get('user');
+    if (!contextUser) return c.json({ success: false, message: "Unauthorized" }, 401);
 
     try {
-        // 1. Get User ID first to trigger Lazy Yield
-        const userShort = await db.query.users.findFirst({
-            where: eq(users.walletAddress, walletAddress),
-            columns: { id: true }
-        });
-
-        let yieldResult = null;
-        if (userShort) {
-            yieldResult = await RewardService.checkAndClaimYield(userShort.id);
-        }
-
-        // 2. Fetch Full Profile (including updated points)
         const [userData] = await db.select({
             id: users.id,
-            name: users.name,
-            email: users.email,
-            walletAddress: users.walletAddress,
+            userId: users.userId,
+            fullName: profiles.fullName,
+            email: profiles.email,
+            whatsapp: profiles.whatsapp,
             role: users.role,
-            status: users.status,
-            referralCode: agents.referralCode,
-            points: pointsBalance.balance
+            status: users.isActive,
+            points: users.pointsBalance,
         })
             .from(users)
-            .leftJoin(pointsBalance, eq(users.id, pointsBalance.userId))
-            .leftJoin(agents, eq(users.id, agents.userId))
-            .where(eq(users.walletAddress, walletAddress))
+            .leftJoin(profiles, eq(users.id, profiles.userId))
+            .where(eq(users.id, contextUser.id))
             .limit(1);
 
         if (!userData) {
             return c.json({ success: false, message: "User not found" }, 404);
         }
 
-        // 3. Get Wealth Stats for Dashboard (Net Worth & Estimated Yield)
-        // We reuse the calculation logic (it reads DB + Mock Price)
-        const wealthStats = await RewardService.calculateDailyYield(userData.id);
-
         return c.json({
             success: true,
             data: {
                 ...userData,
                 points: userData.points || 0,
-                dailyYield: yieldResult,
-                wealth: {
-                    totalAum: wealthStats.totalAum,
-                    estimatedYield: wealthStats.finalPoints,
-                    tier: wealthStats.tier
-                }
             }
         });
 
@@ -76,84 +54,70 @@ user.get('/profile', async (c) => {
 
 /**
  * @route   GET /api/v1/user/activity
- * @desc    Get points history and referrals
- * @query   walletAddress
+ * @desc    Get points history
+ * @access  Private (User)
  */
 user.get('/activity', async (c) => {
-    const walletAddress = c.req.query('walletAddress');
-
-    if (!walletAddress) {
-        return c.json({ success: false, message: "Wallet address required" }, 400);
-    }
+    const contextUser = c.get('user');
+    if (!contextUser) return c.json({ success: false, message: "Unauthorized" }, 401);
 
     try {
-        const [userData] = await db.select({ id: users.id }).from(users).where(eq(users.walletAddress, walletAddress)).limit(1);
-
-        if (!userData) {
-            return c.json({ success: false, message: "User not found" }, 404);
-        }
-
-        // Fetch Points Ledger (History)
         const history = await db.select({
             id: pointsLedger.id,
             amount: pointsLedger.amount,
-            reason: pointsLedger.reason,
+            description: pointsLedger.description,
             source: pointsLedger.source,
-            txHash: pointsLedger.txHash,
             createdAt: pointsLedger.createdAt,
-            status: sql<string>`NULL` // Placeholder for status
         })
             .from(pointsLedger)
-            .where(eq(pointsLedger.userId, userData.id))
+            .where(eq(pointsLedger.userId, contextUser.id))
             .orderBy(desc(pointsLedger.createdAt))
-            .limit(30);
-
-        // Fetch Redeem Requests to get statuses
-        const redemptions = await db.select({
-            reason: sql<string>`CONCAT('Redeem: ', ${redeemCatalog.name})`,
-            status: redeemRequests.status,
-            createdAt: redeemRequests.createdAt
-        })
-            .from(redeemRequests)
-            .leftJoin(redeemCatalog, eq(redeemRequests.rewardId, redeemCatalog.id))
-            .where(eq(redeemRequests.userId, userData.id));
-
-        // Map status back to history by matching reason AND closest timestamp
-        const mergedHistory = history.map(item => {
-            // Refund entries get special 'refund' status
-            if (item.reason.startsWith('Refund:')) {
-                return { ...item, status: 'refund' };
-            }
-
-            if (item.source === 'redeem') {
-                // Find redemption with same reason AND closest createdAt
-                const matchingRedemptions = redemptions.filter(r => r.reason === item.reason);
-
-                if (matchingRedemptions.length === 0) {
-                    return { ...item, status: 'pending' };
-                }
-
-                // Find the one with closest timestamp (within 5 seconds tolerance)
-                const itemTime = new Date(item.createdAt).getTime();
-                const closest = matchingRedemptions.reduce((prev, curr) => {
-                    const prevDiff = Math.abs(new Date(prev.createdAt).getTime() - itemTime);
-                    const currDiff = Math.abs(new Date(curr.createdAt).getTime() - itemTime);
-                    return currDiff < prevDiff ? curr : prev;
-                });
-
-                return { ...item, status: closest.status };
-            }
-            return item;
-        });
+            .limit(50);
 
         return c.json({
             success: true,
-            data: mergedHistory
+            data: history
         });
 
     } catch (error) {
         console.error("Activity Error:", error);
         return c.json({ success: false, message: "Failed to fetch activity" }, 500);
+    }
+});
+
+/**
+ * @route   GET /api/v1/user/my-referrals
+ * @desc    Get list of nasabah referred by this agent
+ * @access  Private (Agent)
+ */
+user.get('/my-referrals', async (c) => {
+    const contextUser = c.get('user');
+    if (contextUser.role !== 'agent' && contextUser.role !== 'super_admin') {
+        return c.json({ success: false, message: "Forbidden: Only Agents can view referrals" }, 403);
+    }
+
+    try {
+        const list = await db.select({
+            id: users.id,
+            userId: users.userId,
+            fullName: profiles.fullName,
+            whatsapp: profiles.whatsapp,
+            joinedAt: users.createdAt,
+            pointsBalance: users.pointsBalance
+        })
+            .from(users)
+            .leftJoin(profiles, eq(users.id, profiles.userId))
+            .where(eq(profiles.referredByAgentId, contextUser.userId))
+            .orderBy(desc(users.createdAt));
+
+        return c.json({
+            success: true,
+            data: list
+        });
+
+    } catch (error) {
+        console.error("Referrals Error:", error);
+        return c.json({ success: false, message: "Failed to fetch referrals" }, 500);
     }
 });
 

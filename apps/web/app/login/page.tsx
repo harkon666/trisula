@@ -20,7 +20,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
     const router = useRouter();
-    const { login, isAuthenticated } = useAuth();
+    const { login, isAuthenticated, user } = useAuth();
     const [loading, setLoading] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -33,10 +33,14 @@ export default function LoginPage() {
     });
 
     useEffect(() => {
-        if (isAuthenticated) {
-            router.push('/dashboard');
+        if (isAuthenticated && user) {
+            if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
+                router.push('/admin');
+            } else {
+                router.push('/dashboard');
+            }
         }
-    }, [isAuthenticated, router]);
+    }, [isAuthenticated, user, router]);
 
     useEffect(() => {
         const ctx = gsap.context(() => {
@@ -78,8 +82,9 @@ export default function LoginPage() {
                 login(response.data.token, response.data.user);
 
                 // Redirect logic based on role
+                // Redirect logic based on role
                 const role = response.data.user.role;
-                if (role === 'admin' || role === 'super_admin' || role === 'admin_input' || role === 'admin_view') {
+                if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(role)) {
                     router.push('/admin');
                 } else {
                     router.push('/dashboard');

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -34,9 +34,20 @@ type AgentFormData = z.infer<typeof AgentSchema>;
 
 export default function RegisterPage() {
     const router = useRouter();
-    const { login } = useAuth();
+    const { login, isAuthenticated, user } = useAuth();
     const [activeTab, setActiveTab] = useState<'nasabah' | 'agent'>('nasabah');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
+                router.push('/admin');
+            } else {
+                router.push('/dashboard');
+            }
+        }
+    }, [isAuthenticated, user, router]);
 
     // Forms
     const nasabahForm = useForm<NasabahFormData>({

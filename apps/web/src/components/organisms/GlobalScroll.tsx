@@ -1,13 +1,14 @@
 "use client";
-import { useEffect } from 'react';
-import Lenis from 'lenis';
 
-export default function SmoothScroll({ children }: { children: React.ReactNode }) {
+import { ReactNode, useEffect } from "react";
+import Lenis from "lenis";
+
+export function GlobalScroll({ children }: { children: ReactNode }) {
     useEffect(() => {
         const lenis = new Lenis({
             duration: 1.2,
             easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-            // smooth: true, // Lenis v1 options might differ, sticking to defaults or simple config
+            // strict: true,
         });
 
         function raf(time: number) {
@@ -16,6 +17,11 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
         }
 
         requestAnimationFrame(raf);
+
+        // Integrate with GSAP ScrollTrigger if used later
+        // gsap.ticker.add((time)=>{
+        //   lenis.raf(time * 1000)
+        // })
 
         return () => {
             lenis.destroy();

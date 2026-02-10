@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/hooks/useAuth";
 import api from "@/src/lib/api-client";
-import RedeemButton from "../../../components/RedeemButton";
-import StatusTracker from "../../../components/StatusTracker";
-import CancelButton from "../../../components/CancelButton";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Card, Button, Badge, Skeleton } from "@/src/components/atoms";
+import { RedeemModal } from "@/src/components/organisms/RedeemModal";
 
 interface CatalogItem {
-    id: number;
+    id: string; // Changed to string to match Product type
     name: string;
     pointsRequired: number;
     description?: string;
@@ -28,194 +28,230 @@ interface RedemptionRequest {
 export default function RedeemPage() {
     const { user, isAuthenticated } = useAuth();
     const router = useRouter();
-    const [catalog, setCatalog] = useState<CatalogItem[]>([]);
-    const [myRequests, setMyRequests] = useState<RedemptionRequest[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [userPoints, setUserPoints] = useState(0);
+    const queryClient = useQueryClient();
 
-    // activeRequest is the most recent incomplete request to show in the Tracker
+    // --- Queries ---
+    const { data: userPoints = 0 } = useQuery({
+        queryKey: ['userProfile'],
+        queryFn: async () => {
+            const res = await api.get('/v1/user/profile');
+            return res.data.data.points as number;
+        },
+        enabled: isAuthenticated
+    });
+
+    const { data: catalog = [], isLoading: loadingCatalog } = useQuery({
+        queryKey: ['redeemCatalog'],
+        queryFn: async () => {
+            const res = await api.get('/v1/redeem/catalog');
+            return res.data.data as CatalogItem[];
+        },
+        enabled: isAuthenticated
+    });
+
+    const { data: myRequests = [], isLoading: loadingRequests } = useQuery({
+        queryKey: ['myRequests'],
+        queryFn: async () => {
+            const res = await api.get('/v1/redeem/my-requests');
+            return res.data.data as RedemptionRequest[];
+        },
+        enabled: isAuthenticated
+    });
+
+    // --- Mutations ---
+    const cancelMutation = useMutation({
+        mutationFn: async (requestId: string) => {
+            return api.patch(`/v1/redeem/${requestId}/cancel`, { userId: user?.userId });
+        },
+        onSuccess: () => {
+            toast.success("Request cancelled successfully");
+            queryClient.invalidateQueries({ queryKey: ['myRequests'] });
+            queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.message || "Cancellation failed");
+        }
+    });
+
     const activeRequest = myRequests.find(r => ['pending', 'processing', 'ready'].includes(r.status));
-
-    // Fetch All Data
-    const fetchData = async () => {
-        if (!user) return;
-        try {
-            // 1. Fetch Profile (Points)
-            const profileRes = await api.get('/v1/user/profile');
-            if (profileRes.data.success) {
-                setUserPoints(profileRes.data.data.points);
-            }
-
-            // 2. Fetch Catalog
-            const catalogRes = await api.get('/v1/redeem/catalog');
-            if (catalogRes.data.success) {
-                setCatalog(catalogRes.data.data);
-            }
-
-            // 3. Fetch My Requests
-            const requestsRes = await api.get('/v1/redeem/my-requests');
-            if (requestsRes.data.success) {
-                setMyRequests(requestsRes.data.data);
-            }
-
-        } catch (error) {
-            console.error("Fetch error:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (isAuthenticated && user) {
-            fetchData();
-        } else if (!isAuthenticated) {
-            setLoading(false);
-        }
-    }, [isAuthenticated, user]);
-
-    const handleRedeemSuccess = () => {
-        // Refresh data to show new balance and new request in list
-        fetchData();
-    };
 
     if (!isAuthenticated) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white">
-                <button
-                    onClick={() => router.push('/login')}
-                    className="px-8 py-4 bg-amber-500 text-black font-bold rounded-xl"
-                >
-                    Sign In to Access
-                </button>
-                <p className="mt-4 text-zinc-500">Access Restricted. Members Only.</p>
+            <div className="min-h-screen bg-midnight-950 flex flex-col items-center justify-center text-white p-6">
+                <div className="w-16 h-16 bg-trisula-500/10 rounded-full flex items-center justify-center mb-6">
+                    <span className="text-3xl">🔓</span>
+                </div>
+                <h1 className="text-2xl font-bold mb-2">Members Only</h1>
+                <p className="text-zinc-500 mb-8 max-w-md text-center">
+                    Please sign in to access the rewards catalog.
+                </p>
+                <Button variant="primary" onClick={() => router.push('/login')}>
+                    Sign In
+                </Button>
             </div>
         );
     }
 
-    if (loading) {
-        return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-amber-500 animate-pulse">Loading Rewards...</div>;
-    }
-
     return (
-        <div className="min-h-screen bg-zinc-950 text-white p-6 md:p-12 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="min-h-screen bg-midnight-950 text-white p-6 md:p-12 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-trisula-500/5 blur-[120px] rounded-full pointer-events-none" />
 
             <div className="max-w-6xl mx-auto relative z-10">
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
                     <div>
-                        <button
-                            onClick={() => router.push('/dashboard')}
-                            className="text-zinc-400 hover:text-white mb-4 flex items-center gap-2 transition-colors border-b border-white/10 pb-1"
-                        >
-                            ← Kembali ke Dashboard
-                        </button>
-                        <h1 className="text-4xl font-black text-white underline decoration-amber-500/30 underline-offset-8">Katalog Reward</h1>
-                        <p className="text-zinc-400 mt-4">Tukarkan Trisula Poin Anda dengan berbagai pilihan reward eksklusif.</p>
+                        <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')} className="mb-4 -ml-4">
+                            ← Dashboard
+                        </Button>
+                        <h1 className="text-4xl font-black text-white tracking-tight">
+                            Reward <span className="text-trisula-500">Catalog</span>
+                        </h1>
+                        <p className="text-zinc-500 font-medium mt-2">Tukarkan poin Anda dengan pengalaman eksklusif.</p>
                     </div>
-                    <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-6 flex flex-col items-end shadow-lg backdrop-blur-xl">
-                        <p className="text-xs text-amber-500/70 uppercase tracking-widest font-black mb-1">Saldo Poin</p>
-                        <p className="text-4xl font-black text-amber-500">{userPoints.toLocaleString()} <span className="text-sm">PTS</span></p>
-                    </div>
+                    <Card variant="solid" className="bg-trisula-500/5 border-trisula-500/20 p-6 flex flex-col items-end backdrop-blur-xl">
+                        <p className="text-[10px] text-trisula-500/70 uppercase tracking-widest font-black mb-1">Available Points</p>
+                        <p className="text-4xl font-black text-trisula-500">
+                            {userPoints.toLocaleString()} <span className="text-sm">PTS</span>
+                        </p>
+                    </Card>
                 </header>
 
                 {/* Status Tracker for Active Order */}
                 {activeRequest && (
-                    <div className="mb-12 bg-zinc-900/50 p-8 rounded-3xl border border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.1)]">
-                        <div className="flex justify-between items-start mb-8">
+                    <Card variant="glass" className="mb-12 p-8 border-trisula-500/20 bg-trisula-500/[0.02]">
+                        <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4">
                             <div>
-                                <h3 className="text-xl font-bold text-white uppercase tracking-tight">Pelacakan Pesanan: {activeRequest.itemName}</h3>
-                                <p className="text-sm text-zinc-500 font-mono mt-1">Order-ID: #{activeRequest.id.substring(0, 8)}</p>
+                                <Badge variant="warning" className="mb-2">Active Redemption</Badge>
+                                <h3 className="text-2xl font-black text-white uppercase tracking-tight">{activeRequest.itemName}</h3>
+                                <p className="text-[10px] text-zinc-500 font-mono mt-1 uppercase tracking-widest">Protocol-ID: {activeRequest.id.substring(0, 8)}</p>
                             </div>
-                            <div className="text-right flex flex-col items-end gap-3">
-                                <span className="text-amber-500 font-bold bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/20">{activeRequest.pointsUsed.toLocaleString()} PTS</span>
-                                {user && (
-                                    <CancelButton
-                                        requestId={activeRequest.id}
-                                        userId={user.userId}
-                                        status={activeRequest.status}
-                                        onSuccess={handleRedeemSuccess}
-                                    />
+                            <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+                                <span className="text-trisula-400 font-black text-lg">{activeRequest.pointsUsed.toLocaleString()} PTS</span>
+                                {activeRequest.status === 'pending' && (
+                                    <Button
+                                        variant="danger"
+                                        size="sm"
+                                        onClick={() => cancelMutation.mutate(activeRequest.id)}
+                                        isLoading={cancelMutation.isPending}
+                                    >
+                                        Cancel Request
+                                    </Button>
                                 )}
                             </div>
                         </div>
 
-                        <StatusTracker
-                            status={activeRequest.status}
-                            updatedAt={activeRequest.updatedAt}
-                        />
-                    </div>
+                        {/* Simplified Status UI for this page since StatusTracker was removed */}
+                        <div className="flex items-center justify-between relative">
+                            <div className="absolute top-1/2 left-0 w-full h-0.5 bg-white/5 -translate-y-1/2" />
+                            {['pending', 'processing', 'ready', 'completed'].map((step, idx) => {
+                                const steps = ['pending', 'processing', 'ready', 'completed'];
+                                const currentIdx = steps.indexOf(activeRequest.status);
+                                const isCompleted = idx <= currentIdx;
+                                const isActive = idx === currentIdx;
+
+                                return (
+                                    <div key={step} className="relative z-10 flex flex-col items-center">
+                                        <div className={`w-4 h-4 rounded-full border-4 ${isCompleted ? 'bg-trisula-500 border-trisula-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]' : 'bg-zinc-800 border-zinc-700'}`} />
+                                        <span className={`text-[8px] font-black uppercase tracking-widest mt-3 ${isActive ? 'text-trisula-500' : isCompleted ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                                            {step}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </Card>
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-                    {catalog.length === 0 ? (
-                        <div className="col-span-3 text-center py-20 text-zinc-500 bg-white/5 rounded-3xl border border-white/5">
-                            Belum ada reward yang tersedia saat ini.
-                        </div>
+                    {loadingCatalog ? (
+                        Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-96 rounded-[32px]" />)
+                    ) : catalog.length === 0 ? (
+                        <Card className="col-span-3 text-center py-20 text-zinc-500 border-dashed">
+                            Catalog currently offline. Check back soon.
+                        </Card>
                     ) : (
                         catalog.map((item) => (
-                            <div key={item.id} className="bg-white/5 border border-white/10 hover:border-amber-500/50 transition-all rounded-3xl p-8 flex flex-col group relative overflow-hidden shadow-xl">
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-[40px] rounded-full pointer-events-none group-hover:bg-amber-500/10 transition-colors" />
+                            <Card key={item.id} variant="glass" className="p-8 flex flex-col group relative overflow-hidden hover:border-trisula-500/50 transition-all">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-trisula-500/5 blur-3xl rounded-full group-hover:bg-trisula-500/10 transition-all" />
 
-                                <div className="bg-zinc-900 w-full h-48 rounded-2xl mb-6 flex items-center justify-center text-5xl shadow-inner border border-white/5 relative z-10">
+                                <div className="bg-white/5 w-full h-48 rounded-2xl mb-6 flex items-center justify-center text-4xl shadow-inner border border-white/5 group-hover:scale-105 transition-transform">
                                     🎁
                                 </div>
-                                <h3 className="text-2xl font-black text-white mb-2">{item.name}</h3>
-                                <p className="text-zinc-500 text-sm leading-relaxed mb-8 flex-grow">{item.description}</p>
-                                <div className="mt-auto pt-6 border-t border-white/5">
-                                    <RedeemButton
-                                        item={item}
-                                        userId={user?.userId!}
-                                        disabled={userPoints < item.pointsRequired}
-                                        onSuccess={handleRedeemSuccess}
-                                    />
-                                    {userPoints < item.pointsRequired && (
-                                        <p className="text-center text-[10px] font-black uppercase text-red-500 mt-3 tracking-widest bg-red-500/10 py-1 rounded">Poin tidak mencukupi</p>
-                                    )}
+                                <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">{item.name}</h3>
+                                <p className="text-zinc-500 text-sm font-medium leading-relaxed mb-8 flex-grow">{item.description}</p>
+
+                                <div className="mt-auto pt-6 border-t border-white/5 flex flex-col gap-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-trisula-500 font-black tracking-widest">{item.pointsRequired.toLocaleString()} PTS</span>
+                                        <Badge variant={userPoints >= item.pointsRequired ? 'success' : 'outline'}>
+                                            {userPoints >= item.pointsRequired ? 'Affordable' : 'Locked'}
+                                        </Badge>
+                                    </div>
+                                    <RedeemModal
+                                        item={item as any} // Cast to any to avoid minor TS quibbles if necessary, but should match Product now
+                                        userPoints={userPoints}
+                                        onSuccess={() => {
+                                            queryClient.invalidateQueries({ queryKey: ['myRequests'] });
+                                            queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+                                        }}
+                                    >
+                                        <RedeemModal.Trigger asChild>
+                                            <Button
+                                                variant="primary"
+                                                className="w-full"
+                                                disabled={userPoints < item.pointsRequired}
+                                            >
+                                                Redeem Reward
+                                            </Button>
+                                        </RedeemModal.Trigger>
+                                        <RedeemModal.Content />
+                                    </RedeemModal>
                                 </div>
-                            </div>
+                            </Card>
                         ))
                     )}
                 </div>
 
                 {/* History Section */}
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-8 mb-12 shadow-2xl">
-                    <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
-                        <span className="w-2 h-8 bg-amber-500 rounded-full" />
-                        Riwayat Penukaran
+                <Card variant="solid" className="bg-white/5 border-white/5 p-8 mb-12 shadow-2xl">
+                    <h2 className="text-xl font-black mb-8 flex items-center gap-3 uppercase tracking-widest">
+                        <span className="w-1.5 h-6 bg-trisula-500 rounded-full" />
+                        Operation History
                     </h2>
 
-                    {myRequests.length === 0 ? (
-                        <p className="text-zinc-500 italic">Belum ada riwayat penukaran hadiah.</p>
+                    {loadingRequests ? (
+                        <div className="space-y-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    ) : myRequests.length === 0 ? (
+                        <p className="text-zinc-500 italic text-sm">No recorded transactions found.</p>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="text-zinc-500 text-xs font-black uppercase tracking-widest">
-                                    <tr className="border-b border-white/5">
-                                        <th className="pb-6 px-4">Tanggal</th>
-                                        <th className="pb-6 px-4">Item</th>
+                                <thead className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] border-b border-white/5">
+                                    <tr>
+                                        <th className="pb-6 px-4">Timestamp</th>
+                                        <th className="pb-6 px-4">Item Identity</th>
                                         <th className="pb-6 px-4">Status</th>
-                                        <th className="pb-6 px-4 text-right">Potongan Poin</th>
+                                        <th className="pb-6 px-4 text-right">Points</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-white/5">
                                     {myRequests.map((req) => (
-                                        <tr key={req.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                                            <td className="py-6 px-4 text-zinc-400 text-sm font-mono">
-                                                {new Date(req.createdAt).toLocaleDateString('id-ID')}
+                                        <tr key={req.id} className="hover:bg-white/[0.02] transition-colors">
+                                            <td className="py-6 px-4 text-zinc-500 text-[10px] font-mono font-bold">
+                                                {new Date(req.createdAt).toLocaleString()}
                                             </td>
-                                            <td className="py-6 px-4 font-bold text-white">
+                                            <td className="py-6 px-4 font-black text-white text-sm uppercase tracking-tight">
                                                 {req.itemName}
                                             </td>
                                             <td className="py-6 px-4">
-                                                <span className={`px-3 py-1 rounded-full text-[10px] uppercase font-black border ${req.status === 'completed' ? 'bg-green-500/10 border-green-500/30 text-green-400' :
-                                                    req.status === 'ready' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' :
-                                                        req.status === 'rejected' || req.status === 'cancelled' ? 'bg-red-500/10 border-red-500/30 text-red-400' :
-                                                            'bg-amber-500/10 border-amber-500/30 text-amber-400'
-                                                    }`}>
-                                                    {req.status === 'completed' ? 'SELESAI' : req.status === 'ready' ? 'SIAP DIAMBIL' : req.status === 'pending' ? 'MENUNGGU' : req.status === 'cancelled' ? 'DIBATALKAN' : req.status === 'rejected' ? 'DITOLAK' : req.status}
-                                                </span>
+                                                <Badge variant={req.status === 'completed' ? 'success' : req.status === 'rejected' || req.status === 'cancelled' ? 'outline' : 'warning'}>
+                                                    {req.status}
+                                                </Badge>
                                             </td>
-                                            <td className="py-6 px-4 text-right font-black text-zinc-400">
+                                            <td className="py-6 px-4 text-right font-black text-zinc-400 text-sm">
                                                 -{req.pointsUsed.toLocaleString()}
                                             </td>
                                         </tr>
@@ -224,7 +260,7 @@ export default function RedeemPage() {
                             </table>
                         </div>
                     )}
-                </div>
+                </Card>
             </div>
         </div>
     );

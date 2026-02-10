@@ -1,18 +1,32 @@
-import WealthDashboard from "../../../components/WealthDashboard";
+"use client";
+
+import { WealthOverview } from "@/src/components/organisms";
+import { Button } from "@/src/components/atoms";
+import { useRouter } from "next/navigation";
 
 export default function WealthPage() {
-    return (
-        <div className="min-h-screen bg-black text-white p-8 pt-24">
-            <header className="mb-10 text-center">
-                <h1 className="text-4xl font-extrabold bg-gradient-to-r from-amber-200 to-amber-600 bg-clip-text text-transparent">
-                    Wealth Overview
-                </h1>
-                <p className="text-white/50 mt-2">
-                    Your consolidated Net Worth across Trisula Banking & On-chain Assets.
-                </p>
-            </header>
+    const router = useRouter();
 
-            <WealthDashboard />
+    return (
+        <div className="min-h-screen bg-midnight-950 text-white p-6 md:p-12 relative overflow-hidden">
+            {/* Background Ambience */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-trisula-500/5 blur-[120px] rounded-full pointer-events-none" />
+
+            <div className="max-w-4xl mx-auto relative z-10">
+                <header className="mb-12">
+                    <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')} className="mb-6 -ml-4">
+                        ← Dashboard
+                    </Button>
+                    <h1 className="text-4xl font-black text-white mb-2 tracking-tight">
+                        Wealth <span className="text-trisula-500">Portfolio</span>
+                    </h1>
+                    <p className="text-zinc-500 font-medium">
+                        Your consolidated Net Worth across Trisula Banking & Assets.
+                    </p>
+                </header>
+
+                <WealthOverview />
+            </div>
         </div>
     );
 }

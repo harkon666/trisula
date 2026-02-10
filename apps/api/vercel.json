@@ -1,4 +1,5 @@
 {
+    "buildCommand": "cd ../.. && turbo run build --filter=api",
     "rewrites": [
         {
             "source": "/api/(.*)",

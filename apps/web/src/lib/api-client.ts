@@ -1,8 +1,12 @@
 import axios from 'axios';
 import { toast } from 'sonner';
 
+// Handle API URL handling (ensure /api prefix)
+const envUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const baseURL = envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api',
+    baseURL,
 });
 
 api.interceptors.request.use((config) => {

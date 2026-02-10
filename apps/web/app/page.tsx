@@ -2,26 +2,29 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/src/hooks/useAuth";
 import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 
 export default function Home() {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const container = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useGSAP(() => {
     // Simple entrance animation
     gsap.from(".hero-content", {
       y: 50,
       opacity: 0,
       duration: 1,
       stagger: 0.2,
-      ease: "power4.out"
+      ease: "power4.out",
+      clearProps: "all" // Ensure elements finish in a clean state
     });
-  }, []);
+  }, { scope: container });
 
   return (
-    <div className="min-h-screen bg-midnight-950 text-white selection:bg-trisula-500/30 font-sans">
+    <div ref={container} className="min-h-screen bg-midnight-950 text-white selection:bg-trisula-500/30 font-sans">
 
       {/* Background Ambience - Water & Deep Ocean Theme */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">

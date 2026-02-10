@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/hooks/useAuth";
+import api from "@/src/lib/api-client";
 import RedeemButton from "../../../components/RedeemButton";
 import StatusTracker from "../../../components/StatusTracker";
 import CancelButton from "../../../components/CancelButton";
@@ -40,27 +41,22 @@ export default function RedeemPage() {
     const fetchData = async () => {
         if (!user) return;
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
             // 1. Fetch Profile (Points)
-            const profileRes = await fetch(`${apiUrl}/api/v1/user/profile?userId=${user.userId}`);
-            const profileJson = await profileRes.json();
-            if (profileJson.success) {
-                setUserPoints(profileJson.data.points);
+            const profileRes = await api.get('/v1/user/profile');
+            if (profileRes.data.success) {
+                setUserPoints(profileRes.data.data.points);
             }
 
             // 2. Fetch Catalog
-            const catalogRes = await fetch(`${apiUrl}/api/v1/redeem/catalog`);
-            const catalogJson = await catalogRes.json();
-            if (catalogJson.success) {
-                setCatalog(catalogJson.data);
+            const catalogRes = await api.get('/v1/redeem/catalog');
+            if (catalogRes.data.success) {
+                setCatalog(catalogRes.data.data);
             }
 
             // 3. Fetch My Requests
-            const requestsRes = await fetch(`${apiUrl}/api/v1/redeem/my-requests?userId=${user.userId}`);
-            const requestsJson = await requestsRes.json();
-            if (requestsJson.success) {
-                setMyRequests(requestsJson.data);
+            const requestsRes = await api.get('/v1/redeem/my-requests');
+            if (requestsRes.data.success) {
+                setMyRequests(requestsRes.data.data);
             }
 
         } catch (error) {

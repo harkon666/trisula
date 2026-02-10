@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/hooks/useAuth";
+import api from "@/src/lib/api-client";
 import RejectModal from "../../components/RejectModal";
 
 interface RedeemRequest {
@@ -23,17 +24,14 @@ export default function AdminPage() {
     const [processing, setProcessing] = useState<string | null>(null);
     const [rejectTarget, setRejectTarget] = useState<RedeemRequest | null>(null);
 
-    const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+    const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || user?.role === 'admin_input' || user?.role === 'admin_view';
 
     const fetchRequests = async () => {
         if (!user || !isAdmin) return;
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-            const res = await fetch(`${apiUrl}/api/v1/admin/redeem/pending?adminId=${user.userId}`);
-            const json = await res.json();
-
-            if (json.success) {
-                setRequests(json.data);
+            const res = await api.get(`/v1/admin/redeem/pending?adminId=${user.userId}`);
+            if (res.data.success) {
+                setRequests(res.data.data);
             }
         } catch (error) {
             console.error("Fetch error:", error);
@@ -54,28 +52,22 @@ export default function AdminPage() {
         if (!user) return;
         setProcessing(requestId);
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-            const res = await fetch(`${apiUrl}/api/v1/admin/redeem/${requestId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    status,
-                    adminId: user.userId,
-                })
+            const res = await api.patch(`/v1/admin/redeem/${requestId}`, {
+                status,
+                adminId: user.userId,
             });
 
-            const json = await res.json();
-            if (json.success) {
+            if (res.data.success) {
                 if (status === 'completed') {
                     setRequests(prev => prev.filter(r => r.id !== requestId));
                 } else {
                     fetchRequests();
                 }
             } else {
-                alert(json.message);
+                alert(res.data.message);
             }
-        } catch (error) {
-            alert("Action failed");
+        } catch (error: any) {
+            alert(error.response?.data?.message || "Action failed");
         } finally {
             setProcessing(null);
         }

@@ -20,7 +20,14 @@ console.log(`🚀 API STARTED AT: ${new Date().toISOString()}`);
 
 // --- MIDDLEWARES ---
 app.use('*', logger()); // Monitoring request yang masuk
-app.use('*', cors());   // Mengizinkan akses dari Frontend (Next.js)
+app.use('*', cors({
+  origin: ['http://localhost:3001', 'http://localhost:3000', 'https://trisula.vercel.app'],
+  allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+  maxAge: 600,
+  credentials: true,
+}));
 app.use('*', authMiddleware({ strict: false })); // Populate context user if token present
 
 // --- ROUTES ---
@@ -28,8 +35,8 @@ app.get('/', (c) => c.text('TRISULA API Orchestrator (Vercel Best Practice Test)
 
 // Daftarkan route auth dengan prefix /api/v1
 app.route('/api/v1/auth', authRoutes);
-// app.route('/api/v1/user', userRoutes);
-// app.route('/api/v1/redeem', redeemRoutes);
+app.route('/api/v1/user', userRoutes);
+app.route('/api/v1/redeem', redeemRoutes);
 app.route('/api/v1/admin', adminRoutes);
 app.route('/api/v1/products', productsRoutes);
 app.route('/api/v1/polis', polisRoutes);

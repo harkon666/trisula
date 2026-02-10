@@ -8,6 +8,7 @@ export const authMiddleware = (options = { strict: true }) => {
         const authHeader = c.req.header('Authorization');
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            console.log(`[AUTH] No Bearer token found in Header. Strict: ${options.strict}`);
             if (options.strict) {
                 return c.json({ success: false, message: 'Unauthorized: Missing or invalid token format' }, 401);
             }
@@ -35,6 +36,7 @@ export const authMiddleware = (options = { strict: true }) => {
             };
 
             c.set('user', user);
+            console.log(`[AUTH] Token Verified. User: ${user.userId}, Role: ${user.role}`);
             await next();
         } catch (error) {
             console.error("JWT Verify Error:", error);

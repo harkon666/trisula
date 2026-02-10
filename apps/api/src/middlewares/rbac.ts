@@ -14,8 +14,7 @@ export const rbacMiddleware = () => {
         const user = c.get('user');
 
         if (!user || !user.role) {
-            // If no user context, maybe 401 or let it pass if public route?
-            // Assuming strict mode, return 401 Unauthorized
+            console.log(`[RBAC] Access Denied: User context missing or role not found for ${c.req.path}`);
             return c.json({ success: false, message: 'Unauthorized: No user role found' }, 401);
         }
 

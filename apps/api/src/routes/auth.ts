@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { db, users, profiles, agentActivationCodes, adminActions, pointsLedger } from '@repo/database';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 import { PointsService } from '../services/points.js';
@@ -93,7 +93,27 @@ auth.post('/register/agent', zValidator('json', RegisterAgentSchema), async (c) 
                 createdAt: new Date(),
             });
 
-            return c.json({ success: true, message: "Agent berhasil terdaftar", userId: newUser.userId }, 201);
+            // 8. Generate JWT for Auto-Login
+            const token = await new SignJWT({
+                sub: newUser.id,
+                role: newUser.role,
+                userId: newUser.userId
+            })
+                .setProtectedHeader({ alg: 'HS256' })
+                .setIssuedAt()
+                .setExpirationTime('24h')
+                .sign(JWT_SECRET);
+
+            return c.json({
+                success: true,
+                message: "Agent berhasil terdaftar",
+                token,
+                user: {
+                    userId: newUser.userId,
+                    role: newUser.role,
+                    points: 0 // New agents start with 0
+                }
+            }, 201);
         });
     } catch (error) {
         console.error("Agent Register Error:", error);
@@ -160,7 +180,27 @@ auth.post('/register/nasabah', zValidator('json', RegisterNasabahSchema), async 
                 createdAt: new Date(),
             });
 
-            return c.json({ success: true, message: "Nasabah berhasil terdaftar", userId: newUser.userId }, 201);
+            // 8. Generate JWT for Auto-Login
+            const token = await new SignJWT({
+                sub: newUser.id,
+                role: newUser.role,
+                userId: newUser.userId
+            })
+                .setProtectedHeader({ alg: 'HS256' })
+                .setIssuedAt()
+                .setExpirationTime('24h')
+                .sign(JWT_SECRET);
+
+            return c.json({
+                success: true,
+                message: "Nasabah berhasil terdaftar",
+                token,
+                user: {
+                    userId: newUser.userId,
+                    role: newUser.role,
+                    points: 100 // Nasabah gets welcome bonus
+                }
+            }, 201);
         });
     } catch (error) {
         console.error("Nasabah Register Error:", error);
@@ -176,16 +216,37 @@ auth.post('/login', zValidator('json', LoginSchema), async (c) => {
     const { userId, password } = c.req.valid('json');
 
     try {
-        // 1. Find User by ID
-        const [user] = await db.select().from(users).where(eq(users.userId, userId)).limit(1);
-        if (!user) {
-            return c.json({ success: false, message: "User ID atau Password salah" }, 401);
+        console.log(`[LOGIN ATTEMPT] userId: '${userId}'`);
+
+        // 1. Find User by ID or Email
+        const [userWithProfile] = await db.select({
+            user: users,
+            profile: profiles
+        })
+            .from(users)
+            .leftJoin(profiles, eq(users.id, profiles.userId))
+            .where(or(
+                eq(users.userId, userId),
+                eq(profiles.email, userId)
+            ))
+            .limit(1);
+
+        if (!userWithProfile) {
+            console.log(`[LOGIN FAILED] User/Email not found: '${userId}'`);
+            return c.json({ success: false, message: "User ID/Email atau Password salah" }, 401);
         }
+
+        const user = userWithProfile.user;
+
+        console.log(`[LOGIN FOUND] User: ${user.userId}, Role: ${user.role}, Active: ${user.isActive}`);
+        console.log(`[LOGIN AUTH] Verifying password... stored hash: ${user.password.substring(0, 10)}...`);
 
         // 2. Verify Password
         const isValid = await bcrypt.compare(password, user.password);
+        console.log(`[LOGIN RESULT] Password Valid: ${isValid}`);
+
         if (!isValid) {
-            return c.json({ success: false, message: "User ID atau Password salah" }, 401);
+            return c.json({ success: false, message: "User ID/Email atau Password salah" }, 401);
         }
 
         if (!user.isActive) {

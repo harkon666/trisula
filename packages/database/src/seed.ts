@@ -1,117 +1,116 @@
-import { db, users, agents, pointsBalance, redeemCatalog } from "./index";
+import { db, users, profiles, rewards } from "./index";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 async function seed() {
     console.log("🌱 Seeding database...");
 
     try {
         // Shared Password Hash
-        const passwordHash = await Bun.password.hash("Sultan2026!", {
-            algorithm: "argon2id",
-            memoryCost: 65536,
-            timeCost: 2,
-        });
-
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash("Sultan2026!", salt);
         const usersToSeed = [
             {
                 name: "Agent Primary",
+                userId: "SULTAN01", // Used as Handle/Referral Code
                 email: "agent1@trisula.com",
+                phone: "628123456789",
                 role: "agent",
-                walletAddress: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", // Hardhat Account #0
-                referralCode: "SULTAN01",
                 balance: 1000
             },
             {
                 name: "Admin User",
+                userId: "ADMIN01",
                 email: "admin1@trisula.com",
-                role: "admin",
-                walletAddress: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", // Hardhat Account #1
-                referralCode: "ADMIN01",
+                phone: "628000000001",
+                role: "admin_input",
                 balance: 0
             },
             {
                 name: "Super Admin",
+                userId: "SUPER01",
                 email: "super1@trisula.com",
+                phone: "628000000000",
                 role: "super_admin",
-                walletAddress: "0x4744bE27D899D5465262C602B28AE88DEDF96613",
-                referralCode: "SUPER01",
                 balance: 999999
             },
             {
-                name: "Dev Wallet",
-                email: "dev@trisula.com",
-                role: "super_admin",
-                walletAddress: "0x162b329d330f2641594d36fc75305e985e645810",
-                referralCode: "DEV01",
-                balance: 1000000
+                name: "Nasabah Sultan",
+                userId: "NASABAH01",
+                email: "nasabah1@trisula.com",
+                phone: "628999999999",
+                role: "nasabah",
+                balance: 50
             }
         ];
 
         for (const u of usersToSeed) {
-            // Check existence
+            // Check existence by email (via profiles join? or just skip if userId exists)
             const existing = await db.query.users.findFirst({
-                where: (users, { eq }) => eq(users.email, u.email),
+                where: (users, { eq }) => eq(users.userId, u.userId),
             });
 
             if (existing) {
-                console.log(`⚠️ User ${u.email} already exists. Skipping.`);
+                console.log(`⚠️ User ${u.userId} already exists. Skipping.`);
                 continue;
             }
 
-            // Insert User
+            // Insert User (Core Auth)
             const [newUser] = await db.insert(users).values({
-                name: u.name,
-                email: u.email,
-                passwordHash,
-                phone: "628123456789",
-                city: "Jakarta",
-                walletAddress: u.walletAddress,
+                userId: u.userId,
+                password: passwordHash,
                 role: u.role as any,
-                status: "active",
+                pointsBalance: u.balance,
+                isActive: true,
+                additionalMetadata: { referral_code: u.userId }, // Storing same as userId for now
             }).returning();
 
-            console.log(`✅ User created: ${newUser.id} (${u.role})`);
-
-            // If Agent, create agent record (Admins might not need it unless they refer people too?)
-            // Let's give everyone a referral code just in case or strict to Agent role?
-            // Schema: agents table links userId.
-            // Let's insert for everyone so they can refer.
-            await db.insert(agents).values({
+            // Insert Profile (Details)
+            await db.insert(profiles).values({
                 userId: newUser.id,
-                referralCode: u.referralCode,
+                fullName: u.name,
+                email: u.email,
+                whatsapp: u.phone,
             });
-            console.log(`   Referral Code: ${u.referralCode}`);
 
-            // Initialize Balance
-            await db.insert(pointsBalance).values({
-                userId: newUser.id,
-                balance: u.balance,
-            });
+            console.log(`✅ User created: ${newUser.userId} (${u.role})`);
         }
 
-        console.log("✅ Users & Balances initialized.");
+        console.log("✅ Users & Profiles initialized.");
 
-        // 6. Seed Redeem Catalog
-        console.log("🎁 Seeding Redeem Catalog...");
+        // Seeding Rewards (Catalog)
+        console.log("🎁 Seeding Rewards Catalog...");
         const catalogItems = [
-            { name: "Voucher Kopi Premium", pointsRequired: 50, description: "Nikmati kopi spesial racikan barista terbaik." },
-            { name: "E-Money Rp 100.000", pointsRequired: 1000, description: "Saldo E-Money untuk kebutuhan transaksi harian Anda." },
-            { name: "Trisula Exclusive Merch", pointsRequired: 500, description: "Kaos eksklusif komunitas Trisula." },
-            { name: "Mystery Box", pointsRequired: 200, description: "Kotak kejutan berisi hadiah menarik." },
-            { name: "Samsung Galaxy S24", pointsRequired: 50000, description: "Smartphone flagship untuk member sultan." },
+            { title: "Voucher Kopi Premium", requiredPoints: 50, description: "Nikmati kopi spesial racikan barista terbaik." },
+            { title: "E-Money Rp 100.000", requiredPoints: 1000, description: "Saldo E-Money untuk kebutuhan transaksi harian Anda." },
+            { title: "Trisula Exclusive Merch", requiredPoints: 500, description: "Kaos eksklusif komunitas Trisula." },
+            { title: "Mystery Box", requiredPoints: 200, description: "Kotak kejutan berisi hadiah menarik." },
+            { title: "Samsung Galaxy S24", requiredPoints: 50000, description: "Smartphone flagship untuk member sultan." },
         ];
 
+        // Drizzle doesn't have native "UPSERT" based on non-unique columns easily without constraints, 
+        // so we just check count or ignore. For simplicity, we just insert if table empty or use onConflict if we had unique constraint on title.
+        // Assuming no unique constraint on title in schema, so let's check first.
+
         for (const item of catalogItems) {
-            await db.insert(redeemCatalog).values(item).onConflictDoNothing();
+            // Simple check to avoid dupes purely by title for this seed script
+            const existing = await db.query.rewards.findFirst({
+                where: (rewards, { eq }) => eq(rewards.title, item.title),
+            });
+
+            if (!existing) {
+                await db.insert(rewards).values(item);
+            }
         }
-        console.log("✅ Catalog seeded.");
+        console.log("✅ Rewards seeded.");
 
         console.log("✨ Seeding completed successfully!");
 
     } catch (error) {
         console.error("❌ Seeding failed:", error);
     } finally {
-        process.exit();
+        // In bun/script context, we might need to manually close client or just exit
+        process.exit(0);
     }
 }
 

@@ -12,7 +12,7 @@ import gsap from 'gsap';
 import { GoldCard } from '@/src/components/ui/GoldCard';
 
 const loginSchema = z.object({
-    email: z.string().email("Format email tidak valid"),
+    userId: z.string().min(4, "User ID / Email minimal 4 karakter"),
     password: z.string().min(6, "Password minimal 6 karakter"),
 });
 
@@ -79,13 +79,13 @@ export default function LoginPage() {
 
                 // Redirect logic based on role
                 const role = response.data.user.role;
-                if (role === 'admin' || role === 'super_admin') {
+                if (role === 'admin' || role === 'super_admin' || role === 'admin_input' || role === 'admin_view') {
                     router.push('/admin');
                 } else {
                     router.push('/dashboard');
                 }
             } else {
-                toast.error(response.data.message || "Email atau password salah");
+                toast.error(response.data.message || "User ID/Email atau password salah");
             }
         } catch (error: any) {
             const message = error.response?.data?.message || "Terjadi kesalahan sistem. Silakan coba lagi.";
@@ -116,14 +116,14 @@ export default function LoginPage() {
 
                             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-widest text-zinc-500 ml-1">Email Address</label>
+                                    <label className="text-xs font-black uppercase tracking-widest text-zinc-500 ml-1">User ID / Email</label>
                                     <input
-                                        {...register("email")}
-                                        type="email"
-                                        placeholder="name@example.com"
-                                        className={`w-full bg-deep-blue/5 border ${errors.email ? 'border-red-500/50' : 'border-white/10'} rounded-2xl px-5 py-4 text-white placeholder:text-zinc-600 focus:border-trisula-500/50 focus:outline-none transition-all`}
+                                        {...register("userId")}
+                                        type="text"
+                                        placeholder="User ID or Email"
+                                        className={`w-full bg-deep-blue/5 border ${errors.userId ? 'border-red-500/50' : 'border-white/10'} rounded-2xl px-5 py-4 text-white placeholder:text-zinc-600 focus:border-trisula-500/50 focus:outline-none transition-all`}
                                     />
-                                    {errors.email && <p className="text-red-500 text-[10px] font-bold uppercase ml-1">{errors.email.message}</p>}
+                                    {errors.userId && <p className="text-red-500 text-[10px] font-bold uppercase ml-1">{errors.userId.message}</p>}
                                 </div>
 
                                 <div className="space-y-2">

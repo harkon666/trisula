@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/hooks/useAuth";
+import api from "@/src/lib/api-client";
 
 interface UserProfile {
     name: string;
@@ -48,26 +49,22 @@ export default function DashboardPage() {
 
         const fetchData = async () => {
             try {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
                 // Fetch Profile
-                const profileRes = await fetch(`${apiUrl}/api/v1/user/profile?userId=${user.userId}`);
-                const profileJson = await profileRes.json();
+                const profileRes = await api.get('/v1/user/profile');
 
-                if (profileJson.success) {
-                    setProfile(profileJson.data);
-                    if (profileJson.data.dailyYield?.claimed) {
-                        setYieldReward(profileJson.data.dailyYield);
+                if (profileRes.data.success) {
+                    setProfile(profileRes.data.data);
+                    if (profileRes.data.data.dailyYield?.claimed) {
+                        setYieldReward(profileRes.data.data.dailyYield);
                         setShowYieldModal(true);
                     }
                 }
 
                 // Fetch Activity
-                const activityRes = await fetch(`${apiUrl}/api/v1/user/activity?userId=${user.userId}`);
-                const activityJson = await activityRes.json();
+                const activityRes = await api.get('/v1/user/activity');
 
-                if (activityJson.success) {
-                    setActivity(activityJson.data);
+                if (activityRes.data.success) {
+                    setActivity(activityRes.data.data);
                 }
 
             } catch (error) {
@@ -84,21 +81,15 @@ export default function DashboardPage() {
         if (!user) return;
         if (!confirm("Reset daily check-in for testing? This will reload the page.")) return;
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
         try {
-            const res = await fetch(`${apiUrl}/api/v1/rewards/reset-claim`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: user.userId })
-            });
-            const json = await res.json();
-            if (json.success) {
+            const res = await api.post('/v1/rewards/reset-claim', { userId: user.userId });
+            if (res.data.success) {
                 window.location.reload();
             } else {
-                alert("Failed: " + json.error);
+                alert("Failed: " + res.data.error);
             }
-        } catch (e) {
-            alert("Error resetting check-in");
+        } catch (e: any) {
+            alert(e.response?.data?.message || "Error resetting check-in");
         }
     };
 

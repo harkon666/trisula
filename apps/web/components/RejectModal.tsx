@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import api from "@/src/lib/api-client";
 
 interface RejectModalProps {
     requestId: string;
@@ -25,26 +26,20 @@ export default function RejectModal({ requestId, itemName, adminId, onClose, onS
         setError("");
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-            const res = await fetch(`${apiUrl}/api/v1/admin/redeem/${requestId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    status: 'rejected',
-                    adminId,
-                    reason,
-                }),
+            const res = await api.patch(`/v1/admin/redeem/${requestId}`, {
+                status: 'rejected',
+                adminId,
+                reason,
             });
 
-            const json = await res.json();
-            if (json.success) {
+            if (res.data.success) {
                 onSuccess();
                 onClose();
             } else {
-                setError(json.message || "Gagal menolak permintaan");
+                setError(res.data.message || "Gagal menolak permintaan");
             }
-        } catch (err) {
-            setError("Terjadi kesalahan sistem");
+        } catch (err: any) {
+            setError(err.response?.data?.message || "Terjadi kesalahan sistem");
         } finally {
             setLoading(false);
         }

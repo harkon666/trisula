@@ -1,11 +1,21 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { db, users, redeemRequests, pointsLedger, rewards, profiles, roleEnum } from '@repo/database';
+import { db, users, redeemRequests, pointsLedger, rewards, profiles, roleEnum, agentActivationCodes } from '@repo/database';
 import { eq, inArray, sql, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import { rbacMiddleware } from '../middlewares/rbac';
 
-const admin = new Hono();
+type Env = {
+    Variables: {
+        user: {
+            id: string;
+            role: string;
+            userId: string;
+        };
+    };
+};
+
+const admin = new Hono<Env>();
 
 // Apply Strict RBAC Middleware
 admin.use('*', rbacMiddleware());
@@ -138,6 +148,94 @@ admin.patch('/redeem/:id', zValidator('json', UpdateRedeemStatusSchema), async (
     } catch (error) {
         console.error("Admin Update Error:", error);
         return c.json({ success: false, message: "Failed to process update" }, 500);
+    }
+});
+
+/**
+ * @route   GET /codes
+ * @desc    List all agent activation codes
+ * @access  Super Admin, Admin View
+ */
+admin.get('/codes', async (c) => {
+    try {
+        const codes = await db.select({
+            id: agentActivationCodes.id,
+            code: agentActivationCodes.code,
+            isUsed: agentActivationCodes.isUsed,
+            generatedByName: users.userId, // Link to generator ID
+            usedByName: profiles.fullName, // Link to user who used it
+            createdAt: agentActivationCodes.createdAt,
+        })
+            .from(agentActivationCodes)
+            .leftJoin(users, eq(agentActivationCodes.generatedBy, users.id))
+            .leftJoin(profiles, eq(agentActivationCodes.usedBy, profiles.userId))
+            .orderBy(desc(agentActivationCodes.createdAt));
+
+        return c.json({ success: true, data: codes });
+    } catch (error) {
+        console.error("Admin Fetch Codes Error:", error);
+        return c.json({ success: false, message: "Failed to fetch codes" }, 500);
+    }
+});
+
+/**
+ * @route   POST /codes
+ * @desc    Generate a new activation code
+ * @access  Super Admin, Admin Input
+ */
+admin.post('/codes', async (c) => {
+    const user = c.get('user');
+
+    // Generate a unique code: TRISULA-XXXXXX
+    const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const newCode = `TRISULA-${randomStr}`;
+
+    try {
+        const [inserted] = await db.insert(agentActivationCodes).values({
+            code: newCode,
+            generatedBy: user.id,
+            isUsed: false,
+            createdAt: new Date(),
+        }).returning();
+
+        return c.json({
+            success: true,
+            message: "Activation code generated successfully",
+            data: inserted
+        }, 201);
+    } catch (error) {
+        console.error("Code Generation Error:", error);
+        return c.json({ success: false, message: "Failed to generate code" }, 500);
+    }
+});
+
+/**
+ * @route   DELETE /codes/:id
+ * @desc    Delete an unused activation code
+ * @access  Super Admin Only
+ */
+admin.delete('/codes/:id', async (c) => {
+    const user = c.get('user');
+    const codeId = parseInt(c.req.param('id'));
+
+    if (user.role !== 'super_admin') {
+        return c.json({ success: false, message: "Forbidden: Only Super Admin can delete codes" }, 403);
+    }
+
+    try {
+        // Only delete if it's NOT used
+        const [deleted] = await db.delete(agentActivationCodes)
+            .where(sql`${agentActivationCodes.id} = ${codeId} AND ${agentActivationCodes.isUsed} = false`)
+            .returning();
+
+        if (!deleted) {
+            return c.json({ success: false, message: "Code not found or already used" }, 404);
+        }
+
+        return c.json({ success: true, message: "Code deleted successfully" });
+    } catch (error) {
+        console.error("Code Deletion Error:", error);
+        return c.json({ success: false, message: "Failed to delete code" }, 500);
     }
 });
 

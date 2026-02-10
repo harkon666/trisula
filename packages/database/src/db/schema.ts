@@ -65,14 +65,13 @@ export const rewards = pgTable("rewards", {
     isActive: boolean("is_active").default(true),
 });
 
-// 6. Points Ledger (Audit Trail Mutasi Poin)
+// 6. Points Ledger (Atomic Audit Trail)
 export const pointsLedger = pgTable("points_ledger", {
     id: serial("id").primaryKey(),
     userId: uuid("user_id").references(() => users.id).notNull(),
     amount: integer("amount").notNull(),
     source: text("source").notNull(), // 'welcome', 'daily', 'purchase', 'redeem', 'refund'
     description: text("description"),
-    txHash: text("tx_hash"), // Added for blockchain verification potential
     createdAt: timestamp("created_at").defaultNow(),
 });
 

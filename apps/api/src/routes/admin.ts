@@ -46,7 +46,6 @@ admin.get('/redeem/pending', async (c) => {
             whatsapp: profiles.whatsapp, // Get WA from profiles
             status: redeemRequests.status,
             createdAt: redeemRequests.createdAt,
-            // txHash: pointsLedger.txHash, // Optional: join with ledger if needed
         })
             .from(redeemRequests)
             .leftJoin(users, eq(redeemRequests.nasabahId, users.id))

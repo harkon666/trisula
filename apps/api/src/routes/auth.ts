@@ -111,7 +111,7 @@ auth.post('/register/agent', zValidator('json', RegisterAgentSchema), async (c) 
                 user: {
                     userId: newUser.userId,
                     role: newUser.role,
-                    points: 0 // New agents start with 0
+                    pointsBalance: 0 // New agents start with 0
                 }
             }, 201);
         });
@@ -198,7 +198,7 @@ auth.post('/register/nasabah', zValidator('json', RegisterNasabahSchema), async 
                 user: {
                     userId: newUser.userId,
                     role: newUser.role,
-                    points: 100 // Nasabah gets welcome bonus
+                    pointsBalance: 50 // Nasabah gets welcome bonus
                 }
             }, 201);
         });

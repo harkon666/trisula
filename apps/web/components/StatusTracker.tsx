@@ -10,14 +10,13 @@ type TrackingStep = {
     completed: boolean;
 };
 
-type StatusTrackerProps = {
+interface StatusTrackerProps {
     status: 'pending' | 'processing' | 'ready' | 'completed' | 'cancelled' | 'rejected';
-    txHash?: string | null;
     updatedAt: string;
-    rejectedReason?: string | null;
-};
+    rejectedReason?: string;
+}
 
-export default function StatusTracker({ status, txHash, updatedAt, rejectedReason }: StatusTrackerProps) {
+export default function StatusTracker({ status, updatedAt, rejectedReason }: StatusTrackerProps) {
     const steps = useMemo(() => {
         const allSteps = [
             { id: 'pending', label: 'Requested', icon: '📝' },
@@ -106,19 +105,6 @@ export default function StatusTracker({ status, txHash, updatedAt, rejectedReaso
                     <span className="text-white/40">Last Update</span>
                     <span className="text-white/60">{new Date(updatedAt).toLocaleString()}</span>
                 </div>
-                {txHash && (
-                    <div className="flex justify-between items-center text-sm mt-2 pt-2 border-t border-white/5">
-                        <span className="text-white/40">On-chain Proof</span>
-                        <a
-                            href={`https://sepolia.basescan.org/tx/${txHash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-amber-500 hover:text-amber-400 underline truncate max-w-[200px]"
-                        >
-                            {txHash.substring(0, 10)}...{txHash.substring(txHash.length - 8)}
-                        </a>
-                    </div>
-                )}
             </div>
         </div>
     );

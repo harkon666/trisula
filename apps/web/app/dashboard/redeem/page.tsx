@@ -23,7 +23,6 @@ interface RedemptionRequest {
     status: 'pending' | 'processing' | 'ready' | 'completed' | 'cancelled' | 'rejected';
     createdAt: string;
     updatedAt: string;
-    txHash?: string | null;
 }
 
 export default function RedeemPage() {
@@ -142,7 +141,6 @@ export default function RedeemPage() {
 
                         <StatusTracker
                             status={activeRequest.status}
-                            txHash={activeRequest.txHash}
                             updatedAt={activeRequest.updatedAt}
                         />
                     </div>

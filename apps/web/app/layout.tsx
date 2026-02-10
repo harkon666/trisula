@@ -24,6 +24,10 @@ export const viewport = {
 export const metadata: Metadata = {
   title: "Trisula - Premium Experience",
   description: "Exclusive Referral & Loyalty Platform",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/icon.png",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

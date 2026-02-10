@@ -73,7 +73,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-12 border-t border-white/5 bg-midnight-950 text-center text-zinc-600 text-sm relative z-10">
         <div className="flex items-center justify-center gap-2 mb-4 opacity-50 grayscale hover:grayscale-0 transition-all">
-          <Image src="/icon.png" alt="Trisula" width={24} height={24} />
+          <Image src="/icon.png" alt="Trisula" width={32} height={32} />
           <span className="font-bold text-white">TRISULA</span>
         </div>
         <p>&copy; {new Date().getFullYear()} Trisula Platform. Built for the future.</p>

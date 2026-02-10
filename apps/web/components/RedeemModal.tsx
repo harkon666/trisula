@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useActiveAccount } from "thirdweb/react";
-import { signMessage } from "thirdweb/utils";
 
 type RewardItem = {
     id: number;
@@ -20,31 +18,17 @@ type RedeemModalProps = {
 };
 
 export default function RedeemModal({ isOpen, onClose, item, userId, onSuccess }: RedeemModalProps) {
-    const account = useActiveAccount();
     const [loading, setLoading] = useState(false);
-    const [step, setStep] = useState<'confirm' | 'signing' | 'processing'>('confirm');
+    const [step, setStep] = useState<'confirm' | 'processing'>('confirm');
     const [error, setError] = useState<string | null>(null);
 
     if (!isOpen) return null;
 
     const handleRedeem = async () => {
-        if (!account) {
-            setError("Please connect your wallet first.");
-            return;
-        }
-
         setLoading(true);
         setError(null);
 
         try {
-            // 1. Passkey / Biometric Confirmation (Signature)
-            setStep('signing');
-            // We ask user to sign a message to prove intent and ownership
-            // In a real passkey setup with Thirdweb In-App Wallet, this triggers the biometric prompt
-            await account.signMessage({
-                message: `I confirm redemption of ${item.name} for ${item.pointsRequired} points.`
-            });
-
             // 2. Call Backend
             setStep('processing');
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/redeem`, {
@@ -89,15 +73,9 @@ export default function RedeemModal({ isOpen, onClose, item, userId, onSuccess }
                 </p>
 
                 <div className="bg-black/20 rounded-xl p-4 mb-6 border border-white/5">
-                    <div className="flex justify-between items-center mb-2">
+                    <div className="flex justify-between items-center">
                         <span className="text-white/40 text-sm">Cost</span>
                         <span className="text-amber-400 font-mono font-bold">{item.pointsRequired.toLocaleString()} Pts</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                        <span className="text-white/40 text-sm">Wallet</span>
-                        <span className="text-white/80 font-mono text-xs truncate max-w-[150px]">
-                            {account?.address}
-                        </span>
                     </div>
                 </div>
 
@@ -126,7 +104,7 @@ export default function RedeemModal({ isOpen, onClose, item, userId, onSuccess }
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
-                                <span>{step === 'signing' ? 'Signing...' : 'Processing...'}</span>
+                                <span>Processing...</span>
                             </>
                         ) : (
                             <span>Confirm & Pay</span>

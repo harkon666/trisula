@@ -1,9 +1,8 @@
 "use client";
 
-import { useActiveAccount } from "thirdweb/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import ConnectWallet from "../../components/ConnectWallet";
+import { useAuth } from "@/src/hooks/useAuth";
 import RejectModal from "../../components/RejectModal";
 
 interface RedeemRequest {
@@ -17,42 +16,20 @@ interface RedeemRequest {
 }
 
 export default function AdminPage() {
-    const account = useActiveAccount();
+    const { user, isAuthenticated, logout } = useAuth();
     const router = useRouter();
     const [requests, setRequests] = useState<RedeemRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState<string | null>(null);
-    const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
     const [rejectTarget, setRejectTarget] = useState<RedeemRequest | null>(null);
 
-    // Fetch user role from database
-    const checkAdminRole = async () => {
-        if (!account) {
-            setIsAdmin(false);
-            return;
-        }
-        try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-            const res = await fetch(`${apiUrl}/api/v1/user/profile?walletAddress=${account.address}`);
-            const json = await res.json();
-
-            if (json.success && json.data) {
-                const role = json.data.role;
-                setIsAdmin(role === 'admin' || role === 'super_admin');
-            } else {
-                setIsAdmin(false);
-            }
-        } catch (error) {
-            console.error("Role check error:", error);
-            setIsAdmin(false);
-        }
-    };
+    const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
     const fetchRequests = async () => {
-        if (!account) return;
+        if (!user || !isAdmin) return;
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-            const res = await fetch(`${apiUrl}/api/v1/admin/redeem/pending?adminWallet=${account.address}`);
+            const res = await fetch(`${apiUrl}/api/v1/admin/redeem/pending?adminId=${user.userId}`);
             const json = await res.json();
 
             if (json.success) {
@@ -66,19 +43,15 @@ export default function AdminPage() {
     };
 
     useEffect(() => {
-        checkAdminRole();
-    }, [account]);
-
-    useEffect(() => {
-        if (isAdmin === true) {
+        if (isAuthenticated && isAdmin) {
             fetchRequests();
-        } else if (isAdmin === false) {
+        } else if (isAuthenticated && !isAdmin) {
             setLoading(false);
         }
-    }, [isAdmin]);
+    }, [isAuthenticated, isAdmin]);
 
     const handleStatusUpdate = async (requestId: string, status: 'processing' | 'ready' | 'completed') => {
-        if (!account) return;
+        if (!user) return;
         setProcessing(requestId);
         try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
@@ -87,7 +60,7 @@ export default function AdminPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     status,
-                    adminWallet: account.address,
+                    adminId: user.userId,
                 })
             });
 
@@ -108,16 +81,7 @@ export default function AdminPage() {
         }
     };
 
-    // Loading state while checking role
-    if (isAdmin === null) {
-        return (
-            <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-amber-500 animate-pulse">
-                Verifying access...
-            </div>
-        );
-    }
-
-    if (!account || !isAdmin) {
+    if (!isAuthenticated || !isAdmin) {
         return (
             <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center text-white p-6">
                 <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
@@ -125,9 +89,14 @@ export default function AdminPage() {
                 </div>
                 <h1 className="text-2xl font-bold mb-2">Restricted Access</h1>
                 <p className="text-zinc-500 mb-8 max-w-md text-center">
-                    Area ini khusus untuk Administrator. Silakan hubungkan wallet yang terdaftar sebagai Admin.
+                    Area ini khusus untuk Administrator. Silakan masuk dengan akun Admin Anda.
                 </p>
-                <ConnectWallet />
+                <button
+                    onClick={() => router.push('/login')}
+                    className="px-8 py-3 bg-amber-500 text-black font-bold rounded-xl"
+                >
+                    Sign In as Admin
+                </button>
             </div>
         );
     }
@@ -135,11 +104,11 @@ export default function AdminPage() {
     return (
         <div className="min-h-screen bg-zinc-950 text-white p-6 md:p-12">
             {/* Reject Modal */}
-            {rejectTarget && account && (
+            {rejectTarget && (
                 <RejectModal
                     requestId={rejectTarget.id}
                     itemName={rejectTarget.itemName}
-                    adminWallet={account.address}
+                    adminId={user.userId}
                     onClose={() => setRejectTarget(null)}
                     onSuccess={fetchRequests}
                 />
@@ -147,26 +116,39 @@ export default function AdminPage() {
 
             <header className="flex justify-between items-center mb-12">
                 <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">
+                    <h1 className="text-3xl font-bold text-white mb-2 underline decoration-amber-500/30 underline-offset-8">
                         <span className="text-amber-500">Admin</span> Dashboard
                     </h1>
-                    <p className="text-zinc-400">Approval System & User Management</p>
+                    <p className="text-zinc-400 mt-4">Approval System & User Management</p>
                 </div>
-                <ConnectWallet />
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => router.push('/')}
+                        className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-sm font-medium border border-white/10"
+                    >
+                        Landing
+                    </button>
+                    <button
+                        onClick={() => logout()}
+                        className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all text-sm font-medium border border-red-500/20"
+                    >
+                        Sign Out
+                    </button>
+                </div>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Stats / Sidebar */}
                 <div className="space-y-6">
-                    <div className="bg-zinc-900 border border-white/5 rounded-3xl p-6">
+                    <div className="bg-zinc-900 border border-white/5 rounded-3xl p-8 shadow-xl">
                         <h3 className="text-zinc-400 text-sm font-medium uppercase tracking-wider mb-4">Pending Requests</h3>
-                        <p className="text-5xl font-bold text-white">{requests.length}</p>
+                        <p className="text-6xl font-black text-amber-500 leading-none">{requests.length}</p>
                     </div>
 
-                    <div className="bg-zinc-900 border border-white/5 rounded-3xl p-6">
+                    <div className="bg-zinc-900 border border-white/5 rounded-3xl p-8 shadow-xl">
                         <h3 className="text-zinc-400 text-sm font-medium uppercase tracking-wider mb-4">System Status</h3>
-                        <div className="flex items-center gap-2 text-green-400">
-                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        <div className="flex items-center gap-3 text-green-400 font-bold">
+                            <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
                             Operational
                         </div>
                     </div>
@@ -174,55 +156,58 @@ export default function AdminPage() {
 
                 {/* Main Content: Pending Table */}
                 <div className="lg:col-span-2">
-                    <div className="bg-zinc-900 border border-white/5 rounded-3xl overflow-hidden">
-                        <div className="p-6 border-b border-white/5 flex justify-between items-center">
-                            <h2 className="text-xl font-bold">Redeem Queue</h2>
-                            <button onClick={fetchRequests} className="text-sm text-amber-500 hover:text-amber-400">Refresh</button>
+                    <div className="bg-zinc-900 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+                        <div className="p-8 border-b border-white/5 flex justify-between items-center">
+                            <h2 className="text-2xl font-bold flex items-center gap-3">
+                                <span className="w-1.5 h-6 bg-amber-500 rounded-full" />
+                                Redeem Queue
+                            </h2>
+                            <button onClick={fetchRequests} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold transition-all">Refresh</button>
                         </div>
 
                         {loading ? (
-                            <div className="p-12 text-center text-zinc-500 animate-pulse">Loading requests...</div>
+                            <div className="p-20 text-center text-zinc-500 animate-pulse">Loading requests...</div>
                         ) : requests.length === 0 ? (
-                            <div className="p-12 text-center text-zinc-500">
+                            <div className="p-20 text-center text-zinc-500 italic">
                                 No pending requests found.
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
-                                    <thead className="bg-white/5 text-zinc-400 text-sm font-medium">
+                                    <thead className="bg-white/5 text-zinc-400 text-xs font-bold uppercase tracking-widest">
                                         <tr>
-                                            <th className="p-4">User</th>
-                                            <th className="p-4">Item</th>
-                                            <th className="p-4">Status</th>
-                                            <th className="p-4 text-right">Actions</th>
+                                            <th className="p-6">User</th>
+                                            <th className="p-6">Item</th>
+                                            <th className="p-6">Status</th>
+                                            <th className="p-6 text-right">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/5">
                                         {requests.map((req) => (
-                                            <tr key={req.id} className="hover:bg-white/5 transition-colors">
-                                                <td className="p-4">
-                                                    <div className="font-bold text-white">{req.userName}</div>
-                                                    <div className="text-xs text-zinc-500">{req.whatsapp}</div>
+                                            <tr key={req.id} className="hover:bg-white/[0.02] transition-colors">
+                                                <td className="p-6">
+                                                    <div className="font-bold text-white text-lg">{req.userName}</div>
+                                                    <div className="text-sm text-zinc-500 font-mono mt-1">{req.whatsapp}</div>
                                                 </td>
-                                                <td className="p-4">
-                                                    <div className="text-amber-400">{req.itemName}</div>
-                                                    <div className="text-xs text-zinc-500">{req.pointsUsed} Pts</div>
+                                                <td className="p-6">
+                                                    <div className="text-amber-500 font-bold">{req.itemName}</div>
+                                                    <div className="text-sm text-zinc-500 mt-1">{req.pointsUsed.toLocaleString()} Pts</div>
                                                 </td>
-                                                <td className="p-4">
-                                                    <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${req.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                            req.status === 'processing' ? 'bg-blue-500/20 text-blue-400' :
-                                                                'bg-green-500/20 text-green-400'
+                                                <td className="p-6">
+                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${req.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' :
+                                                        req.status === 'processing' ? 'bg-blue-500/10 text-blue-500 border-blue-500/30' :
+                                                            'bg-green-500/10 text-green-500 border-green-500/30'
                                                         }`}>
-                                                        {req.status}
+                                                        {req.status === 'pending' ? 'MENUNGGU' : req.status === 'processing' ? 'DIPROSES' : req.status}
                                                     </span>
                                                 </td>
-                                                <td className="p-4 text-right">
+                                                <td className="p-6 text-right">
                                                     <div className="flex items-center justify-end gap-2">
                                                         {req.status === 'pending' && (
                                                             <button
                                                                 onClick={() => handleStatusUpdate(req.id, 'processing')}
                                                                 disabled={processing === req.id}
-                                                                className="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                                                                className="px-4 py-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/30 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
                                                             >
                                                                 Process
                                                             </button>
@@ -231,7 +216,7 @@ export default function AdminPage() {
                                                             <button
                                                                 onClick={() => handleStatusUpdate(req.id, 'ready')}
                                                                 disabled={processing === req.id}
-                                                                className="px-3 py-1.5 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                                                                className="px-4 py-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
                                                             >
                                                                 Ready
                                                             </button>
@@ -240,7 +225,7 @@ export default function AdminPage() {
                                                             <button
                                                                 onClick={() => handleStatusUpdate(req.id, 'completed')}
                                                                 disabled={processing === req.id}
-                                                                className="px-3 py-1.5 bg-green-500/20 text-green-400 hover:bg-green-500/30 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                                                                className="px-4 py-2 bg-green-500/10 text-green-500 hover:bg-green-500/20 border border-green-500/30 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
                                                             >
                                                                 Complete
                                                             </button>
@@ -248,7 +233,7 @@ export default function AdminPage() {
                                                         <button
                                                             onClick={() => setRejectTarget(req)}
                                                             disabled={processing === req.id}
-                                                            className="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                                                            className="px-4 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/30 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
                                                         >
                                                             Reject
                                                         </button>

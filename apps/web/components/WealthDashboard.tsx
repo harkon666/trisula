@@ -1,8 +1,7 @@
 "use client";
 
-import { useActiveAccount, useActiveWalletChain } from "thirdweb/react";
 import { useEffect, useState } from "react";
-import { client } from "../lib/thirdweb";
+import { useAuth } from "@/src/hooks/useAuth";
 
 type WealthProfile = {
     userId: string;
@@ -18,16 +17,15 @@ type WealthProfile = {
 };
 
 export default function WealthDashboard() {
-    const account = useActiveAccount();
-    const chain = useActiveWalletChain();
+    const { user, isAuthenticated } = useAuth();
     const [profile, setProfile] = useState<WealthProfile | null>(null);
     const [loading, setLoading] = useState(false);
 
     const fetchWealth = async () => {
-        if (!account) return;
+        if (!isAuthenticated || !user) return;
         setLoading(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/wealth/summary?walletAddress=${account.address}`);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/wealth/summary?userId=${user.userId}`);
             const data = await response.json();
 
             if (data.error) {
@@ -48,10 +46,10 @@ export default function WealthDashboard() {
         try {
             await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/rewards/daily-yield`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" } // In prod add Auth header
+                headers: { "Content-Type": "application/json" }
             });
             await fetchWealth();
-            alert("Daily Yield Distributed! Check your points.");
+            alert("Harian Reward telah didistribusikan! Cek saldo poin Anda.");
         } catch (e) {
             console.error(e);
             setLoading(false);
@@ -79,26 +77,26 @@ export default function WealthDashboard() {
     };
 
     useEffect(() => {
-        if (account) {
+        if (isAuthenticated) {
             fetchWealth();
         }
-    }, [account]);
+    }, [isAuthenticated]);
 
-    if (!account) return <div className="text-white/50 p-4 text-center">Please connect wallet to view wealth.</div>;
-    if (loading && !profile) return <div className="text-amber-400 p-4 animate-pulse">Calculating Net Worth...</div>;
+    if (!isAuthenticated) return <div className="text-white/50 p-4 text-center">Silakan masuk untuk melihat aset Anda.</div>;
+    if (loading && !profile) return <div className="text-amber-400 p-4 animate-pulse">Menghitung Total Aset...</div>;
     if (!profile) return null;
 
     return (
         <div className="w-full max-w-4xl mx-auto p-6 space-y-6">
             {/* Total Wealth Card */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 to-black border border-white/10 p-8">
-                <div className="absolute top-0 right-0 p-4 opacity-10">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 to-black border border-white/10 p-8 shadow-2xl">
+                <div className="absolute top-0 right-0 p-4 opacity-5">
                     <svg className="w-32 h-32 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z" />
                     </svg>
                 </div>
 
-                <h3 className="text-white/60 text-sm uppercase tracking-widest font-medium mb-1">Total Net Worth</h3>
+                <h3 className="text-white/60 text-sm uppercase tracking-widest font-medium mb-1">Total Saldo Terkelola</h3>
                 <div className="flex items-baseline space-x-2">
                     <span className="text-amber-500 text-2xl font-bold">Rp</span>
                     <span className="text-5xl font-extrabold text-white tracking-tight">
@@ -113,11 +111,11 @@ export default function WealthDashboard() {
                             profile.tier === 'Gold' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500' :
                                 profile.tier === 'Silver' ? 'bg-gray-400/20 text-gray-300 border-gray-400' :
                                     'bg-orange-700/20 text-orange-600 border-orange-700'}`}>
-                        {profile.tier} Member
+                        Anggota {profile.tier}
                     </div>
                     {profile.nextTier && (
                         <span className="text-xs text-white/40">
-                            +{profile.nextTier.needed.toLocaleString('id-ID')} to {profile.nextTier.name}
+                            +{profile.nextTier.needed.toLocaleString('id-ID')} lagi ke {profile.nextTier.name}
                         </span>
                     )}
                 </div>
@@ -126,44 +124,44 @@ export default function WealthDashboard() {
             {/* Split View */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Fiat Card */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all">
                     <div className="flex justify-between items-start mb-4">
                         <div className="p-3 bg-green-500/10 rounded-xl">
                             <span className="text-2xl">💵</span>
                         </div>
-                        <span className="text-xs text-white/40 font-mono">FIAT (IDR)</span>
+                        <span className="text-xs text-white/40 font-mono">SALDO BANK</span>
                     </div>
                     <div className="text-2xl font-bold text-white mb-1">
                         Rp {profile.fiatBalance.toLocaleString('id-ID')}
                     </div>
-                    <p className="text-sm text-white/50">Stored in Trisula Banking</p>
+                    <p className="text-sm text-white/50">Tersimpan di Trisula Banking</p>
                 </div>
 
-                {/* Crypto Card */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                {/* Digital Assets Card */}
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-white/20 transition-all">
                     <div className="flex justify-between items-start mb-4">
                         <div className="p-3 bg-blue-500/10 rounded-xl">
-                            <span className="text-2xl">⛓️</span>
+                            <span className="text-2xl">✨</span>
                         </div>
-                        <span className="text-xs text-white/40 font-mono">CRYPTO (Base)</span>
+                        <span className="text-xs text-white/40 font-mono">ASET DIGITAL</span>
                     </div>
                     <div className="text-2xl font-bold text-white mb-1">
                         Rp {profile.cryptoBalance.toLocaleString('id-ID')}
                     </div>
-                    <p className="text-sm text-white/50">On-chain Assets (Converted)</p>
+                    <p className="text-sm text-white/50">Investasi & Aset Digital Anda</p>
                 </div>
             </div>
 
             {/* Simulation Button (Dev Only) */}
             <div className="mt-8 pt-8 border-t border-white/10">
                 <p className="text-xs text-amber-500/50 uppercase mb-4">Dev Tools</p>
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap gap-2">
                     <button
                         className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs rounded-lg transition disabled:opacity-50"
                         onClick={handleSimulateDeposit}
                         disabled={loading}
                     >
-                        {loading ? 'Processing...' : '+ Add Rp 10jt Fiat (Simulate)'}
+                        {loading ? 'Processing...' : '+ Deposit Rp 10jt (Simulasi)'}
                     </button>
                     <button
                         className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs rounded-lg transition"
@@ -175,7 +173,7 @@ export default function WealthDashboard() {
                         className="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 text-xs rounded-lg transition border border-amber-500/50"
                         onClick={handleTriggerYield}
                     >
-                        💰 Trigger Daily Yield
+                        💰 Trigger Harian Reward
                     </button>
                 </div>
             </div>

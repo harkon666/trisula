@@ -1,9 +1,8 @@
 "use client";
 
-import { useActiveAccount } from "thirdweb/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import ConnectWallet from "../../components/ConnectWallet";
+import { useAuth } from "@/src/hooks/useAuth";
 
 interface UserProfile {
     name: string;
@@ -36,7 +35,7 @@ interface ActivityLog {
 }
 
 export default function DashboardPage() {
-    const account = useActiveAccount();
+    const { user, isAuthenticated, logout } = useAuth();
     const router = useRouter();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [activity, setActivity] = useState<ActivityLog[]>([]);
@@ -45,14 +44,14 @@ export default function DashboardPage() {
     const [yieldReward, setYieldReward] = useState<{ points: number } | null>(null);
 
     useEffect(() => {
-        if (!account) return;
+        if (!isAuthenticated || !user) return;
 
         const fetchData = async () => {
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
                 // Fetch Profile
-                const profileRes = await fetch(`${apiUrl}/api/v1/user/profile?walletAddress=${account.address}`);
+                const profileRes = await fetch(`${apiUrl}/api/v1/user/profile?userId=${user.userId}`);
                 const profileJson = await profileRes.json();
 
                 if (profileJson.success) {
@@ -64,7 +63,7 @@ export default function DashboardPage() {
                 }
 
                 // Fetch Activity
-                const activityRes = await fetch(`${apiUrl}/api/v1/user/activity?walletAddress=${account.address}`);
+                const activityRes = await fetch(`${apiUrl}/api/v1/user/activity?userId=${user.userId}`);
                 const activityJson = await activityRes.json();
 
                 if (activityJson.success) {
@@ -79,10 +78,10 @@ export default function DashboardPage() {
         };
 
         fetchData();
-    }, [account]);
+    }, [isAuthenticated, user]);
 
     const resetDailyCheckIn = async () => {
-        if (!account) return;
+        if (!user) return;
         if (!confirm("Reset daily check-in for testing? This will reload the page.")) return;
 
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
@@ -90,7 +89,7 @@ export default function DashboardPage() {
             const res = await fetch(`${apiUrl}/api/v1/rewards/reset-claim`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ walletAddress: account.address })
+                body: JSON.stringify({ userId: user.userId })
             });
             const json = await res.json();
             if (json.success) {
@@ -103,10 +102,15 @@ export default function DashboardPage() {
         }
     };
 
-    if (!account) {
+    if (!isAuthenticated) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white">
-                <ConnectWallet />
+                <button
+                    onClick={() => router.push('/login')}
+                    className="px-8 py-4 bg-amber-500 text-black font-bold rounded-xl"
+                >
+                    Sign In to Access
+                </button>
                 <p className="mt-4 text-zinc-500">Access Restricted. Members Only.</p>
             </div>
         );
@@ -125,12 +129,25 @@ export default function DashboardPage() {
                 {/* Header */}
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
                     <div>
-                        <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-600 bg-clip-text text-transparent">
+                        <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-600 bg-clip-text text-transparent underline decoration-amber-500/30 underline-offset-8">
                             Member Dashboard
                         </h1>
-                        <p className="text-zinc-400 mt-2">Welcome back, {profile?.name || "Member"}</p>
+                        <p className="text-zinc-400 mt-4">Welcome back, <span className="text-white font-semibold">{profile?.name || "Member"}</span></p>
                     </div>
-                    <ConnectWallet />
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => router.push('/')}
+                            className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-sm font-medium border border-white/10"
+                        >
+                            Landing
+                        </button>
+                        <button
+                            onClick={() => logout()}
+                            className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all text-sm font-medium border border-red-500/20"
+                        >
+                            Sign Out
+                        </button>
+                    </div>
                 </header>
 
                 {/* Stats Grid */}
@@ -140,16 +157,16 @@ export default function DashboardPage() {
                         <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
                             <span className="text-9xl font-bold text-amber-500">₿</span>
                         </div>
-                        <h3 className="text-zinc-400 uppercase tracking-widest text-sm font-semibold mb-2">Total Points</h3>
+                        <h3 className="text-zinc-400 uppercase tracking-widest text-sm font-semibold mb-2">Total Trisula Poin</h3>
                         <div className="text-6xl md:text-7xl font-bold text-white mb-4">
                             {profile?.points.toLocaleString()}
                         </div>
                         <div className="flex gap-3">
-                            <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs border border-amber-500/30">
+                            <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs border border-amber-500/30 font-bold">
                                 Level: Priority
                             </span>
-                            <span className="px-3 py-1 rounded-full bg-zinc-800 text-zinc-400 text-xs border border-white/5">
-                                Referral Code: {profile?.referralCode || "-"}
+                            <span className="px-3 py-1 rounded-full bg-zinc-800 text-zinc-300 text-xs border border-white/5 font-mono">
+                                REF-ID: {profile?.referralCode || "-"}
                             </span>
                         </div>
                     </div>
@@ -165,7 +182,7 @@ export default function DashboardPage() {
                             </svg>
                         </div>
                         <h3 className="text-zinc-400 uppercase tracking-widest text-sm font-semibold mb-2 flex items-center gap-2">
-                            Net Worth
+                            Total Aset
                             <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                         </h3>
                         <div className="text-3xl md:text-4xl font-bold text-white mb-2 truncate">
@@ -174,67 +191,67 @@ export default function DashboardPage() {
                                 : "Rp 0"}
                         </div>
                         <p className="text-zinc-500 text-xs mb-4">
-                            ~{profile?.wealth?.estimatedYield} Pts/Day (Est.)
+                            ~{profile?.wealth?.estimatedYield} Pts/Hari (Est.)
                         </p>
                         <div className="flex items-center text-amber-500 text-sm font-medium gap-1 group-hover:translate-x-1 transition-transform">
-                            Manage Portfolio &rarr;
+                            Kelola Portofolio &rarr;
                         </div>
                     </div>
 
                     {/* Status Card */}
                     <div className="bg-zinc-900/50 border border-white/5 rounded-3xl p-8 flex flex-col justify-center">
-                        <h3 className="text-zinc-400 uppercase tracking-widest text-sm font-semibold mb-4">Account Status</h3>
+                        <h3 className="text-zinc-400 uppercase tracking-widest text-sm font-semibold mb-4">Status Akun</h3>
                         <div className="flex items-center gap-4 mb-6">
                             <div className={`w-3 h-3 rounded-full ${profile?.status === 'active' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`} />
-                            <span className="text-xl capitalize">{profile?.status}</span>
+                            <span className="text-xl capitalize font-bold">{profile?.status === 'active' ? 'AKTIF' : profile?.status}</span>
                         </div>
                         <div className="mt-auto">
                             <button
                                 onClick={() => router.push('/dashboard/redeem')}
-                                className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all text-sm font-medium"
+                                className="w-full py-4 bg-amber-500 hover:bg-amber-400 text-black rounded-xl transition-all text-sm font-bold shadow-lg"
                             >
-                                Redeem Rewards
+                                Tukar Reward
                             </button>
                         </div>
                     </div>
                 </div>
 
                 {/* Activity Table */}
-                <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-3xl p-8">
+                <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-3xl p-8 shadow-2xl">
                     <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
                         <span className="w-2 h-8 bg-amber-500 rounded-full" />
-                        Activity History
+                        Riwayat Aktivitas
                     </h2>
 
                     {activity.length === 0 ? (
-                        <p className="text-zinc-500 italic">No activity recorded yet.</p>
+                        <p className="text-zinc-500 italic">Belum ada riwayat aktivitas.</p>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="text-zinc-500 border-b border-white/5">
-                                        <th className="pb-4 font-medium pl-4">Date</th>
-                                        <th className="pb-4 font-medium">Activity</th>
-                                        <th className="pb-4 font-medium">Source</th>
-                                        <th className="pb-4 font-medium text-right pr-4">Points</th>
+                                        <th className="pb-4 font-medium pl-4">Tanggal</th>
+                                        <th className="pb-4 font-medium">Aktivitas</th>
+                                        <th className="pb-4 font-medium">Sumber</th>
+                                        <th className="pb-4 font-medium text-right pr-4">Poin</th>
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm">
                                     {activity.map((log) => (
                                         <tr key={log.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                                             <td className="py-4 pl-4 text-zinc-400">
-                                                {new Date(log.createdAt).toLocaleDateString()}
+                                                {new Date(log.createdAt).toLocaleDateString('id-ID')}
                                             </td>
                                             <td className="py-4 font-medium text-white flex items-center gap-2">
                                                 {log.reason}
                                                 {log.status && (
                                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${log.status === 'completed' ? 'bg-green-500/20 border-green-500/30 text-green-300' :
-                                                            log.status === 'rejected' ? 'bg-red-500/20 border-red-500/30 text-red-300' :
-                                                                log.status === 'cancelled' ? 'bg-zinc-500/20 border-zinc-500/30 text-zinc-300' :
-                                                                    log.status === 'ready' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300' :
-                                                                        log.status === 'processing' ? 'bg-blue-500/20 border-blue-500/30 text-blue-300' :
-                                                                            log.status === 'refund' ? 'bg-purple-500/20 border-purple-500/30 text-purple-300' :
-                                                                                'bg-amber-500/20 border-amber-500/30 text-amber-300'
+                                                        log.status === 'rejected' ? 'bg-red-500/20 border-red-500/30 text-red-300' :
+                                                            log.status === 'cancelled' ? 'bg-zinc-500/20 border-zinc-500/30 text-zinc-300' :
+                                                                log.status === 'ready' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300' :
+                                                                    log.status === 'processing' ? 'bg-blue-500/20 border-blue-500/30 text-blue-300' :
+                                                                        log.status === 'refund' ? 'bg-purple-500/20 border-purple-500/30 text-purple-300' :
+                                                                            'bg-amber-500/20 border-amber-500/30 text-amber-300'
                                                         }`}>
                                                         {log.status === 'cancelled' ? 'DIBATALKAN' :
                                                             log.status === 'rejected' ? 'DITOLAK' :
@@ -260,7 +277,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Developer Tools (Bottom) */}
-            <div className="mt-12 pt-12 border-t border-dashed border-zinc-800 opacity-50 hover:opacity-100 transition-opacity">
+            <div className="mt-12 pt-12 border-t border-dashed border-zinc-800 opacity-20 hover:opacity-100 transition-opacity max-w-6xl mx-auto">
                 <h3 className="text-zinc-500 text-sm font-mono mb-4">🛠️ DEVELOPER TOOLS</h3>
                 <div className="flex gap-4">
                     <button
@@ -268,6 +285,12 @@ export default function DashboardPage() {
                         className="bg-red-900/20 hover:bg-red-900/40 border border-red-500/30 text-red-400 px-4 py-2 rounded text-xs font-mono transition-colors"
                     >
                         Reset Daily Check-in & Refresh
+                    </button>
+                    <button
+                        onClick={() => logout()}
+                        className="bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-white px-4 py-2 rounded text-xs font-mono"
+                    >
+                        Quick Logout
                     </button>
                 </div>
             </div>
@@ -282,20 +305,20 @@ export default function DashboardPage() {
 
                             <div className="text-center relative z-10">
                                 <div className="text-6xl mb-4 animate-bounce">🎉</div>
-                                <h2 className="text-2xl font-bold text-white mb-2">Daily Check-in Complete!</h2>
-                                <p className="text-zinc-400 mb-6">You have earned daily yield rewards based on your asset holdings.</p>
+                                <h2 className="text-2xl font-bold text-white mb-2">Check-in Harian Berhasil!</h2>
+                                <p className="text-zinc-400 mb-6">Anda mendapatkan reward Trisula Poin berdasarkan total aset terkelola Anda.</p>
 
                                 <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
-                                    <span className="block text-sm text-zinc-500 uppercase tracking-widest font-semibold mb-1">Yield Earned</span>
+                                    <span className="block text-sm text-zinc-500 uppercase tracking-widest font-semibold mb-1">Poin Didapat</span>
                                     <span className="text-5xl font-bold text-amber-500">+{yieldReward?.points}</span>
                                     <span className="text-amber-500/50 text-xl font-bold ml-1">PTS</span>
                                 </div>
 
                                 <button
                                     onClick={() => setShowYieldModal(false)}
-                                    className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-all hover:scale-105 active:scale-95"
+                                    className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-all hover:scale-105 active:scale-95"
                                 >
-                                    Awesome!
+                                    Luar Biasa!
                                 </button>
                             </div>
                         </div>

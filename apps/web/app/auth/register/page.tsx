@@ -1,63 +1,32 @@
 "use client";
 
-import { useActiveAccount, useActiveWallet } from "thirdweb/react";
-import { getUserEmail } from "thirdweb/wallets/in-app";
-import { client } from "../../../lib/thirdweb";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RegisterUserSchema } from "@repo/shared";
 import { z } from "zod";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import ConnectWallet from "../../../components/ConnectWallet";
+import { useAuth } from "@/src/hooks/useAuth";
 
 // Infer type from schema
 type RegisterFormData = z.infer<typeof RegisterUserSchema>;
 
 export default function RegisterPage() {
-    const account = useActiveAccount();
     const router = useRouter();
+    const { login } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [isEmailFromWallet, setIsEmailFromWallet] = useState(false);
 
     const {
         register,
         handleSubmit,
-        setValue,
         formState: { errors },
     } = useForm<RegisterFormData>({
         resolver: zodResolver(RegisterUserSchema),
         defaultValues: {
-            // Pre-fill wallet address if available (will be overwritten by useEffect/submit)
-            walletAddress: account?.address || "",
+            walletAddress: "0x0000000000000000000000000000000000000000", // Placeholder for backend compatibility if needed
         }
     });
-
-    // Update wallet address when account changes
-    if (account && account.address) {
-        setValue("walletAddress", account.address);
-    }
-
-    // Attempt to fetch email from Thirdweb In-App Wallet
-    const wallet = useActiveWallet();
-    useEffect(() => {
-        const fetchEmail = async () => {
-            if (wallet && wallet.id === "inApp") {
-                try {
-                    // getUserEmail generally works with the client and infers session/wallet logic
-                    const email = await getUserEmail({ client });
-                    if (email) {
-                        setValue("email", email);
-                        setIsEmailFromWallet(true);
-                    }
-                } catch (e) {
-                    console.log("Could not fetch email from wallet", e);
-                }
-            }
-        };
-        fetchEmail();
-    }, [wallet, setValue]);
 
     const onSubmit = async (data: RegisterFormData) => {
         setIsSubmitting(true);
@@ -70,10 +39,7 @@ export default function RegisterPage() {
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    ...data,
-                    walletAddress: account?.address, // Force use of connected wallet
-                }),
+                body: JSON.stringify(data),
             });
 
             const result = await response.json();
@@ -82,7 +48,11 @@ export default function RegisterPage() {
                 throw new Error(result.message || "Gagal mendaftar");
             }
 
-            // Redirect ke Dashboard (nanti)
+            // Automically login after registration
+            if (result.success && result.data.token) {
+                login(result.data.token, result.data.user);
+            }
+
             alert("Registrasi Berhasil! Selamat datang di Trisula.");
             router.push("/dashboard");
 
@@ -93,35 +63,11 @@ export default function RegisterPage() {
         }
     };
 
-    if (!account) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white selection:bg-amber-500/30">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-900/20 via-zinc-950 to-zinc-950 pointer-events-none" />
-                <h1 className="relative z-10 text-5xl font-bold mb-8 bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-600 bg-clip-text text-transparent">
-                    TRISULA
-                </h1>
-                <div className="relative z-10">
-                    <ConnectWallet />
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-screen p-4 md:p-8 bg-zinc-950 text-white flex items-center justify-center">
             <div className="w-full max-w-2xl bg-white/5 border border-white/10 backdrop-blur-xl p-8 rounded-3xl shadow-2xl">
                 <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Complete Profile</h1>
-                <p className="mb-6 text-zinc-400">Final step to activate your Premium Account.</p>
-
-                <div className="mb-8 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-black font-bold text-lg">
-                        ₿
-                    </div>
-                    <div className="overflow-hidden">
-                        <p className="text-xs text-amber-200 uppercase tracking-wider font-semibold">Connected Wallet</p>
-                        <p className="text-sm font-mono truncate text-amber-100">{account.address}</p>
-                    </div>
-                </div>
+                <p className="mb-8 text-zinc-400">Final step to activate your Premium Account.</p>
 
                 {error && (
                     <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm">
@@ -141,8 +87,7 @@ export default function RegisterPage() {
                             <input
                                 {...register("email")}
                                 type="email"
-                                disabled={isEmailFromWallet}
-                                className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all placeholder:text-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all placeholder:text-zinc-600"
                                 placeholder="sultan@mail.com"
                             />
                             {errors.email && <p className="text-red-400 text-xs">{errors.email.message}</p>}
@@ -150,7 +95,6 @@ export default function RegisterPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        {/* Password field removed for Smart Onboarding */}
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-zinc-300">Phone Number</label>
                             <input {...register("phone")} className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:ring-2 focus:ring-amber-500 outline-none transition-all placeholder:text-zinc-600" placeholder="628123456789" />

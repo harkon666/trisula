@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import ThirdwebProvider from "../components/providers/ThirdwebProvider";
+import QueryProvider from "../components/providers/QueryProvider";
+import SmoothScroll from "../components/providers/SmoothScroll";
+import { Toaster } from "sonner";
+import { AuthProvider } from "@/src/hooks/useAuth";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -38,9 +41,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <ThirdwebProvider>
-          {children}
-        </ThirdwebProvider>
+        <QueryProvider>
+          <AuthProvider>
+            <SmoothScroll>
+              {children}
+              <Toaster richColors position="top-right" />
+            </SmoothScroll>
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

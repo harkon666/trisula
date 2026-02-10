@@ -5,12 +5,12 @@ import { useState } from "react";
 interface RejectModalProps {
     requestId: string;
     itemName: string;
-    adminWallet: string;
+    adminId: string;
     onClose: () => void;
     onSuccess: () => void;
 }
 
-export default function RejectModal({ requestId, itemName, adminWallet, onClose, onSuccess }: RejectModalProps) {
+export default function RejectModal({ requestId, itemName, adminId, onClose, onSuccess }: RejectModalProps) {
     const [reason, setReason] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -31,7 +31,7 @@ export default function RejectModal({ requestId, itemName, adminWallet, onClose,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     status: 'rejected',
-                    adminWallet,
+                    adminId,
                     reason,
                 }),
             });

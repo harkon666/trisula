@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import RoleGuard from "@/src/components/auth/RoleGuard";
-import { NasabahNavbar, GoldCardOverview, NasabahActivityTable, NasabahDevTools } from "@/src/components/organisms";
+import { NasabahNavbar, GoldCardOverview, NasabahActivityTable, NasabahDevTools, DailyCheckInModal } from "@/src/components/organisms";
 import { DailyCheckIn } from "@/src/components/molecules/DailyCheckIn";
 import { useNasabahDashboard } from "@/src/hooks/useNasabahDashboard";
 import gsap from "gsap";
@@ -14,15 +14,12 @@ export default function NasabahDashboard() {
         isProfileLoading,
         activity,
         isActivityLoading,
-        claimDailyBonus,
-        isDailyPending,
         dailyResult,
     } = useNasabahDashboard();
 
     const containerRef = useRef<HTMLDivElement>(null);
     const navRef = useRef<HTMLDivElement>(null);
     const cardRef = useRef<HTMLDivElement>(null);
-    const checkInRef = useRef<HTMLDivElement>(null);
     const tableRef = useRef<HTMLDivElement>(null);
     const toolsRef = useRef<HTMLDivElement>(null);
 
@@ -53,16 +50,7 @@ export default function NasabahDashboard() {
             }, "-=0.2");
         }
 
-        // 3. DailyCheckIn fades in
-        if (checkInRef.current) {
-            tl.from(checkInRef.current, {
-                y: 20,
-                opacity: 0,
-                duration: 0.5,
-            }, "-=0.3");
-        }
-
-        // 4. ActivityTable fades in from below
+        // 3. ActivityTable fades in from below
         if (tableRef.current) {
             tl.from(tableRef.current, {
                 y: 40,
@@ -71,7 +59,7 @@ export default function NasabahDashboard() {
             }, "-=0.2");
         }
 
-        // 5. Dev Tools fade in subtly
+        // 4. Dev Tools fade in subtly
         if (toolsRef.current) {
             tl.from(toolsRef.current, {
                 opacity: 0,
@@ -95,49 +83,45 @@ export default function NasabahDashboard() {
                 </div>
 
                 {/* Main Content */}
-                <main className="relative z-10 max-w-5xl mx-auto px-6 pt-28 pb-16 space-y-8">
-                    {/* Welcome */}
-                    <div className="mb-2">
-                        <p className="text-zinc-500 text-sm font-medium">
-                            Selamat datang kembali,
-                        </p>
-                        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gold-metallic via-gold-light to-gold-metallic bg-clip-text text-transparent tracking-tight">
-                            {isProfileLoading ? "..." : (profile?.fullName || "Nasabah")}
-                        </h1>
-                    </div>
+                <DailyCheckInModal>
+                    <main className="relative z-10 max-w-5xl mx-auto px-6 pt-28 pb-16 space-y-8">
+                        {/* Welcome */}
+                        <div className="mb-2">
+                            <p className="text-zinc-500 text-sm font-medium">
+                                Selamat datang kembali,
+                            </p>
+                            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gold-metallic via-gold-light to-gold-metallic bg-clip-text text-transparent tracking-tight">
+                                {isProfileLoading ? "..." : (profile?.fullName || "Nasabah")}
+                            </h1>
+                        </div>
 
-                    {/* Gold Card Overview */}
-                    <div ref={cardRef}>
-                        <GoldCardOverview
-                            fullName={profile?.fullName ?? null}
-                            pointsBalance={profile?.points ?? 0}
-                            role="Nasabah"
-                            isLoading={isProfileLoading}
-                        />
-                    </div>
+                        {/* Gold Card Overview */}
+                        <div ref={cardRef}>
+                            <GoldCardOverview
+                                fullName={profile?.fullName ?? null}
+                                pointsBalance={profile?.points ?? 0}
+                                role="Nasabah"
+                                isLoading={isProfileLoading}
+                            />
+                        </div>
 
-                    {/* Daily Check-In */}
-                    <div ref={checkInRef}>
-                        <DailyCheckIn
-                            onClaim={claimDailyBonus}
-                            isPending={isDailyPending}
-                            alreadyClaimed={dailyResult?.awarded === false}
-                        />
-                    </div>
+                        {/* Daily Check-In Modal (Auto-open logic inside Component) */}
+                        <DailyCheckInModal.Content autoOpen />
 
-                    {/* Activity Table */}
-                    <div ref={tableRef}>
-                        <NasabahActivityTable
-                            activity={activity}
-                            isLoading={isActivityLoading}
-                        />
-                    </div>
+                        {/* Activity Table */}
+                        <div ref={tableRef}>
+                            <NasabahActivityTable
+                                activity={activity}
+                                isLoading={isActivityLoading}
+                            />
+                        </div>
 
-                    {/* Dev Tools */}
-                    <div ref={toolsRef}>
-                        <NasabahDevTools />
-                    </div>
-                </main>
+                        {/* Dev Tools */}
+                        <div ref={toolsRef}>
+                            <NasabahDevTools />
+                        </div>
+                    </main>
+                </DailyCheckInModal>
             </div>
         </RoleGuard>
     );

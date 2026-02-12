@@ -11,4 +11,6 @@ export * from "./GoldCardOverview";
 export * from "./NasabahActivityTable";
 export * from "./NasabahNavbar";
 export * from "./NasabahDevTools";
+export * from "./DailyCheckInModal";
+
 

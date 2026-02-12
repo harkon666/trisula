@@ -99,7 +99,7 @@ export default function RedeemPage() {
             <div className="max-w-6xl mx-auto relative z-10">
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
                     <div>
-                        <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')} className="mb-4 -ml-4">
+                        <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/nasabah')} className="mb-4 -ml-4">
                             ← Dashboard
                         </Button>
                         <h1 className="text-4xl font-black text-white tracking-tight">

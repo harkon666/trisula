@@ -37,7 +37,7 @@ export default function LoginPage() {
             if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
                 router.push('/admin');
             } else {
-                router.push('/dashboard');
+                router.push('/dashboard/nasabah');
             }
         }
     }, [isAuthenticated, user, router]);
@@ -87,7 +87,7 @@ export default function LoginPage() {
                 if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(role)) {
                     router.push('/admin');
                 } else {
-                    router.push('/dashboard');
+                    router.push('/dashboard/nasabah');
                 }
             } else {
                 toast.error(response.data.message || "User ID/Email atau password salah");

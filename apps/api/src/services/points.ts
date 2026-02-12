@@ -91,5 +91,34 @@ export const PointsService = {
 
             return { awarded: false, points: 0 };
         });
+    },
+
+    /**
+     * Check if a user has already claimed their daily bonus for today.
+     */
+    async isClaimedToday(userId: string): Promise<boolean> {
+        const today = new Date().toISOString().split('T')[0] as string;
+        const [existing] = await db.select()
+            .from(loginLogs)
+            .where(and(
+                eq(loginLogs.userId, userId),
+                eq(loginLogs.loginDate, today)
+            ))
+            .limit(1);
+
+        return !!existing;
+    },
+
+    /**
+     * RESET daily login status for development/testing.
+     * Deletes the log for today so the user can claim again.
+     */
+    async resetDailyLogin(userId: string) {
+        const today = new Date().toISOString().split('T')[0] as string;
+        await db.delete(loginLogs)
+            .where(and(
+                eq(loginLogs.userId, userId),
+                eq(loginLogs.loginDate, today)
+            ));
     }
 };

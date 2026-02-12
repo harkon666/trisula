@@ -43,7 +43,7 @@ export function Navbar() {
                 {/* Auth Action */}
                 <div className="flex items-center gap-4">
                     {isAuthenticated ? (
-                        <Link href="/dashboard">
+                        <Link href="/dashboard/nasabah">
                             <Button variant="secondary" size="md" className="group">
                                 Dashboard
                                 <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />

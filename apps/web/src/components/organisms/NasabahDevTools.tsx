@@ -3,12 +3,14 @@
 import { Card, Button, Badge } from "@/src/components/atoms";
 import { RefreshCw, Terminal, Sparkles, Command } from "lucide-react";
 import { useNasabahDashboard } from "@/src/hooks/useNasabahDashboard";
+import { useDailyCheckInModalContext } from "./DailyCheckInModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState } from "react";
 
 export function NasabahDevTools() {
-    const { claimDailyBonus, isDailyPending } = useNasabahDashboard();
+    const { profile, devResetDaily, isDevResetPending } = useNasabahDashboard();
+    const { setIsOpen } = useDailyCheckInModalContext();
     const queryClient = useQueryClient();
     const [isVisible, setIsVisible] = useState(true);
 
@@ -16,6 +18,20 @@ export function NasabahDevTools() {
         queryClient.invalidateQueries({ queryKey: ["nasabahProfile"] });
         queryClient.invalidateQueries({ queryKey: ["nasabahActivity"] });
         toast.info("Cache invalidated & data refreshed");
+    };
+
+    const handleSimulate = async () => {
+        try {
+            await devResetDaily();
+            toast.success("Status reset! Opening modal...");
+            // The modal will auto-open because its internal useEffect 
+            // watches profile.isDailyClaimed which is now false 
+            // thanks to the devResetDaily -> invalidateQueries flow.
+            // If it doesn't auto-open (e.g. race condition), we force it:
+            setIsOpen(true);
+        } catch (error) {
+            toast.error("Failed to reset daily status");
+        }
     };
 
     if (!isVisible) {
@@ -44,11 +60,13 @@ export function NasabahDevTools() {
                             Development Environment
                         </p>
                         <Badge variant="outline" className="bg-trisula-500/10 text-[9px] py-0 border-trisula-500/20">
-                            v2.0-nasabah
+                            v2.1-nasabah
                         </Badge>
                     </div>
                     <p className="text-zinc-500 text-xs font-medium">
-                        Simulasi aksi nasabah untuk pengujian sistem poin.
+                        Status Claim: <span className={profile?.isDailyClaimed ? "text-emerald-400" : "text-amber-400"}>
+                            {profile?.isDailyClaimed ? "Claimed" : "Available"}
+                        </span>
                     </p>
                 </div>
 
@@ -56,8 +74,8 @@ export function NasabahDevTools() {
                     <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => claimDailyBonus()}
-                        isLoading={isDailyPending}
+                        onClick={handleSimulate}
+                        isLoading={isDevResetPending}
                         className="gap-2 bg-white/5 border-white/5 hover:bg-white/10"
                     >
                         <Sparkles className="w-3.5 h-3.5 text-gold-metallic" />

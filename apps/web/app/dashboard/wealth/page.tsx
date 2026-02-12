@@ -14,7 +14,7 @@ export default function WealthPage() {
 
             <div className="max-w-4xl mx-auto relative z-10">
                 <header className="mb-12">
-                    <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')} className="mb-6 -ml-4">
+                    <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard/nasabah')} className="mb-6 -ml-4">
                         ← Dashboard
                     </Button>
                     <h1 className="text-4xl font-black text-white mb-2 tracking-tight">

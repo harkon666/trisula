@@ -15,6 +15,7 @@ export interface NasabahProfile {
     role: string;
     status: boolean;
     points: number;
+    isDailyClaimed: boolean;
 }
 
 export interface ActivityLog {
@@ -80,6 +81,17 @@ export function useNasabahDashboard() {
         },
     });
 
+    // Dev Tools Reset Mutation
+    const devResetMutation = useMutation({
+        mutationFn: async () => {
+            const res = await api.post("/v1/user/dev-reset-daily");
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["nasabahProfile"] });
+        },
+    });
+
     return {
         // Profile
         profile: profileQuery.data,
@@ -93,5 +105,9 @@ export function useNasabahDashboard() {
         claimDailyBonus: dailyCheckInMutation.mutate,
         isDailyPending: dailyCheckInMutation.isPending,
         dailyResult: dailyCheckInMutation.data,
+
+        // Dev Utilities
+        devResetDaily: devResetMutation.mutateAsync,
+        isDevResetPending: devResetMutation.isPending,
     };
 }

@@ -65,7 +65,7 @@ export function HeroSection() {
                     {isLoading ? (
                         <div className="h-14 w-48 rounded-full bg-white/5 animate-pulse" />
                     ) : isAuthenticated ? (
-                        <Link href="/dashboard">
+                        <Link href="/dashboard/nasabah">
                             <Button variant="primary" size="lg" className="group">
                                 Enter Dashboard
                             </Button>

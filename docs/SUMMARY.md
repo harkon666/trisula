@@ -72,7 +72,7 @@ To control the onboarding of Agents (Partners), we implemented a unique activati
 ---
 
 ## 5. Technology Stack
-- **Frontend**: Next.js 16 (Turbopack), Tailwind CSS v4, GSAP, Lenis.
+- **Frontend**: Next.js 16 (Turbopack), Tailwind CSS v4, GSAP (see [GSAP Guide](file:///home/harkon666/Dev/kerjaan/trisula/docs/GSAP_ANIMATION.md)), Lenis.
 - **Data Fetching**: TanStack Query v5.
 - **Backend**: Hono (Node.js/Serverless), @hono/node-server.
 - **Database**: PostgreSQL, Drizzle ORM.
@@ -106,3 +106,40 @@ In Feb 2026, the frontend underwent a major architectural refactor to improve sc
   - Rebranded with a custom-generated 3D golden Trisula logo.
   - Standardized color palette focused on luxury dark modes and vibrant gold accents.
   - Updated metadata, favicons, and touch icons for a professional cross-platform presence.
+
+---
+
+## 7. Nasabah Dashboard & Royalty System
+In Feb 2026, a dedicated dashboard for Nasabah users was implemented as a core loyalty and appreciation center.
+
+### The "Sultan" Dashboard Experience
+- **Dedicated Route**: Implemented at `/dashboard/nasabah`, protected by `RoleGuard` and `rbacMiddleware`.
+- **Luxury Theme**: Personalized with the **Royal Blue (#002366)** and **Gold Metallic (#D4AF37)** palette, distinct from the standard management dashboard.
+- **GSAP Orchestration**: Features a unique refined entrance timeline (Navbar → Card Scale-up → Content fade-in).
+
+### Daily Check-In: "The Golden Firework"
+- **Auto-Popup Flow**: The system automatically detects a user's claim status on dashboard entry. If available, the check-in modal greets the user immediately—an automated "Sultan level" experience.
+- **Firework Animation**: A premium GSAP particle system that triggers on successful claim, exploding golden particles from the center to celebrate the user's loyalty.
+- **Compound Pattern**: The `DailyCheckInModal` is built using the Compound Component pattern, encapsulating trigger logic, firework containers, and automated entry hooks.
+
+### Interactive Components
+- **GoldCardOverview**: A high-end balance card featuring a GSAP shimmer effect, animated points counter (`AnimatedCounter` — ref-based DOM update, Strict Mode compatible), and premium loading skeletons.
+- **NasabahActivityTable**: A responsive activity log with desktop table + mobile card-list views, mapping point sources to consistent Lucide icons. Supports 100+ entries with fixed-height scroll and sticky header.
+- **useNasabahDashboard**: A centralized data hook leveraging TanStack Query v5 for seamless cache invalidation across the dashboard after any points mutation.
+
+### Developer Utilities
+- **NasabahDevTools**: A dedicated development panel at the page bottom (dev-only) allowing for:
+  - **Status Reset**: One-click backend reset of the daily login status to re-test the "Golden Firework" flow.
+  - **Manual Trigger**: Quick access to modal and mutation states for rapid iteration.
+
+---
+
+## 8. GSAP Animation Architecture
+For detailed animation guidelines, patterns, and common pitfalls, see [GSAP_ANIMATION.md](file:///home/harkon666/Dev/kerjaan/trisula/docs/GSAP_ANIMATION.md).
+
+### Key Patterns Documented
+- **Rule 1**: Never let React control GSAP-animated content (empty span pattern).
+- **Rule 2**: React Strict Mode double-mount — only set final state in `onComplete`, never in cleanup.
+- **Rule 3**: `useGSAP` for CSS animations, `useEffect` for text/counter animations.
+- **Rule 4**: Direct DOM updates via refs, never `setState` in frame-by-frame animation loops.
+- **Rule 5**: Coordinate child animations with parent entrance timelines using `delay`.

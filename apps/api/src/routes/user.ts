@@ -39,11 +39,14 @@ user.get('/profile', async (c) => {
             return c.json({ success: false, message: "User not found" }, 404);
         }
 
+        const isDailyClaimed = await PointsService.isClaimedToday(contextUser.id);
+
         return c.json({
             success: true,
             data: {
                 ...userData,
                 points: userData.points || 0,
+                isDailyClaimed
             }
         });
 
@@ -153,6 +156,27 @@ user.post('/daily-checkin', async (c) => {
     } catch (error) {
         console.error("Daily Check-in Error:", error);
         return c.json({ success: false, message: "Failed to process daily check-in" }, 500);
+    }
+});
+
+/**
+ * @route   POST /api/v1/user/dev-reset-daily
+ * @desc    RESET daily bonus status (DEV ONLY)
+ * @access  Private (User)
+ */
+user.post('/dev-reset-daily', async (c) => {
+    const contextUser = c.get('user');
+    if (!contextUser) return c.json({ success: false, message: "Unauthorized" }, 401);
+
+    try {
+        await PointsService.resetDailyLogin(contextUser.id);
+        return c.json({
+            success: true,
+            message: "Daily check-in status reset. You can now claim again."
+        });
+    } catch (error) {
+        console.error("Dev Reset Error:", error);
+        return c.json({ success: false, message: "Failed to reset daily status" }, 500);
     }
 });
 

@@ -44,7 +44,7 @@ export default function RegisterPage() {
             if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
                 router.push('/admin');
             } else {
-                router.push('/dashboard');
+                router.push('/dashboard/nasabah');
             }
         }
     }, [isAuthenticated, user, router]);
@@ -65,7 +65,7 @@ export default function RegisterPage() {
             if (response.data.success && response.data.token) {
                 login(response.data.token, response.data.user);
                 toast.success("Registrasi Member Berhasil!");
-                router.push("/dashboard");
+                router.push("/dashboard/nasabah");
             } else {
                 toast.error(response.data.message || "Gagal mendaftar");
             }
@@ -83,7 +83,7 @@ export default function RegisterPage() {
             if (response.data.success && response.data.token) {
                 login(response.data.token, response.data.user);
                 toast.success("Registrasi Partner Berhasil!");
-                router.push("/dashboard");
+                router.push("/dashboard/agent");
             } else {
                 toast.error(response.data.message || "Gagal mendaftar");
             }

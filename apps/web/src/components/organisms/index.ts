@@ -12,5 +12,6 @@ export * from "./NasabahActivityTable";
 export * from "./NasabahNavbar";
 export * from "./NasabahDevTools";
 export * from "./DailyCheckInModal";
-
-
+export * from "./RewardGrid";
+export * from "./RedeemConfirmModal";
+export * from "./RedeemSuccessCertificate";

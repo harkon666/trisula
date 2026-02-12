@@ -3,19 +3,22 @@
 import { useState } from "react";
 import RoleGuard from "@/src/components/auth/RoleGuard";
 import { PageEntrance } from "@/src/components/ui/GsapContext";
-import { AdminRedeemTable, AdminPolisForm, AdminCodeManager } from "@/src/components/organisms";
-import { Activity, ShieldPlus, UserPlus, LayoutDashboard, LogOut } from "lucide-react";
+import { AdminRedeemTable, AdminPolisForm, AdminCodeManager, AdminRewardManager } from "@/src/components/organisms";
+import { Activity, ShieldPlus, UserPlus, LayoutDashboard, LogOut, Ticket } from "lucide-react";
 import { useAuth } from "@/src/hooks/useAuth";
 
 export default function AdminDashboard() {
-    const { logout } = useAuth();
-    const [activeSection, setActiveSection] = useState<"fulfillment" | "polis" | "codes">("fulfillment");
+    const { user, logout } = useAuth();
+    const [activeSection, setActiveSection] = useState<"fulfillment" | "polis" | "codes" | "rewards">("fulfillment");
 
     const sections = [
-        { id: "fulfillment", label: "Redeem Queue", icon: Activity, component: <AdminRedeemTable /> },
-        { id: "polis", label: "Polis Entry", icon: ShieldPlus, component: <AdminPolisForm /> },
-        { id: "codes", label: "Agent Codes", icon: UserPlus, component: <AdminCodeManager /> },
+        { id: "fulfillment", label: "Redeem Queue", icon: Activity, component: <AdminRedeemTable />, allowedRoles: ['admin', 'super_admin', 'admin_view', 'admin_input'] },
+        { id: "polis", label: "Polis Entry", icon: ShieldPlus, component: <AdminPolisForm />, allowedRoles: ['admin', 'super_admin', 'admin_input'] },
+        { id: "codes", label: "Agent Codes", icon: UserPlus, component: <AdminCodeManager />, allowedRoles: ['admin', 'super_admin', 'admin_input'] },
+        { id: "rewards", label: "Voucher Catalog", icon: Ticket, component: <AdminRewardManager />, allowedRoles: ['super_admin'] },
     ];
+
+    const visibleSections = sections.filter(s => s.allowedRoles.includes(user?.role || ""));
 
     return (
         <RoleGuard allowedRoles={['admin', 'super_admin', 'admin_input', 'admin_view']}>
@@ -46,7 +49,7 @@ export default function AdminDashboard() {
                         {/* Navigation and Desktop Actions */}
                         <div className="flex items-center gap-4">
                             <nav className="flex items-center gap-1 p-1 bg-charcoal-800/50 rounded-2xl border border-white/5">
-                                {sections.map(section => (
+                                {visibleSections.map(section => (
                                     <button
                                         key={section.id}
                                         //@ts-ignore
@@ -75,7 +78,7 @@ export default function AdminDashboard() {
 
                 <main className="max-w-7xl mx-auto px-6 mt-12">
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        {sections.find(s => s.id === activeSection)?.component}
+                        {visibleSections.find(s => s.id === activeSection)?.component}
                     </div>
                 </main>
             </PageEntrance>

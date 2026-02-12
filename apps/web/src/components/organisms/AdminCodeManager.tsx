@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAdminCodes, AgentCode } from "@/src/hooks/useAdminCodes";
 import {
     Plus,
@@ -12,13 +13,27 @@ import {
     Calendar,
     Loader2,
     ShieldAlert,
+    Keyboard,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { toast } from "sonner";
 
 export function AdminCodeManager() {
-    const { codes, isLoading, generateCode, isGenerating, deleteCode, isDeleting } = useAdminCodes();
+    const { codes, isLoading, registerCode, isRegistering, deleteCode, isDeleting } = useAdminCodes();
+    const [newCode, setNewCode] = useState("");
+
+    const handleAddCode = () => {
+        if (!newCode.trim()) {
+            toast.error("Silakan masukkan kode agen");
+            return;
+        }
+        registerCode(newCode, {
+            onSuccess: () => {
+                setNewCode("");
+            }
+        });
+    };
 
     const copyToClipboard = (code: string) => {
         navigator.clipboard.writeText(code);
@@ -34,25 +49,38 @@ export function AdminCodeManager() {
 
     return (
         <div className="space-y-6">
-            {/* Header / Summary */}
+            {/* Header / Registration Form */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 p-8 rounded-3xl border border-white/10 bg-charcoal-900/40 backdrop-blur-md relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gold-metallic/5 blur-3xl rounded-full" />
 
                 <div className="space-y-1 relative z-10">
                     <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-                        Agent Onboarding Codes
+                        Agent Activation Codes
                     </h2>
-                    <p className="text-sm text-zinc-500">Generate dan pantau kode aktivasi untuk partner agen baru.</p>
+                    <p className="text-sm text-zinc-500">Daftarkan kode agen resmi dari kantor pusat secara manual.</p>
                 </div>
 
-                <button
-                    onClick={() => generateCode()}
-                    disabled={isGenerating}
-                    className="relative px-8 py-4 bg-gold-metallic text-charcoal-950 font-black rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-3 shadow-xl shadow-gold-metallic/20"
-                >
-                    {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
-                    <span>GENERATE KODE BARU</span>
-                </button>
+                <div className="flex flex-col sm:flex-row items-stretch gap-3 w-full md:w-auto relative z-10">
+                    <div className="relative group flex-1 min-w-[240px]">
+                        <Keyboard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 group-focus-within:text-gold-metallic transition-colors" />
+                        <input
+                            type="text"
+                            value={newCode}
+                            onChange={(e) => setNewCode(e.target.value.toUpperCase())}
+                            onKeyDown={(e) => e.key === "Enter" && handleAddCode()}
+                            placeholder="INPUT KODE AGEN (E.G. JKT-001)"
+                            className="w-full bg-charcoal-800/50 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white font-mono placeholder:text-zinc-600 focus:outline-none focus:border-gold-metallic/50 focus:ring-1 focus:ring-gold-metallic/20 transition-all uppercase"
+                        />
+                    </div>
+                    <button
+                        onClick={handleAddCode}
+                        disabled={isRegistering || !newCode.trim()}
+                        className="relative px-8 py-4 bg-gold-metallic text-charcoal-950 font-black rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-xl shadow-gold-metallic/20 whitespace-nowrap"
+                    >
+                        {isRegistering ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                        <span>TAMBAH KODE</span>
+                    </button>
+                </div>
             </div>
 
             {/* List Table */}

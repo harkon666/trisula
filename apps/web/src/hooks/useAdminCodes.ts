@@ -25,14 +25,14 @@ export function useAdminCodes() {
         },
     });
 
-    // Generate New Code
-    const generateMutation = useMutation({
-        mutationFn: async () => {
-            const res = await api.post("/v1/admin/codes");
+    // Register New Code
+    const registerMutation = useMutation({
+        mutationFn: async (code: string) => {
+            const res = await api.post("/v1/admin/codes", { code });
             return res.data.data;
         },
         onSuccess: () => {
-            toast.success("Kode Aktivasi Agen berhasil dibuat!", {
+            toast.success("Kode Aktivasi Agen berhasil didaftarkan!", {
                 style: {
                     background: "#002366",
                     border: "1px solid #D4AF37",
@@ -42,7 +42,7 @@ export function useAdminCodes() {
             queryClient.invalidateQueries({ queryKey: ["admin", "codes"] });
         },
         onError: (error: any) => {
-            toast.error(error.message || "Gagal membuat kode");
+            toast.error(error.response?.data?.message || "Gagal mendaftarkan kode");
         },
     });
 
@@ -64,8 +64,8 @@ export function useAdminCodes() {
     return {
         codes,
         isLoading,
-        generateCode: generateMutation.mutate,
-        isGenerating: generateMutation.isPending,
+        registerCode: registerMutation.mutate,
+        isRegistering: registerMutation.isPending,
         deleteCode: deleteMutation.mutate,
         isDeleting: deleteMutation.isPending,
     };

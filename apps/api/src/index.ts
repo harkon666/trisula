@@ -23,7 +23,7 @@ app.use('*', logger()); // Monitoring request yang masuk
 app.use('*', cors({
   origin: ['http://localhost:3001', 'http://localhost:3000', 'https://trisula.vercel.app'],
   allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
   maxAge: 600,
   credentials: true,

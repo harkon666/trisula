@@ -25,20 +25,20 @@ Dedicated middleware verifies user roles before granting access to protected rou
 
 ---
 
-## 2. Agent Activation System
-To control the onboarding of Agents (Partners), we implemented a unique activation code system.
+### 2. Agent Activation System
+To control the onboarding of Agents (Partners), we implemented an activation code system synced with central office records.
 
 ### Features
-- **Code Generation**: Admins can generate unique codes (Format: `TRISULA-XXXXXX`).
-- **Validation**: Agent registration fails without a valid, unused code.
+- **Manual Registration**: Admins can register official agent codes manually (e.g., `JKT-001`).
+- **Validation**: Registering a code fails if it already exists in the system. Agent registration fails without a valid, unused code.
 - **Usage Tracking**: Each code tracks:
-  - Who generated it (Admin ID).
+  - Who registered it (Admin ID).
   - Who used it (Agent ID).
   - Timestamp of usage.
 - **One-Time Use**: Codes are marked as `isUsed: true` immediately after successful registration.
 
 ### Admin Tools
-- **Tabbed Interface**: Separates "Redeem Queue" from "Agent Codes".
+- **Registration Interface**: Input field for adding official agent codes manually.
 - **Copy to Clipboard**: One-click action to share codes.
 - **Purge**: Super Admins can delete unused codes created in error.
 

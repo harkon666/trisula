@@ -17,3 +17,4 @@ export * from "./RedeemSuccessCertificate";
 export * from "./AdminRedeemTable";
 export * from "./AdminPolisForm";
 export * from "./AdminCodeManager";
+export * from "./AdminRewardManager";

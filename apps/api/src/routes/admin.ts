@@ -179,19 +179,18 @@ admin.get('/codes', async (c) => {
 
 /**
  * @route   POST /codes
- * @desc    Generate a new activation code
+ * @desc    Register a manual activation code
  * @access  Super Admin, Admin Input
  */
-admin.post('/codes', async (c) => {
+admin.post('/codes', zValidator('json', z.object({
+    code: z.string().min(3, "Kode minimal 3 karakter"),
+})), async (c) => {
     const user = c.get('user');
-
-    // Generate a unique code: TRISULA-XXXXXX
-    const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const newCode = `TRISULA-${randomStr}`;
+    const { code } = c.req.valid('json');
 
     try {
         const [inserted] = await db.insert(agentActivationCodes).values({
-            code: newCode,
+            code: code.trim().toUpperCase(),
             generatedBy: user.id,
             isUsed: false,
             createdAt: new Date(),
@@ -199,12 +198,16 @@ admin.post('/codes', async (c) => {
 
         return c.json({
             success: true,
-            message: "Activation code generated successfully",
+            message: "Activation code registered successfully",
             data: inserted
         }, 201);
-    } catch (error) {
-        console.error("Code Generation Error:", error);
-        return c.json({ success: false, message: "Failed to generate code" }, 500);
+    } catch (error: any) {
+        // Handle unique constraint error
+        if (error.code === '23505' || error.message?.includes('unique')) {
+            return c.json({ success: false, message: "Kode sudah terdaftar dalam sistem" }, 400);
+        }
+        console.error("Code Registration Error:", error);
+        return c.json({ success: false, message: "Failed to register code" }, 500);
     }
 });
 
@@ -266,6 +269,116 @@ admin.get('/users', async (c) => {
     } catch (error) {
         console.error("Admin Fetch Users Error:", error);
         return c.json({ success: false, message: "Failed to fetch users" }, 500);
+    }
+});
+
+/**
+ * @route   GET /rewards
+ * @desc    List all rewards (Administrative View)
+ * @access  Super Admin, Admin View, Admin Input
+ */
+admin.get('/rewards', async (c) => {
+    try {
+        const list = await db.select().from(rewards).orderBy(desc(rewards.id));
+        return c.json({ success: true, data: list });
+    } catch (error) {
+        console.error("Admin Fetch Rewards Error:", error);
+        return c.json({ success: false, message: "Failed to fetch rewards" }, 500);
+    }
+});
+
+/**
+ * @route   POST /rewards
+ * @desc    Create a new reward item
+ * @access  Super Admin Only
+ */
+admin.post('/rewards', zValidator('json', z.object({
+    title: z.string().min(3),
+    description: z.string().optional(),
+    requiredPoints: z.number().int().positive(),
+    isActive: z.boolean().default(true),
+})), async (c) => {
+    const user = c.get('user');
+    if (user.role !== 'super_admin') {
+        return c.json({ success: false, message: "Forbidden: Only Super Admin can manage catalog" }, 403);
+    }
+
+    const data = c.req.valid('json');
+
+    try {
+        const [inserted] = await db.insert(rewards).values({
+            ...data,
+        }).returning();
+
+        return c.json({ success: true, message: "Reward created successfully", data: inserted }, 201);
+    } catch (error) {
+        console.error("Admin Create Reward Error:", error);
+        return c.json({ success: false, message: "Failed to create reward" }, 500);
+    }
+});
+
+/**
+ * @route   PATCH /rewards/:id
+ * @desc    Update an existing reward item
+ * @access  Super Admin Only
+ */
+admin.patch('/rewards/:id', zValidator('json', z.object({
+    title: z.string().min(3).optional(),
+    description: z.string().optional(),
+    requiredPoints: z.number().int().positive().optional(),
+    isActive: z.boolean().optional(),
+})), async (c) => {
+    const user = c.get('user');
+    const id = parseInt(c.req.param('id'));
+
+    if (user.role !== 'super_admin') {
+        return c.json({ success: false, message: "Forbidden: Only Super Admin can manage catalog" }, 403);
+    }
+
+    const data = c.req.valid('json');
+
+    try {
+        const [updated] = await db.update(rewards)
+            .set({ ...data })
+            .where(eq(rewards.id, id))
+            .returning();
+
+        if (!updated) return c.json({ success: false, message: "Reward not found" }, 404);
+
+        return c.json({ success: true, message: "Reward updated successfully", data: updated });
+    } catch (error) {
+        console.error("Admin Update Reward Error:", error);
+        return c.json({ success: false, message: "Failed to update reward" }, 500);
+    }
+});
+
+/**
+ * @route   DELETE /rewards/:id
+ * @desc    Hard delete a reward item
+ * @access  Super Admin Only
+ */
+admin.delete('/rewards/:id', async (c) => {
+    const user = c.get('user');
+    const id = parseInt(c.req.param('id'));
+
+    if (user.role !== 'super_admin') {
+        return c.json({ success: false, message: "Forbidden: Only Super Admin can delete rewards" }, 403);
+    }
+
+    try {
+        // Warning: Deleting rewards might break references in redeemRequests if not handled.
+        // However, schema uses .references(() => rewards.id) without onDelete cascade,
+        // so it will fail if there are existing requests.
+        const [deleted] = await db.delete(rewards)
+            .where(eq(rewards.id, id))
+            .returning();
+
+        if (!deleted) return c.json({ success: false, message: "Reward not found or has references" }, 404);
+
+        return c.json({ success: true, message: "Reward deleted successfully" });
+    } catch (error) {
+        console.error("Admin Delete Reward Error:", error);
+        return c.json({ success: false, message: "Gagal menghapus reward (mungkin masih memiliki referensi pesanan)" }, 500);
     }
 });
 

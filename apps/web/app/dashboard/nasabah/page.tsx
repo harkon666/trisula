@@ -78,7 +78,7 @@ export default function NasabahDashboard() {
                 </div>
 
                 {/* Navbar */}
-                <div ref={navRef}>
+                <div ref={navRef} className="relative z-50">
                     <NasabahNavbar />
                 </div>
 

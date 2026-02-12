@@ -18,6 +18,32 @@ export function RedeemSuccessCertificate({ rewardName, onDone }: RedeemSuccessCe
     const stampRef = useRef<HTMLDivElement>(null);
     const glowRef = useRef<HTMLDivElement>(null);
 
+    // Body scroll lock — position:fixed approach
+    useEffect(() => {
+        const scrollY = window.scrollY;
+        const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+        document.documentElement.style.overflow = "hidden";
+        document.body.style.overflow = "hidden";
+        document.body.style.position = "fixed";
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.left = "0";
+        document.body.style.right = "0";
+        document.body.style.paddingRight = `${scrollBarWidth}px`;
+
+        return () => {
+            document.documentElement.style.overflow = "";
+            document.body.style.overflow = "";
+            document.body.style.position = "";
+            document.body.style.top = "";
+            document.body.style.left = "";
+            document.body.style.right = "";
+            document.body.style.paddingRight = "";
+            window.scrollTo(0, scrollY);
+        };
+    }, []);
+
+
     useGSAP(() => {
         if (!containerRef.current || !certRef.current || !contentRef.current || !stampRef.current) return;
 
@@ -63,14 +89,14 @@ export function RedeemSuccessCertificate({ rewardName, onDone }: RedeemSuccessCe
     }, { scope: containerRef });
 
     return (
-        <div ref={containerRef} className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl overflow-hidden perspective-1000">
+        <div ref={containerRef} className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl perspective-1000">
             {/* Certificate Container */}
             <div
                 ref={certRef}
-                className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-royal-800 border-[2px] md:border-[3px] border-gold-metallic/50 p-1 shadow-[0_0_80px_rgba(212,175,55,0.2)] rounded-sm overflow-hidden"
+                className="relative w-full max-w-2xl max-h-[90dvh] md:max-h-[92vh] flex flex-col bg-royal-800 border-[2px] md:border-[3px] border-gold-metallic/50 p-1 shadow-[0_0_80px_rgba(212,175,55,0.2)] rounded-sm overflow-hidden"
             >
                 {/* Inner Border & Gradient Background */}
-                <div className="relative flex-1 border border-gold-metallic/30 p-6 md:p-12 bg-gradient-to-br from-royal-blue via-charcoal-deep to-black overflow-y-auto rounded-[2px] custom-scrollbar">
+                <div className="relative flex-1 border border-gold-metallic/30 p-6 md:p-12 bg-gradient-to-br from-royal-blue via-charcoal-deep to-black overflow-y-auto rounded-[2px] custom-scrollbar overscroll-contain touch-pan-y">
 
                     {/* Animated Glow Sweep FX */}
                     <div
@@ -89,10 +115,10 @@ export function RedeemSuccessCertificate({ rewardName, onDone }: RedeemSuccessCe
 
                         <div className="space-y-2">
                             <h1 className="text-gold-metallic font-serif text-2xl md:text-5xl tracking-[0.1em] uppercase">
-                                Sertifikat Layanan
+                                Sertifikat Penukaran
                             </h1>
                             <p className="text-gold-light/40 text-[10px] uppercase tracking-[0.3em] font-bold">
-                                Konfirmasi Klaim Eksklusif
+                                Konfirmasi Penukaran Eksklusif
                             </p>
                         </div>
 

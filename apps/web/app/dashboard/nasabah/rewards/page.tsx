@@ -4,7 +4,7 @@ import { useRef, useState, useCallback } from "react";
 import RoleGuard from "@/src/components/auth/RoleGuard";
 import { NasabahNavbar } from "@/src/components/organisms/NasabahNavbar";
 import { RewardGrid } from "@/src/components/organisms/RewardGrid";
-import { RedeemConfirm, useRedeemConfirm } from "@/src/components/organisms/RedeemConfirmModal";
+import { Redeem, useRedeem } from "@/src/components/organisms/RedeemModal";
 import { useRewardsCatalog, type Reward } from "@/src/hooks/useRewardsCatalog";
 import { useNasabahDashboard } from "@/src/hooks/useNasabahDashboard";
 import { ArrowLeft, Crown } from "lucide-react";
@@ -15,9 +15,9 @@ import { useGSAP } from "@gsap/react";
 export default function RewardsPage() {
     return (
         <RoleGuard allowedRoles={["nasabah"]}>
-            <RedeemConfirm>
+            <Redeem>
                 <RewardsContent />
-            </RedeemConfirm>
+            </Redeem>
         </RoleGuard>
     );
 }
@@ -25,7 +25,7 @@ export default function RewardsPage() {
 function RewardsContent() {
     const { rewards, isRewardsLoading, redeemReward, isRedeemPending, resetRedeem } = useRewardsCatalog();
     const { profile } = useNasabahDashboard();
-    const { openModal, selectedReward } = useRedeemConfirm();
+    const { openModal, selectedReward } = useRedeem();
 
     const userPoints = profile?.points ?? 0;
 
@@ -78,7 +78,7 @@ function RewardsContent() {
             </div>
 
             {/* Navbar */}
-            <div ref={navRef}>
+            <div ref={navRef} className="relative z-50">
                 <NasabahNavbar />
             </div>
 
@@ -130,7 +130,7 @@ function RewardsContent() {
             </main>
 
             {/* Redeem Confirmation Modal Overlay */}
-            <RedeemConfirm.Overlay
+            <Redeem.Overlay
                 userPoints={userPoints}
                 isRedeemPending={isRedeemPending}
                 onConfirm={handleConfirm}

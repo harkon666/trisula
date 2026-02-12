@@ -1,286 +1,401 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Card, Button, Badge, Skeleton, AnimatedCounter } from "@/src/components/atoms";
-import api from "@/src/lib/api-client";
-import { toast } from "sonner";
-import { X, Check, AlertCircle, Gift, CircleCheck, ShieldAlert } from "lucide-react";
-
-// --- Types ---
-interface Product {
-    id: string;
-    name: string;
-    description: string;
-    pointsCost: number;
-    stock: number;
-    image?: string;
-}
-
-interface RedeemContextType {
-    isOpen: boolean;
-    open: () => void;
-    close: () => void;
-    view: 'catalog' | 'confirm' | 'success' | 'error';
-    selectedProduct: Product | null;
-    selectProduct: (product: Product) => void;
-    confirmRedeem: () => void;
-    reset: () => void;
-    isProcessing: boolean;
-}
+import Image from "next/image";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { X, Sparkles, Gem, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Button } from "@/src/components/atoms";
+import type { Reward } from "@/src/hooks/useRewardsCatalog";
+import { RedeemSuccessCertificate } from "./RedeemSuccessCertificate";
 
 // --- Context ---
-const RedeemContext = createContext<RedeemContextType | null>(null);
-
-function useRedeem() {
-    const context = useContext(RedeemContext);
-    if (!context) throw new Error("useRedeem must be used within a RedeemModal");
-    return context;
+interface RedeemContextType {
+    isOpen: boolean;
+    selectedReward: Reward | null;
+    openModal: (reward: Reward) => void;
+    closeModal: () => void;
 }
 
-// --- Icons ---
-const CloseIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 18 18" /></svg>;
-const GiftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13" /><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" /><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" /></svg>;
+const RedeemContext = createContext<RedeemContextType | null>(null);
 
-// --- Components ---
+export function useRedeem() {
+    const ctx = useContext(RedeemContext);
+    if (!ctx) throw new Error("Redeem sub-components must be used within Redeem.Modal");
+    return ctx;
+}
 
-export function RedeemModal({
-    item,
-    userPoints,
-    onSuccess,
-    children
-}: {
-    item?: Product;
-    userPoints?: number;
-    onSuccess?: () => void;
-    children: ReactNode;
-}) {
+// --- Root: Modal Provider ---
+function RedeemModalRoot({ children }: { children: React.ReactNode }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [view, setView] = useState<'catalog' | 'confirm' | 'success' | 'error'>('catalog');
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(item || null);
+    const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
+
+    const openModal = (reward: Reward) => {
+        setSelectedReward(reward);
+        setIsOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsOpen(false);
+        setTimeout(() => setSelectedReward(null), 300);
+    };
+
+    // Body scroll lock — position:fixed approach to truly freeze background
+    const hasBeenOpened = useRef(false);
 
     useEffect(() => {
-        if (item) {
-            setSelectedProduct(item);
-            setView('confirm');
+        if (isOpen) {
+            hasBeenOpened.current = true;
+            const scrollY = window.scrollY;
+            const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+            document.documentElement.style.overflow = "hidden";
+            document.body.style.overflow = "hidden";
+            document.body.style.position = "fixed";
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.left = "0";
+            document.body.style.right = "0";
+            document.body.style.paddingRight = `${scrollBarWidth}px`;
+        } else if (hasBeenOpened.current) {
+            // Only unlock if we previously locked
+            const scrollY = document.body.style.top;
+            document.documentElement.style.overflow = "";
+            document.body.style.overflow = "";
+            document.body.style.position = "";
+            document.body.style.top = "";
+            document.body.style.left = "";
+            document.body.style.right = "";
+            document.body.style.paddingRight = "";
+            window.scrollTo(0, parseInt(scrollY || "0") * -1);
         }
-    }, [item]);
-
-    // Query Client for invalidation
-    const queryClient = useQueryClient();
-
-    // Mutations
-    const redeemMutation = useMutation({
-        mutationFn: async (productId: string) => {
-            return api.post('/v1/redeem', { productId });
-        },
-        onSuccess: () => {
-            setView('success');
-            queryClient.invalidateQueries({ queryKey: ['userProfile'] }); // Refresh points
-            if (onSuccess) onSuccess();
-        },
-        onError: (error: any) => {
-            console.error("Redeem error", error);
-            setView('error');
-            toast.error(error.response?.data?.message || "Gagal menukar poin.");
-        }
-    });
-
-    const open = () => setIsOpen(true);
-    const close = () => {
-        setIsOpen(false);
-        // Reset state after transition
-        setTimeout(() => reset(), 300);
-    };
-
-    const reset = () => {
-        setView(item ? 'confirm' : 'catalog');
-        setSelectedProduct(item || null);
-        redeemMutation.reset();
-    };
-
-    const selectProduct = (product: Product) => {
-        setSelectedProduct(product);
-        setView('confirm');
-    };
-
-    const confirmRedeem = () => {
-        if (selectedProduct) {
-            redeemMutation.mutate(selectedProduct.id);
-        }
-    };
+        return () => {
+            if (hasBeenOpened.current) {
+                const scrollY = document.body.style.top;
+                document.documentElement.style.overflow = "";
+                document.body.style.overflow = "";
+                document.body.style.position = "";
+                document.body.style.top = "";
+                document.body.style.left = "";
+                document.body.style.right = "";
+                document.body.style.paddingRight = "";
+                window.scrollTo(0, parseInt(scrollY || "0") * -1);
+            }
+        };
+    }, [isOpen]);
 
     return (
-        <RedeemContext.Provider value={{
-            isOpen, open, close, view,
-            selectedProduct, selectProduct, confirmRedeem, reset,
-            isProcessing: redeemMutation.isPending
-        }}>
+        <RedeemContext.Provider value={{ isOpen, selectedReward, openModal, closeModal }}>
             {children}
         </RedeemContext.Provider>
     );
 }
 
-// 1. Trigger
-RedeemModal.Trigger = function Trigger({ children, className, asChild }: { children: ReactNode, className?: string, asChild?: boolean }) {
-    const { open } = useRedeem();
+const Redeem = Object.assign(RedeemModalRoot, {
+    Header: RedeemHeader,
+    Content: RedeemContent,
+    Action: RedeemAction,
+    Overlay: RedeemOverlay,
+});
 
-    if (asChild && React.isValidElement(children)) {
-        return React.cloneElement(children as React.ReactElement<any>, {
-            onClick: (e: React.MouseEvent) => {
-                const child = children as React.ReactElement<any>;
-                if (child.props.onClick) child.props.onClick(e);
-                open();
-            },
-            className: `${(children as React.ReactElement<any>).props.className || ''} ${className || ''}`.trim()
-        });
-    }
+export { Redeem };
+
+function RedeemHeader() {
+    const { closeModal } = useRedeem();
 
     return (
-        <div onClick={open} className={className}>
-            {children}
+        <div className="flex items-center justify-between p-6 md:p-8 border-b border-gold-metallic/10 bg-gradient-to-r from-charcoal-deep to-royal-blue/20">
+            <h2 className="text-2xl md:text-3xl font-serif text-gold-metallic flex items-center gap-3 tracking-tight">
+                <Gem className="w-6 h-6 text-gold-metallic drop-shadow-[0_0_8px_rgba(212,175,55,0.4)]" />
+                Konfirmasi Penukaran
+            </h2>
+            <button
+                onClick={closeModal}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors text-zinc-400 hover:text-white"
+            >
+                <X className="w-6 h-6" />
+            </button>
         </div>
     );
-};
+}
 
-// 2. Content (The Modal Overlay & Box)
-RedeemModal.Content = function Content({ className }: { className?: string }) {
-    const { isOpen, close, view, selectedProduct, confirmRedeem, isProcessing, reset } = useRedeem();
+// --- Sub: Content ---
+function RedeemContent({
+    userPoints,
+    view,
+}: {
+    userPoints: number;
+    view: "confirm" | "success" | "error";
+}) {
+    const { selectedReward } = useRedeem();
+
+    if (view === "error") {
+        return (
+            <div className="p-10 md:p-14 text-center space-y-6">
+                <div className="w-24 h-24 bg-red-500/10 border border-red-500/30 rounded-full flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(239,68,68,0.15)]">
+                    <ShieldCheck className="w-12 h-12 text-red-500" />
+                </div>
+                <div className="space-y-2">
+                    <h3 className="text-3xl font-serif text-white">Terjadi Gagal</h3>
+                    <p className="text-zinc-400 text-sm max-w-[280px] mx-auto leading-relaxed">
+                        Terjadi kesalahan saat memproses permintaan keistimewaan Anda. Silakan coba lagi nanti.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!selectedReward) return null;
+
+    const canAfford = userPoints >= selectedReward.requiredPoints;
+
+    return (
+        <div className="p-8 md:p-12 space-y-8 relative overflow-hidden">
+            {/* Watermark Logo */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.05] pointer-events-none select-none">
+                <Image src="/icon.png" alt="Watermark" width={300} height={300} className="grayscale invert" />
+            </div>
+
+            {/* Reward Icon & Title */}
+            <div className="relative z-10 space-y-6 text-center">
+                <div className="w-28 h-28 mx-auto bg-gradient-to-br from-gold-metallic/20 to-royal-blue/20 rounded-2xl flex items-center justify-center border border-gold-metallic/30 shadow-[0_0_40px_rgba(212,175,55,0.1)]">
+                    <Sparkles className="w-12 h-12 text-gold-metallic" />
+                </div>
+                <div className="space-y-2">
+                    <h3 className="text-3xl md:text-4xl font-serif font-bold text-white tracking-tight">
+                        {selectedReward.title}
+                    </h3>
+                    {selectedReward.description && (
+                        <p className="text-zinc-400 text-sm md:text-base italic max-w-sm mx-auto leading-relaxed opacity-80">
+                            {selectedReward.description}
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            {/* Details Grid */}
+            <div className="relative z-10 grid grid-cols-1 gap-4 max-w-sm mx-auto">
+                {/* Price Display */}
+                <div className="bg-white/[0.03] p-6 rounded-2xl border border-white/5 backdrop-blur-sm text-center">
+                    <p className="text-[10px] text-gold-metallic/40 uppercase font-black tracking-[0.3em] mb-2">
+                        Harga Penukaran
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                        <span className="text-4xl font-black text-gold-metallic drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+                            {selectedReward.requiredPoints.toLocaleString()}
+                        </span>
+                        <span className="text-xs text-gold-metallic/40 font-bold uppercase tracking-wider">PTS</span>
+                    </div>
+                </div>
+
+                {/* Balance Status */}
+                <div className="flex items-center justify-between px-2 pt-2 text-sm">
+                    <span className="text-zinc-500 font-medium">Saldo Poin Anda:</span>
+                    <span className={`font-black text-lg ${canAfford ? "text-gold-light" : "text-red-400"}`}>
+                        {userPoints.toLocaleString()} <span className="text-[10px] opacity-40">PTS</span>
+                    </span>
+                </div>
+            </div>
+
+            {/* Insufficient Points Message */}
+            {!canAfford && (
+                <div className="relative z-10 mt-4 p-4 rounded-xl bg-red-500/5 border border-red-500/20 text-center">
+                    <p className="text-xs text-red-400 font-medium italic">
+                        "Mohon maaf, saldo Anda saat ini belum mencukupi untuk penukaran ini."
+                    </p>
+                </div>
+            )}
+
+            {/* Luxury Confirmation Text */}
+            {canAfford && (
+                <p className="relative z-10 text-center text-zinc-500 text-sm italic leading-relaxed pt-2">
+                    "Apakah Anda ingin menukarkan poin untuk layanan eksklusif ini?"
+                </p>
+            )}
+        </div>
+    );
+}
+
+// --- Sub: Action ---
+function RedeemAction({
+    userPoints,
+    view,
+    isLoading,
+    onConfirm,
+}: {
+    userPoints: number;
+    view: "confirm" | "success" | "error";
+    isLoading: boolean;
+    onConfirm: () => void;
+}) {
+    const { selectedReward, closeModal } = useRedeem();
+    const canAfford = selectedReward ? userPoints >= selectedReward.requiredPoints : false;
+    const shimmerRef = useRef<HTMLDivElement>(null);
+
+    useGSAP(() => {
+        if (canAfford && shimmerRef.current) {
+            gsap.to(shimmerRef.current, {
+                x: "400%",
+                duration: 2.5,
+                ease: "power2.inOut",
+                repeat: -1,
+                repeatDelay: 1.5
+            });
+        }
+    }, { dependencies: [canAfford] });
+
+    if (view === "error") {
+        return (
+            <div className="p-8 border-t border-white/5 bg-white/5 flex justify-center">
+                <Button
+                    variant="primary"
+                    onClick={closeModal}
+                    className="w-full max-w-xs bg-charcoal-700 hover:bg-charcoal-800 text-white"
+                >
+                    Kembali
+                </Button>
+            </div>
+        );
+    }
+
+    if (view === "success") return null;
+
+    return (
+        <div className="p-8 md:p-10 border-t border-gold-metallic/10 bg-gradient-to-b from-transparent to-royal-blue/10 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button
+                variant="ghost"
+                onClick={closeModal}
+                disabled={isLoading}
+                className="w-full sm:w-auto text-zinc-500 hover:text-white"
+            >
+                Batalkan
+            </Button>
+
+            <button
+                disabled={!canAfford || isLoading}
+                onClick={onConfirm}
+                className={`group relative overflow-hidden w-full sm:w-[240px] h-[56px] flex items-center justify-center rounded-sm font-black text-sm uppercase tracking-[0.2em] transition-all
+                    ${canAfford && !isLoading
+                        ? "bg-gold-metallic text-royal-blue shadow-[0_10px_30px_rgba(212,175,55,0.25)] hover:bg-white hover:scale-[1.02] active:scale-95"
+                        : "bg-white/5 text-zinc-600 border border-white/5 cursor-not-allowed"
+                    }`}
+            >
+                {/* Shimmer FX */}
+                {canAfford && !isLoading && (
+                    <div
+                        ref={shimmerRef}
+                        className="absolute inset-0 w-1/4 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-25deg] pointer-events-none -left-[50%]"
+                    />
+                )}
+
+                {/* Loading State: Trident Indicator */}
+                {isLoading ? (
+                    <div className="flex items-center gap-3">
+                        <div className="animate-[spin_2s_linear_infinite] [transform-style:preserve-3d]">
+                            <svg className="w-6 h-6 text-royal-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 2v20M5 10a7 7 0 0 0 14 0" />
+                                <path d="M12 2l3 3-3-3-3 3 3-3z" />
+                                <path d="M5 10V7l2-2-2 2zM19 10V7l-2-2 2 2z" />
+                            </svg>
+                        </div>
+                        <span>Memproses...</span>
+                    </div>
+                ) : (
+                    "Tukar Sekarang"
+                )}
+            </button>
+        </div>
+    );
+}
+
+// --- Overlay / Portal ---
+function RedeemOverlay({
+    userPoints,
+    isRedeemPending,
+    onConfirm,
+    view,
+}: {
+    userPoints: number;
+    isRedeemPending: boolean;
+    onConfirm: () => void;
+    view: "confirm" | "success" | "error";
+}) {
+    const { isOpen, closeModal, selectedReward } = useRedeem();
     const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+    const modalRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setPortalContainer(document.body);
     }, []);
 
+    useGSAP(() => {
+        if (isOpen && modalRef.current && view === "confirm") {
+            gsap.fromTo(modalRef.current,
+                { scale: 0.8, y: 50, opacity: 0 },
+                { scale: 1, y: 0, opacity: 1, duration: 0.7, ease: "expo.out" }
+            );
+        }
+    }, { dependencies: [isOpen, view] });
+
     if (!isOpen || !portalContainer) return null;
 
+    // Cinematic Success View (The Golden Voucher)
+    if (view === "success" && selectedReward) {
+        return createPortal(
+            <RedeemSuccessCertificate
+                rewardName={selectedReward.title}
+                onDone={closeModal}
+            />,
+            portalContainer
+        );
+    }
+
+    // Forward wheel events into the scrollable content
+    const handleOverlayWheel = (e: React.WheelEvent) => {
+        e.stopPropagation();
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop += e.deltaY;
+        }
+    };
+
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="relative w-full max-w-lg bg-midnight-950/90 border border-white/10 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            onClick={closeModal}
+            onWheel={handleOverlayWheel}
+        >
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-3xl animate-in fade-in duration-500" />
 
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-white/5 bg-white/5">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                        <GiftIcon />
-                        {view === 'catalog' ? 'Reward Catalog' : view === 'confirm' ? 'Konfirmasi' : 'Status'}
-                    </h2>
-                    <button onClick={close} className="p-2 hover:bg-white/10 rounded-full transition-colors text-zinc-400 hover:text-white">
-                        <CloseIcon />
-                    </button>
+            {/* Modal Box */}
+            <div
+                ref={modalRef}
+                className="relative w-full max-w-xl max-h-[90dvh] md:max-h-[92dvh] flex flex-col bg-gradient-to-br from-charcoal-deep to-royal-800 border-[1.5px] border-gold-metallic/40 rounded-sm overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.8),inset_0_0_30px_rgba(212,175,55,0.05)]"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div ref={scrollContainerRef} className="overflow-y-auto flex-1 custom-scrollbar overscroll-contain">
+                    <RedeemHeader />
+                    <RedeemContent userPoints={userPoints} view={view} />
                 </div>
+                <RedeemAction
+                    userPoints={userPoints}
+                    view={view}
+                    isLoading={isRedeemPending}
+                    onConfirm={onConfirm}
+                />
 
-                {/* Body */}
-                <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-                    {view === 'catalog' && <RedeemModal.CatalogList />}
-
-                    {view === 'confirm' && selectedProduct && (
-                        <div className="text-center space-y-6">
-                            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-amber-500/20 to-amber-600/5 rounded-2xl flex items-center justify-center border border-amber-500/30">
-                                <span className="text-4xl">🎁</span>
-                            </div>
-                            <div>
-                                <h3 className="text-2xl font-bold text-white">{selectedProduct.name}</h3>
-                                <p className="text-zinc-400 mt-2">{selectedProduct.description}</p>
-                            </div>
-                            <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                <p className="text-sm text-zinc-500 uppercase font-bold tracking-wider">Harga Tukar</p>
-                                <p className="text-3xl font-bold text-amber-500 mt-1">
-                                    {selectedProduct.pointsCost.toLocaleString()} <span className="text-sm text-amber-500/50">PTS</span>
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {view === 'success' && (
-                        <div className="text-center py-8">
-                            <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-green-500 animate-bounce">
-                                <CircleCheck className="w-10 h-10" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">Berhasil!</h3>
-                            <p className="text-zinc-400">Permintaan penukaran reward Anda sedang diproses. Cek status di dashboard.</p>
-                        </div>
-                    )}
-
-                    {view === 'error' && (
-                        <div className="text-center py-8">
-                            <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
-                                <ShieldAlert className="w-10 h-10" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">Gagal!</h3>
-                            <p className="text-zinc-400">Terjadi kesalahan saat memproses permintaan. Silakan coba lagi.</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Footer */}
-                <div className="p-6 border-t border-white/5 bg-white/5 flex justify-end gap-3">
-                    {view === 'catalog' && (
-                        <Button variant="ghost" onClick={close}>Tutup</Button>
-                    )}
-
-                    {view === 'confirm' && (
-                        <>
-                            <Button variant="ghost" onClick={reset} disabled={isProcessing}>Kembali</Button>
-                            <Button variant="primary" onClick={confirmRedeem} isLoading={isProcessing}>
-                                Tukar Sekarang
-                            </Button>
-                        </>
-                    )}
-
-                    {(view === 'success' || view === 'error') && (
-                        <Button variant="primary" onClick={close}>Selesai</Button>
-                    )}
-                </div>
+                {/* Decorative Corners */}
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-gold-metallic/20 pointer-events-none" />
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-gold-metallic/20 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-gold-metallic/20 pointer-events-none" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-gold-metallic/20 pointer-events-none" />
             </div>
         </div>,
         portalContainer
     );
-};
-
-// Internal Component: Catalog List
-RedeemModal.CatalogList = function CatalogList() {
-    const { selectProduct } = useRedeem();
-
-    const { data: products, isLoading } = useQuery({
-        queryKey: ['products'],
-        queryFn: async () => {
-            const res = await api.get('/v1/products');
-            return res.data.data as Product[];
-        }
-    });
-
-    if (isLoading) return (
-        <div className="space-y-4">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}
-        </div>
-    );
-
-    if (!products || products.length === 0) return (
-        <div className="text-center py-10 text-zinc-500">Belum ada reward tersedia.</div>
-    );
-
-    return (
-        <div className="space-y-3">
-            {products.map(product => (
-                <div
-                    key={product.id}
-                    onClick={() => selectProduct(product)}
-                    className="group bg-white/5 hover:bg-white/10 border border-white/5 hover:border-amber-500/30 rounded-xl p-4 flex items-center gap-4 cursor-pointer transition-all active:scale-[0.98]"
-                >
-                    <div className="w-12 h-12 bg-zinc-800 rounded-lg flex-shrink-0 flex items-center justify-center text-xl">
-                        🎁
-                    </div>
-                    <div className="flex-1">
-                        <h4 className="font-bold text-white group-hover:text-amber-400 transition-colors">{product.name}</h4>
-                        <p className="text-xs text-zinc-500 line-clamp-1">{product.description}</p>
-                    </div>
-                    <div className="text-right">
-                        <div className="font-bold text-amber-500">{product.pointsCost} PTS</div>
-                        <div className="text-[10px] text-zinc-600 uppercase font-bold tracking-wider">Stok: {product.stock}</div>
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
 }
+
+// --- Export as Compound Component ---
+// (Already exported above via Object.assign if needed, but let's be explicit)
+

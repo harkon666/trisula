@@ -14,3 +14,6 @@ export * from "./NasabahDevTools";
 export * from "./DailyCheckInModal";
 export * from "./RewardGrid";
 export * from "./RedeemSuccessCertificate";
+export * from "./AdminRedeemTable";
+export * from "./AdminPolisForm";
+export * from "./AdminCodeManager";

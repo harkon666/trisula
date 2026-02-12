@@ -238,4 +238,35 @@ admin.delete('/codes/:id', async (c) => {
     }
 });
 
+/**
+ * @route   GET /users
+ * @desc    List all users with their profiles (filtered by role)
+ * @access  Super Admin, Admin View, Admin Input
+ */
+admin.get('/users', async (c) => {
+    const role = c.req.query('role');
+
+    try {
+        const query = db.select({
+            id: users.id,
+            userId: users.userId,
+            fullName: profiles.fullName,
+            role: users.role,
+        })
+            .from(users)
+            .leftJoin(profiles, eq(users.id, profiles.userId));
+
+        if (role) {
+            //@ts-ignore
+            query.where(eq(users.role, role));
+        }
+
+        const list = await query.orderBy(desc(users.createdAt));
+        return c.json({ success: true, data: list });
+    } catch (error) {
+        console.error("Admin Fetch Users Error:", error);
+        return c.json({ success: false, message: "Failed to fetch users" }, 500);
+    }
+});
+
 export default admin;

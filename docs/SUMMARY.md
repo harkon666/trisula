@@ -159,3 +159,21 @@ Implemented on Feb 12, 2026, as a premium destination for Nasabah to exchange po
   - **Wheel Event Forwarding**: Custom `onWheel` interception that pipes mouse wheel events directly into the modal's scrollable container, solving the issue of fixed overlays blocking wheel gestures.
   - **Z-Index Stacking Fix**: Implemented explicit stacking contexts for navbars (`z-50`) to ensure they remain interactive and visible above GSAP-transformed layers.
 - **Documentation**: Detailed patterns for modal scroll locks are maintained in [MODAL_SCROLL_LOCK.md](file:///home/harkon666/Dev/kerjaan/trisula/docs/MODAL_SCROLL_LOCK.md).
+
+---
+
+## 10. Admin Operational Dashboard (Phase 4)
+166: Implemented in Feb 2026 as a high-fidelity command center for administrative roles (`admin`, `super_admin`, `admin_input`, `admin_view`).
+167: 
+168: ### Operational Modules
+169: - **Service Fulfillment Queue**: Real-time management of redemption requests with a multi-stage workflow (`pending` → `processing` → `completed`).
+170: - **Atomic Point Engine (Polis Entry)**: A sophisticated data entry tool that links Nasabah and Agents to new Polis records. 
+171:   - **Automatic Injection**: Awards **1 point per Rp 1.000 premium** atomically via database transactions.
+172:   - **UX Highlights**: Real-time point estimation and Indonesian thousand separator formatting (`id-ID`).
+173: - **Agent Onboarding Manager**: centralized interface for generating, tracking, and auditing `TRISULA-XXXXXX` activation codes.
+174: 
+175: ### Functional & UX Excellence
+176: - **Rejection Workflow**: Integrated a "Tolak" action in the fulfillment queue that prompts for a reason and automatically triggers a point refund to the Nasabah.
+177: - **Standardized API Integration**: Refactored all administrative hooks to use the `api-client` singleton for secure, authenticated communication (Authorization Bearer).
+178: - **Premium Tabbed Interface**: Uses GSAP for smooth transitions between operational modules, maintaining the **Royal Blue & Gold Metallic** luxury aesthetic.
+179: - **Authenticated Session Management**: Added clear Logout UX for secure exit from operational environments.

@@ -5,6 +5,7 @@ import { db, polisData, users, profiles } from '@repo/database';
 import { eq, desc, and, or } from 'drizzle-orm';
 import { rbacMiddleware } from '../middlewares/rbac';
 import { AuthUser } from '../types/hono';
+import { PointsService } from '../services/points';
 
 const polisRoute = new Hono<{ Variables: { user: AuthUser } }>();
 
@@ -26,31 +27,50 @@ polisRoute.post('/', rbacMiddleware(), zValidator('json', InputPolisSchema), asy
     const adminUser = c.get('user');
 
     try {
-        // 1. Validate Agent & Nasabah Existence
-        const [nasabah] = await db.select().from(users).where(eq(users.id, nasabahId)).limit(1);
-        if (!nasabah) return c.json({ success: false, message: "Nasabah ID not found" }, 404);
+        const result = await db.transaction(async (tx) => {
+            // 1. Validate Agent & Nasabah Existence
+            const [nasabah] = await tx.select().from(users).where(eq(users.id, nasabahId)).limit(1);
+            if (!nasabah) throw new Error("Nasabah ID not found");
 
-        const [agent] = await db.select().from(users).where(eq(users.id, agentId)).limit(1);
-        if (!agent) return c.json({ success: false, message: "Agent ID not found" }, 404);
+            const [agent] = await tx.select().from(users).where(eq(users.id, agentId)).limit(1);
+            if (!agent) throw new Error("Agent ID not found");
 
-        // 2. Check Duplicate Polis Number
-        const [existing] = await db.select().from(polisData).where(eq(polisData.polisNumber, polisNumber)).limit(1);
-        if (existing) return c.json({ success: false, message: "Polis Number already exists" }, 400);
+            // 2. Check Duplicate Polis Number
+            const [existing] = await tx.select().from(polisData).where(eq(polisData.polisNumber, polisNumber)).limit(1);
+            if (existing) throw new Error("Nomor Polis sudah terdaftar");
 
-        // 3. Insert Data
-        const [newPolis] = await db.insert(polisData).values({
-            polisNumber,
-            nasabahId,
-            agentId,
-            premiumAmount,
-            inputBy: adminUser.id,
-        }).returning();
+            // 3. Insert Polis Data
+            const [newPolis] = await tx.insert(polisData).values({
+                polisNumber,
+                nasabahId,
+                agentId,
+                premiumAmount,
+                inputBy: adminUser.id,
+            }).returning();
 
-        return c.json({ success: true, data: newPolis }, 201);
+            // 4. Inject Points (1 point per 1000 premium)
+            const pointsToAward = Math.floor(premiumAmount / 1000);
+            if (pointsToAward > 0) {
+                await PointsService.addPoints(
+                    nasabahId,
+                    pointsToAward,
+                    'purchase',
+                    `Point reward dari Polis #${polisNumber}`,
+                    tx
+                );
+            }
 
-    } catch (error) {
+            return newPolis;
+        });
+
+        return c.json({ success: true, data: result }, 201);
+
+    } catch (error: any) {
         console.error("Input Polis Error:", error);
-        return c.json({ success: false, message: "Internal Server Error" }, 500);
+        const isClientError = error.message === "Nasabah ID not found" ||
+            error.message === "Agent ID not found" ||
+            error.message === "Nomor Polis sudah terdaftar";
+        return c.json({ success: false, message: error.message || "Internal Server Error" }, isClientError ? 400 : 500);
     }
 });
 

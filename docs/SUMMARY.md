@@ -143,3 +143,19 @@ For detailed animation guidelines, patterns, and common pitfalls, see [GSAP_ANIM
 - **Rule 3**: `useGSAP` for CSS animations, `useEffect` for text/counter animations.
 - **Rule 4**: Direct DOM updates via refs, never `setState` in frame-by-frame animation loops.
 - **Rule 5**: Coordinate child animations with parent entrance timelines using `delay`.
+
+---
+
+## 9. Reward Center & Redemption Modal (v2)
+Implemented on Feb 12, 2026, as a premium destination for Nasabah to exchange points for exclusive services.
+
+### Features & UX
+- **Luxury Redemption Flow**:
+  - **Rewards Grid**: A staggered GSAP-animated grid featuring premium reward cards with hover glow effects and insufficient points tooltips.
+  - **RedeemModal**: A high-fidelity confirmation modal with a semi-transparent Trisula watermark and a rotating 3D Trident loading indicator. (Located at [/apps/web/src/components/organisms/RedeemModal.tsx](file:///home/harkon666/Dev/kerjaan/trisula/apps/web/src/components/organisms/RedeemModal.tsx))
+  - **Golden Success Certificate**: A cinematic full-screen "Golden Voucher" revelation UI with staggered text reveals and a simulated "impact" stamp.
+- **Robust Scroll UX (The Modal Scroll Pattern)**:
+  - **`position: fixed` Body Lock**: A bulletproof mechanism that locks both `<html>` and `<body>` to prevent background "rubber-banding" while maintaining scroll position accurately.
+  - **Wheel Event Forwarding**: Custom `onWheel` interception that pipes mouse wheel events directly into the modal's scrollable container, solving the issue of fixed overlays blocking wheel gestures.
+  - **Z-Index Stacking Fix**: Implemented explicit stacking contexts for navbars (`z-50`) to ensure they remain interactive and visible above GSAP-transformed layers.
+- **Documentation**: Detailed patterns for modal scroll locks are maintained in [MODAL_SCROLL_LOCK.md](file:///home/harkon666/Dev/kerjaan/trisula/docs/MODAL_SCROLL_LOCK.md).

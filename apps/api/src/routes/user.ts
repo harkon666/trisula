@@ -3,6 +3,7 @@ import { db, users, pointsLedger, profiles, agentActivationCodes } from '@repo/d
 import { eq, desc, sql } from 'drizzle-orm';
 import { rbacMiddleware } from '../middlewares/rbac';
 import { AuthUser } from '../types/hono';
+import { PointsService } from '../services/points.js';
 
 const user = new Hono<{ Variables: { user: AuthUser } }>();
 
@@ -118,6 +119,40 @@ user.get('/my-referrals', async (c) => {
     } catch (error) {
         console.error("Referrals Error:", error);
         return c.json({ success: false, message: "Failed to fetch referrals" }, 500);
+    }
+});
+
+/**
+ * @route   POST /api/v1/user/daily-checkin
+ * @desc    Manual daily bonus trigger from dashboard
+ * @access  Private (User)
+ */
+user.post('/daily-checkin', async (c) => {
+    const contextUser = c.get('user');
+    if (!contextUser) return c.json({ success: false, message: "Unauthorized" }, 401);
+
+    try {
+        const result = await PointsService.processDailyLogin(contextUser.id);
+
+        if (result.awarded) {
+            return c.json({
+                success: true,
+                awarded: true,
+                points: result.points,
+                message: `+${result.points} Poin Harian berhasil diklaim!`
+            });
+        }
+
+        return c.json({
+            success: true,
+            awarded: false,
+            points: 0,
+            message: "Poin harian sudah diklaim hari ini."
+        });
+
+    } catch (error) {
+        console.error("Daily Check-in Error:", error);
+        return c.json({ success: false, message: "Failed to process daily check-in" }, 500);
     }
 });
 

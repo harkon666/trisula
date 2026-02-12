@@ -7,3 +7,8 @@ export * from "./RejectModal";
 export * from "./WealthOverview";
 export * from "./ActivityTable";
 export * from "./FeaturesGrid";
+export * from "./GoldCardOverview";
+export * from "./NasabahActivityTable";
+export * from "./NasabahNavbar";
+export * from "./NasabahDevTools";
+

@@ -20,3 +20,6 @@ export * from "./AdminCodeManager";
 export * from "./AdminRewardManager";
 export * from "./AdminProductManager";
 export * from "./NasabahProductGrid";
+export * from "./AdminUserManager";
+export * from "./AdminUserPointHistory";
+export * from "./MetadataEditor";

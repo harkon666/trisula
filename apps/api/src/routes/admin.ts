@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { db, users, redeemRequests, pointsLedger, rewards, profiles, roleEnum, agentActivationCodes } from '@repo/database';
+import { db, users, redeemRequests, pointsLedger, rewards, profiles, roleEnum, agentActivationCodes, adminActions } from '@repo/database';
 import { eq, inArray, sql, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import { rbacMiddleware } from '../middlewares/rbac';
@@ -273,6 +273,59 @@ admin.get('/users', async (c) => {
 });
 
 /**
+ * @route   GET /users/:id
+ * @desc    Get detailed user information
+ * @access  Super Admin, Admin View
+ */
+admin.get('/users/:id', async (c) => {
+    const id = c.req.param('id');
+
+    try {
+        const [userDetail] = await db.select({
+            id: users.id,
+            userId: users.userId,
+            fullName: profiles.fullName,
+            role: users.role,
+            pointsBalance: users.pointsBalance,
+            whatsapp: profiles.whatsapp,
+            additionalMetadata: users.additionalMetadata,
+        })
+            .from(users)
+            .leftJoin(profiles, eq(users.id, profiles.userId))
+            .where(eq(users.id, id))
+            .limit(1);
+
+        if (!userDetail) return c.json({ success: false, message: "User not found" }, 404);
+
+        return c.json({ success: true, data: userDetail });
+    } catch (error) {
+        console.error("Admin Fetch User Detail Error:", error);
+        return c.json({ success: false, message: "Failed to fetch user detail" }, 500);
+    }
+});
+
+/**
+ * @route   GET /users/:id/points
+ * @desc    Get user point history (Ledger)
+ * @access  Super Admin, Admin View
+ */
+admin.get('/users/:id/points', async (c) => {
+    const userId = c.req.param('id');
+
+    try {
+        const history = await db.select()
+            .from(pointsLedger)
+            .where(eq(pointsLedger.userId, userId))
+            .orderBy(desc(pointsLedger.createdAt));
+
+        return c.json({ success: true, data: history });
+    } catch (error) {
+        console.error("Admin Fetch User Point History Error:", error);
+        return c.json({ success: false, message: "Failed to fetch point history" }, 500);
+    }
+});
+
+/**
  * @route   GET /rewards
  * @desc    List all rewards (Administrative View)
  * @access  Super Admin, Admin View, Admin Input
@@ -379,6 +432,54 @@ admin.delete('/rewards/:id', async (c) => {
     } catch (error) {
         console.error("Admin Delete Reward Error:", error);
         return c.json({ success: false, message: "Gagal menghapus reward (mungkin masih memiliki referensi pesanan)" }, 500);
+    }
+});
+
+/**
+ * @route   PATCH /users/:id/metadata
+ * @desc    Update user additional metadata (Dynamic Fields)
+ * @access  Super Admin, Admin Input
+ */
+admin.patch('/users/:id/metadata', zValidator('json', z.object({
+    metadata: z.record(z.string(), z.any()),
+})), async (c) => {
+    const adminUser = c.get('user');
+    const targetUserId = c.req.param('id');
+    const { metadata } = c.req.valid('json');
+
+    // RBAC: Only admin_input or super_admin
+    if (adminUser.role !== 'super_admin' && adminUser.role !== 'admin_input') {
+        return c.json({ success: false, message: "Forbidden: Insufficient permissions" }, 403);
+    }
+
+    try {
+        return await db.transaction(async (tx) => {
+            // 1. Verify user exists
+            const [user] = await tx.select().from(users).where(eq(users.id, targetUserId)).limit(1);
+            if (!user) return c.json({ success: false, message: "User not found" }, 404);
+
+            // 2. Update metadata
+            await tx.update(users)
+                .set({ additionalMetadata: metadata })
+                .where(eq(users.id, targetUserId));
+
+            // 3. Log Action
+            await tx.insert(adminActions).values({
+                adminId: adminUser.id,
+                action: `UPDATE_USER_METADATA`,
+                details: {
+                    targetUserId,
+                    previousMetadata: user.additionalMetadata,
+                    newMetadata: metadata
+                },
+                createdAt: new Date(),
+            });
+
+            return c.json({ success: true, message: "User metadata updated successfully" });
+        });
+    } catch (error) {
+        console.error("Admin Update Metadata Error:", error);
+        return c.json({ success: false, message: "Failed to update user metadata" }, 500);
     }
 });
 

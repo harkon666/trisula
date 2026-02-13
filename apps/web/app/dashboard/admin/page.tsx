@@ -3,16 +3,17 @@
 import { useState } from "react";
 import RoleGuard from "@/src/components/auth/RoleGuard";
 import { PageEntrance } from "@/src/components/ui/GsapContext";
-import { AdminRedeemTable, AdminPolisForm, AdminCodeManager, AdminRewardManager, AdminProductManager } from "@/src/components/organisms";
-import { Activity, ShieldPlus, UserPlus, LayoutDashboard, LogOut, Ticket, Package } from "lucide-react";
+import { AdminRedeemTable, AdminPolisForm, AdminCodeManager, AdminRewardManager, AdminProductManager, AdminUserManager } from "@/src/components/organisms";
+import { Activity, ShieldPlus, UserPlus, LayoutDashboard, LogOut, Ticket, Package, Users } from "lucide-react";
 import { useAuth } from "@/src/hooks/useAuth";
 
 export default function AdminDashboard() {
     const { user, logout } = useAuth();
-    const [activeSection, setActiveSection] = useState<"fulfillment" | "polis" | "codes" | "rewards" | "products">("fulfillment");
+    const [activeSection, setActiveSection] = useState<"fulfillment" | "polis" | "codes" | "rewards" | "products" | "users">("fulfillment");
 
     const sections = [
         { id: "fulfillment", label: "Redeem Queue", icon: Activity, component: <AdminRedeemTable />, allowedRoles: ['admin', 'super_admin', 'admin_view', 'admin_input'] },
+        { id: "users", label: "User Base", icon: Users, component: <AdminUserManager />, allowedRoles: ['super_admin', 'admin_input'] },
         { id: "products", label: "Product Catalog", icon: Package, component: <AdminProductManager />, allowedRoles: ['super_admin', 'admin_input'] },
         { id: "polis", label: "Polis Entry", icon: ShieldPlus, component: <AdminPolisForm />, allowedRoles: ['admin', 'super_admin', 'admin_input'] },
         { id: "codes", label: "Agent Codes", icon: UserPlus, component: <AdminCodeManager />, allowedRoles: ['admin', 'super_admin', 'admin_input'] },

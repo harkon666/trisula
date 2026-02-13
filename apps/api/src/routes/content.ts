@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { db, announcements, announcementViews } from '@repo/database';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, sql } from 'drizzle-orm';
 import { rbacMiddleware } from '../middlewares/rbac';
 import { AuthUser } from '../types/hono';
 
@@ -69,6 +69,49 @@ async function listAnnouncements(c: any) {
         return c.json({ success: false, message: "Internal Server Error" }, 500);
     }
 }
+
+/**
+ * @route   GET /api/v1/content/announcements/latest
+ * @desc    Get the latest unviewed active announcement for the current user
+ * @access  Authenticated User
+ */
+contentRoute.get('/announcements/latest', rbacMiddleware(), async (c) => {
+    const user = c.get('user');
+
+    try {
+        const [latestUnviewed] = await db
+            .select({
+                id: announcements.id,
+                title: announcements.title,
+                content: announcements.content,
+                videoUrl: announcements.videoUrl,
+                ctaUrl: announcements.ctaUrl,
+                isActive: announcements.isActive,
+                createdAt: announcements.createdAt,
+            })
+            .from(announcements)
+            .leftJoin(
+                announcementViews,
+                and(
+                    eq(announcements.id, announcementViews.announcementId),
+                    eq(announcementViews.userId, user.id)
+                )
+            )
+            .where(
+                and(
+                    eq(announcements.isActive, true),
+                    sql`${announcementViews.id} IS NULL`
+                )
+            )
+            .orderBy(desc(announcements.createdAt))
+            .limit(1);
+
+        return c.json({ success: true, data: latestUnviewed || null });
+    } catch (error) {
+        console.error("Latest Announcement Error:", error);
+        return c.json({ success: false, message: "Internal Server Error" }, 500);
+    }
+});
 
 /**
  * @route   POST /api/v1/content/announcements

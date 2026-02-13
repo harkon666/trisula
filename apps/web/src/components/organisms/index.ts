@@ -24,3 +24,5 @@ export * from "./AdminUserManager";
 export * from "./AdminUserPointHistory";
 export * from "./MetadataEditor";
 export * from "./AdminAnnouncementManager";
+export * from "./AnnouncementModal";
+export * from "./GlobalAnnouncementTrigger";

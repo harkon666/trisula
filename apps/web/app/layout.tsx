@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import QueryProvider from "@/src/components/providers/QueryProvider";
-import { GlobalScroll } from "@/src/components/organisms";
+import { GlobalScroll, GlobalAnnouncementTrigger, AnnouncementModal } from "@/src/components/organisms";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/src/hooks/useAuth";
 
@@ -50,6 +50,8 @@ export default function RootLayout({
         <QueryProvider>
           <AuthProvider>
             <GlobalScroll>
+              <GlobalAnnouncementTrigger />
+              <AnnouncementModal />
               {children}
               <Toaster richColors position="top-right" theme="dark" />
             </GlobalScroll>

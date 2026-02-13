@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/src/hooks/useAuth";
 import { Button } from "@/src/components/atoms";
-import { LogOut, Home, Gift } from "lucide-react";
+import { LogOut, Home, Gift, Sparkles } from "lucide-react";
 
 export function NasabahNavbar() {
     const { logout } = useAuth();
@@ -44,6 +44,12 @@ export function NasabahNavbar() {
                         <Button variant="ghost" size="sm" className="gap-2 text-zinc-400 hover:text-gold-metallic">
                             <Gift className="w-4 h-4" />
                             <span className="hidden sm:inline">Rewards</span>
+                        </Button>
+                    </Link>
+                    <Link href="/dashboard/products">
+                        <Button variant="ghost" size="sm" className="gap-2 text-gold-metallic hover:bg-gold-metallic/5">
+                            <Sparkles className="w-4 h-4" />
+                            <span className="hidden sm:inline">Beli Produk</span>
                         </Button>
                     </Link>
                     <Button

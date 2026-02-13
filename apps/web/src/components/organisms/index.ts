@@ -18,3 +18,5 @@ export * from "./AdminRedeemTable";
 export * from "./AdminPolisForm";
 export * from "./AdminCodeManager";
 export * from "./AdminRewardManager";
+export * from "./AdminProductManager";
+export * from "./NasabahProductGrid";

@@ -10,11 +10,12 @@ import {
     User,
     Users,
     CreditCard,
-    ArrowRight,
-    Loader2,
     ShieldCheck,
-    Coins
+    Coins,
+    ArrowRight,
+    Loader2
 } from "lucide-react";
+import { Button, Input } from "@/src/components/atoms";
 
 const PolisSchema = z.object({
     polisNumber: z.string().min(3, "Nomor polis minimal 3 karakter"),
@@ -75,14 +76,13 @@ export function AdminPolisForm() {
                         {/* Polis Number */}
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-gold-metallic/70 uppercase tracking-widest ml-1">Nomor Polis</label>
-                            <div className="relative group">
-                                <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 group-focus-within:text-gold-metallic transition-colors" />
-                                <input
-                                    {...register("polisNumber")}
-                                    placeholder="TRSL-XXXX-XXXX"
-                                    className="w-full bg-charcoal-800/50 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-gold-metallic/50 focus:ring-1 focus:ring-gold-metallic/20 transition-all placeholder:text-zinc-600"
-                                />
-                            </div>
+                            <Input
+                                {...register("polisNumber")}
+                                placeholder="TRSL-XXXX-XXXX"
+                                className="h-14 bg-charcoal-800/50 border-white/5 rounded-2xl pl-12 focus:border-gold-metallic/50"
+                                icon={<FileText className="w-5 h-5 text-zinc-500 group-focus-within:text-gold-metallic" />}
+                                error={!!errors.polisNumber}
+                            />
                             {errors.polisNumber && <p className="text-xs text-red-500 ml-1">{errors.polisNumber.message}</p>}
                         </div>
 
@@ -134,12 +134,11 @@ export function AdminPolisForm() {
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-gold-metallic/70 uppercase tracking-widest ml-1">Nominal Premi (Rp)</label>
                             <div className="relative group">
-                                <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 group-focus-within:text-gold-metallic transition-colors" />
                                 <Controller
                                     name="premiumAmount"
                                     control={control}
                                     render={({ field: { onChange, value, ...field } }) => (
-                                        <input
+                                        <Input
                                             {...field}
                                             type="text"
                                             placeholder="Contoh: 10.000.000"
@@ -148,11 +147,13 @@ export function AdminPolisForm() {
                                                 const rawValue = e.target.value.replace(/\D/g, "");
                                                 onChange(rawValue === "" ? 0 : parseInt(rawValue, 10));
                                             }}
-                                            className="w-full bg-charcoal-800/50 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white font-mono focus:outline-none focus:border-gold-metallic/50 focus:ring-1 focus:ring-gold-metallic/20 transition-all"
+                                            className="h-14 bg-charcoal-800/50 border-white/5 rounded-2xl pl-12 font-mono focus:border-gold-metallic/50"
+                                            icon={<CreditCard className="w-5 h-5 text-zinc-500 group-focus-within:text-gold-metallic" />}
+                                            error={!!errors.premiumAmount}
                                         />
                                     )}
                                 />
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gold-metallic/10 border border-gold-metallic/20">
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gold-metallic/10 border border-gold-metallic/20 z-10">
                                     <Coins className="w-3.5 h-3.5 text-gold-metallic" />
                                     <span className="text-[10px] font-black text-gold-metallic uppercase">
                                         {estimatedPoints.toLocaleString("id-ID")} PTS
@@ -162,25 +163,14 @@ export function AdminPolisForm() {
                             {errors.premiumAmount && <p className="text-xs text-red-500 ml-1">{errors.premiumAmount.message}</p>}
                         </div>
 
-                        <button
+                        <Button
                             type="submit"
-                            disabled={isSubmitting}
-                            className="w-full relative group overflow-hidden rounded-2xl bg-gradient-to-r from-gold-metallic to-gold-dark p-px shadow-lg shadow-gold-metallic/20 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:scale-100"
+                            isLoading={isSubmitting}
+                            className="w-full h-16 bg-gold-metallic text-charcoal-950 font-black rounded-2xl hover:scale-[1.01] active:scale-[0.99] transition-all shadow-lg shadow-gold-metallic/20 border-transparent gap-3"
                         >
-                            <div className="relative bg-charcoal-950 rounded-[15px] px-6 py-4 flex items-center justify-center gap-3 group-hover:bg-transparent transition-colors">
-                                {isSubmitting ? (
-                                    <Loader2 className="w-5 h-5 text-gold-metallic animate-spin" />
-                                ) : (
-                                    <>
-                                        <span className="font-black text-gold-metallic group-hover:text-charcoal-950 transition-colors uppercase tracking-widest">Simpan & Inject Poin</span>
-                                        <ArrowRight className="w-5 h-5 text-gold-metallic group-hover:text-charcoal-950 transition-colors" />
-                                    </>
-                                )}
-                            </div>
-
-                            {/* Shimmer Effect */}
-                            <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shimmer" />
-                        </button>
+                            <span className="uppercase tracking-widest">Simpan & Inject Poin</span>
+                            <ArrowRight className="w-5 h-5" />
+                        </Button>
                     </form>
                 </div>
             </div>

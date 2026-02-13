@@ -25,12 +25,22 @@ const UpdateProductSchema = CreateProductSchema.partial();
  * @access  Public
  */
 productsRoute.get('/', async (c) => {
-    try {
-        const items = await db.select()
-            .from(products)
-            .where(eq(products.isActive, true))
-            .orderBy(desc(products.id)); // Newest first
+    const showAll = c.req.query('all') === 'true';
+    const user = c.get('user');
 
+    try {
+        let query = db.select().from(products);
+
+        // Filter active only for non-admin or if all=true is not explicitly requested
+        // Admin roles: super_admin, admin_input, admin_view
+        const isAdmin = user && ['super_admin', 'admin_input', 'admin_view'].includes(user.role);
+
+        if (!showAll || !isAdmin) {
+            // @ts-ignore
+            query = query.where(eq(products.isActive, true));
+        }
+
+        const items = await query.orderBy(desc(products.id));
         return c.json({ success: true, data: items });
     } catch (error) {
         console.error("Fetch Products Error:", error);

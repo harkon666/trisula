@@ -15,6 +15,7 @@ import {
     ShieldAlert,
     Keyboard,
 } from "lucide-react";
+import { Button, Input } from "@/src/components/atoms";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { toast } from "sonner";
@@ -61,25 +62,23 @@ export function AdminCodeManager() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-stretch gap-3 w-full md:w-auto relative z-10">
-                    <div className="relative group flex-1 min-w-[240px]">
-                        <Keyboard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500 group-focus-within:text-gold-metallic transition-colors" />
-                        <input
-                            type="text"
-                            value={newCode}
-                            onChange={(e) => setNewCode(e.target.value.toUpperCase())}
-                            onKeyDown={(e) => e.key === "Enter" && handleAddCode()}
-                            placeholder="INPUT KODE AGEN (E.G. JKT-001)"
-                            className="w-full bg-charcoal-800/50 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white font-mono placeholder:text-zinc-600 focus:outline-none focus:border-gold-metallic/50 focus:ring-1 focus:ring-gold-metallic/20 transition-all uppercase"
-                        />
-                    </div>
-                    <button
+                    <Input
+                        value={newCode}
+                        onChange={(e) => setNewCode(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => e.key === "Enter" && handleAddCode()}
+                        placeholder="INPUT KODE AGEN (E.G. JKT-001)"
+                        className="min-w-[240px] h-14 bg-charcoal-800/50 border-white/5 rounded-2xl font-mono text-white placeholder:text-zinc-600 focus:border-gold-metallic/50 focus:ring-1 focus:ring-gold-metallic/20 transition-all uppercase pl-12"
+                        icon={<Keyboard className="w-5 h-5 text-zinc-500 group-focus-within:text-gold-metallic" />}
+                    />
+                    <Button
                         onClick={handleAddCode}
-                        disabled={isRegistering || !newCode.trim()}
-                        className="relative px-8 py-4 bg-gold-metallic text-charcoal-950 font-black rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-xl shadow-gold-metallic/20 whitespace-nowrap"
+                        isLoading={isRegistering}
+                        disabled={!newCode.trim()}
+                        className="px-8 h-14 bg-gold-metallic text-charcoal-950 font-black rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-xl shadow-gold-metallic/20 border-transparent whitespace-nowrap"
                     >
-                        {isRegistering ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                        <Plus className="w-5 h-5" />
                         <span>TAMBAH KODE</span>
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -149,23 +148,27 @@ export function AdminCodeManager() {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <button
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
                                                     onClick={() => copyToClipboard(item.code)}
-                                                    className="p-2.5 rounded-xl bg-white/5 text-zinc-400 hover:text-gold-metallic hover:bg-gold-metallic/10 transition-all border border-transparent hover:border-gold-metallic/20"
+                                                    className="p-2.5 rounded-xl bg-white/5 text-zinc-400 hover:text-gold-metallic hover:bg-gold-metallic/10 transition-all border border-transparent hover:border-gold-metallic/20 h-auto"
                                                     title="Salin Kode"
                                                 >
                                                     <Copy className="w-4 h-4" />
-                                                </button>
+                                                </Button>
 
                                                 {!item.isUsed && (
-                                                    <button
+                                                    <Button
+                                                        variant="danger"
+                                                        size="sm"
                                                         onClick={() => deleteCode(item.id)}
-                                                        disabled={isDeleting}
-                                                        className="p-2.5 rounded-xl bg-red-500/5 text-red-500/50 hover:text-red-500 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
+                                                        isLoading={isDeleting}
+                                                        className="p-2.5 rounded-xl bg-red-500/5 text-red-500/50 hover:text-red-500 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20 h-auto"
                                                         title="Hapus Kode"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
-                                                    </button>
+                                                    </Button>
                                                 )}
                                             </div>
                                         </td>

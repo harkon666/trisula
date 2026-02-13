@@ -14,8 +14,15 @@ import {
     ArrowRightCircle,
     Sparkles
 } from "lucide-react";
+import { Button, Input } from "@/src/components/atoms";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+}
 
 export function AdminRedeemTable() {
     const { requests, isLoading, updateStatus, isUpdating } = useAdminRedeem();
@@ -63,33 +70,33 @@ export function AdminRedeemTable() {
                     {[
                         { id: "pending", label: "Menunggu", icon: Clock },
                         { id: "ongoing", label: "Diproses", icon: ArrowRightCircle },
-                        // { id: "finished", label: "Selesai", icon: CheckCircle2 },
                     ].map(tab => (
-                        <button
+                        <Button
                             key={tab.id}
+                            variant="ghost"
+                            size="sm"
                             //@ts-ignore
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all
-                                ${activeTab === tab.id
-                                    ? "bg-gold-metallic text-charcoal-950 shadow-lg shadow-gold-metallic/20"
-                                    : "text-zinc-500 hover:text-white hover:bg-white/5"}`}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all h-auto",
+                                activeTab === tab.id
+                                    ? "bg-gold-metallic text-charcoal-950 shadow-lg shadow-gold-metallic/20 hover:text-charcoal-950"
+                                    : "text-zinc-500 hover:text-white hover:bg-white/5"
+                            )}
                         >
                             <tab.icon className="w-4 h-4" />
                             {tab.label}
-                        </button>
+                        </Button>
                     ))}
                 </div>
 
-                <div className="relative group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-gold-metallic transition-colors" />
-                    <input
-                        type="text"
-                        placeholder="Cari Nasabah atau Reward..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="bg-charcoal-800/50 border border-white/5 rounded-xl pl-10 pr-4 py-2.5 text-sm w-full md:w-80 focus:outline-none focus:border-gold-metallic/50 focus:ring-1 focus:ring-gold-metallic/20 transition-all"
-                    />
-                </div>
+                <Input
+                    placeholder="Cari Nasabah atau Reward..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="bg-charcoal-800/50 border-white/5 rounded-xl text-sm w-full md:w-80 focus:border-gold-metallic/50 pl-10 h-10"
+                    icon={<Search className="w-4 h-4 text-zinc-500 group-focus-within:text-gold-metallic" />}
+                />
             </div>
 
             {/* Table Container */}
@@ -160,35 +167,39 @@ export function AdminRedeemTable() {
                                             <div className="flex items-center justify-end gap-2">
                                                 {req.status === "pending" && (
                                                     <>
-                                                        <button
+                                                        <Button
                                                             onClick={() => updateStatus({ id: req.id, status: "processing" })}
-                                                            disabled={isUpdating}
-                                                            className="px-4 py-2 rounded-lg bg-gold-metallic/10 text-gold-metallic text-xs font-bold hover:bg-gold-metallic hover:text-charcoal-950 transition-all border border-gold-metallic/20"
+                                                            isLoading={isUpdating}
+                                                            size="sm"
+                                                            className="px-4 py-2 rounded-lg bg-gold-metallic/10 text-gold-metallic text-xs font-bold hover:bg-gold-metallic hover:text-charcoal-950 transition-all border border-gold-metallic/20 h-auto"
                                                         >
                                                             Proses
-                                                        </button>
-                                                        <button
+                                                        </Button>
+                                                        <Button
                                                             onClick={() => handleReject(req.id)}
-                                                            disabled={isUpdating}
-                                                            className="px-4 py-2 rounded-lg bg-red-500/10 text-red-500 text-xs font-bold hover:bg-red-500 hover:text-white transition-all border border-red-500/20"
+                                                            isLoading={isUpdating}
+                                                            variant="danger"
+                                                            size="sm"
+                                                            className="px-4 py-2 rounded-lg bg-red-500/10 text-red-500 text-xs font-bold hover:bg-red-500 hover:text-white transition-all border border-red-500/20 h-auto"
                                                         >
                                                             Tolak
-                                                        </button>
+                                                        </Button>
                                                     </>
                                                 )}
                                                 {(req.status === "processing" || req.status === "ready") && (
-                                                    <button
+                                                    <Button
                                                         onClick={() => updateStatus({ id: req.id, status: "completed" })}
-                                                        disabled={isUpdating}
-                                                        className="px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-500 text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20"
+                                                        isLoading={isUpdating}
+                                                        size="sm"
+                                                        className="px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-500 text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20 h-auto"
                                                     >
                                                         Selesaikan
-                                                    </button>
+                                                    </Button>
                                                 )}
 
-                                                <button className="p-2 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-colors">
+                                                <Button variant="ghost" size="sm" className="p-2 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-white transition-colors h-auto border-transparent">
                                                     <MoreHorizontal className="w-4 h-4" />
-                                                </button>
+                                                </Button>
                                             </div>
                                         </td>
                                     </tr>

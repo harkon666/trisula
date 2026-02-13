@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { Card, Skeleton, AnimatedCounter, Badge } from "@/src/components/atoms";
 import api from "@/src/lib/api-client";
 import { useAuth } from "@/src/hooks/useAuth";
@@ -84,40 +85,42 @@ export function UserBalanceCard() {
             </Card>
 
             {/* Wealth Section */}
-            <Card
-                variant="solid"
-                glow
-                className="bg-gradient-to-br from-zinc-900 to-black group cursor-pointer"
-            >
-                <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <svg className="w-24 h-24 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z" />
-                    </svg>
-                </div>
+            <Link href="/dashboard/products" className="block">
+                <Card
+                    variant="solid"
+                    glow
+                    className="bg-gradient-to-br from-zinc-900 to-black group cursor-pointer h-full"
+                >
+                    <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <svg className="w-24 h-24 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z" />
+                        </svg>
+                    </div>
 
-                <div className="relative z-10 flex flex-col justify-between h-full min-h-[160px]">
-                    <div>
-                        <h3 className="text-zinc-400 uppercase tracking-widest text-xs font-bold mb-2 flex items-center gap-2">
-                            Total Aset
-                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                        </h3>
-                        <div className="text-3xl md:text-4xl font-bold text-white mb-1">
-                            <AnimatedCounter
-                                value={data.wealth?.totalAum || 0}
-                                formatter={(val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)}
-                                duration={2.5}
-                            />
+                    <div className="relative z-10 flex flex-col justify-between h-full min-h-[160px]">
+                        <div>
+                            <h3 className="text-zinc-400 uppercase tracking-widest text-xs font-bold mb-2 flex items-center gap-2">
+                                Total Aset
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                            </h3>
+                            <div className="text-3xl md:text-4xl font-bold text-white mb-1">
+                                <AnimatedCounter
+                                    value={data.wealth?.totalAum || 0}
+                                    formatter={(val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)}
+                                    duration={2.5}
+                                />
+                            </div>
+                            <p className="text-zinc-500 text-xs">
+                                ~{data.wealth?.estimatedYield} Pts/Hari (Est.)
+                            </p>
                         </div>
-                        <p className="text-zinc-500 text-xs">
-                            ~{data.wealth?.estimatedYield} Pts/Hari (Est.)
-                        </p>
-                    </div>
 
-                    <div className="flex items-center text-amber-500 text-xs font-bold uppercase tracking-wider mt-4 group-hover:translate-x-1 transition-transform">
-                        Kelola Portofolio &rarr;
+                        <div className="flex items-center text-amber-500 text-xs font-bold uppercase tracking-wider mt-4 group-hover:translate-x-1 transition-transform">
+                            Beli Produk Eksklusif &rarr;
+                        </div>
                     </div>
-                </div>
-            </Card>
+                </Card>
+            </Link>
         </div>
     );
 }

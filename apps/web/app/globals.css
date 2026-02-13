@@ -81,6 +81,7 @@ button:disabled,
 input:disabled {
   cursor: not-allowed;
 }
+
 /* Custom Scrollbar Utility */
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
@@ -97,4 +98,18 @@ input:disabled {
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(212, 175, 55, 0.4);
+}
+
+@keyframes shimmer-slide {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-shimmer-slide {
+  animation: shimmer-slide var(--speed) linear infinite;
 }

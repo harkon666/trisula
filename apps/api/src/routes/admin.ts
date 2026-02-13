@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
-import { db, users, redeemRequests, pointsLedger, rewards, profiles, roleEnum, agentActivationCodes, adminActions } from '@repo/database';
-import { eq, inArray, sql, desc } from 'drizzle-orm';
+import { db, users, redeemRequests, pointsLedger, rewards, profiles, roleEnum, agentActivationCodes, adminActions, announcements, announcementViews } from '@repo/database';
+import { eq, inArray, sql, desc, count } from 'drizzle-orm';
 import { z } from 'zod';
 import { rbacMiddleware } from '../middlewares/rbac';
 
@@ -480,6 +480,169 @@ admin.patch('/users/:id/metadata', zValidator('json', z.object({
     } catch (error) {
         console.error("Admin Update Metadata Error:", error);
         return c.json({ success: false, message: "Failed to update user metadata" }, 500);
+    }
+});
+
+// ============================================================
+// ANNOUNCEMENTS MANAGEMENT
+// ============================================================
+
+/**
+ * @route   GET /announcements
+ * @desc    List all announcements with view counts
+ * @access  Admin (all roles via rbacMiddleware)
+ */
+admin.get('/announcements', async (c) => {
+    try {
+        const result = await db
+            .select({
+                id: announcements.id,
+                title: announcements.title,
+                videoUrl: announcements.videoUrl,
+                content: announcements.content,
+                ctaUrl: announcements.ctaUrl,
+                isActive: announcements.isActive,
+                createdAt: announcements.createdAt,
+                totalViews: count(announcementViews.id),
+            })
+            .from(announcements)
+            .leftJoin(announcementViews, eq(announcements.id, announcementViews.announcementId))
+            .groupBy(
+                announcements.id,
+                announcements.title,
+                announcements.videoUrl,
+                announcements.content,
+                announcements.ctaUrl,
+                announcements.isActive,
+                announcements.createdAt
+            )
+            .orderBy(desc(announcements.createdAt));
+
+        return c.json({ success: true, data: result });
+    } catch (error) {
+        console.error("Admin List Announcements Error:", error);
+        return c.json({ success: false, message: "Failed to fetch announcements" }, 500);
+    }
+});
+
+/**
+ * @route   POST /announcements
+ * @desc    Create a new announcement
+ * @access  Super Admin, Admin Input
+ */
+const CreateAnnouncementSchema = z.object({
+    title: z.string().min(1, "Judul wajib diisi"),
+    content: z.string().optional(),
+    videoUrl: z.string().optional(),
+    ctaUrl: z.string().optional(),
+    isActive: z.boolean().optional().default(true),
+});
+
+admin.post('/announcements', zValidator('json', CreateAnnouncementSchema), async (c) => {
+    const user = c.get('user');
+
+    if (user.role !== 'super_admin' && user.role !== 'admin_input') {
+        return c.json({ success: false, message: "Forbidden: Insufficient permissions" }, 403);
+    }
+
+    const data = c.req.valid('json');
+
+    try {
+        return await db.transaction(async (tx) => {
+            const [created] = await tx.insert(announcements).values({
+                title: data.title,
+                content: data.content || null,
+                videoUrl: data.videoUrl || null,
+                ctaUrl: data.ctaUrl || null,
+                isActive: data.isActive,
+                createdAt: new Date(),
+            }).returning();
+
+            if (!created) {
+                return c.json({ success: false, message: "Failed to create announcement" }, 500);
+            }
+
+            // Audit trail
+            await tx.insert(adminActions).values({
+                adminId: user.id,
+                action: 'CREATE_ANNOUNCEMENT',
+                details: { announcementId: created.id, title: data.title },
+                createdAt: new Date(),
+            });
+
+            return c.json({ success: true, message: "Pengumuman berhasil dipublikasikan", data: created });
+        });
+    } catch (error) {
+        console.error("Admin Create Announcement Error:", error);
+        return c.json({ success: false, message: "Failed to create announcement" }, 500);
+    }
+});
+
+/**
+ * @route   PATCH /announcements/:id
+ * @desc    Update an announcement
+ * @access  Super Admin, Admin Input
+ */
+const UpdateAnnouncementSchema = z.object({
+    title: z.string().min(1).optional(),
+    content: z.string().optional(),
+    videoUrl: z.string().optional(),
+    ctaUrl: z.string().optional(),
+    isActive: z.boolean().optional(),
+});
+
+admin.patch('/announcements/:id', zValidator('json', UpdateAnnouncementSchema), async (c) => {
+    const user = c.get('user');
+    const id = parseInt(c.req.param('id'));
+
+    if (user.role !== 'super_admin' && user.role !== 'admin_input') {
+        return c.json({ success: false, message: "Forbidden: Insufficient permissions" }, 403);
+    }
+
+    const data = c.req.valid('json');
+
+    try {
+        const [updated] = await db.update(announcements)
+            .set(data)
+            .where(eq(announcements.id, id))
+            .returning();
+
+        if (!updated) return c.json({ success: false, message: "Announcement not found" }, 404);
+
+        return c.json({ success: true, message: "Pengumuman berhasil diperbarui", data: updated });
+    } catch (error) {
+        console.error("Admin Update Announcement Error:", error);
+        return c.json({ success: false, message: "Failed to update announcement" }, 500);
+    }
+});
+
+/**
+ * @route   DELETE /announcements/:id
+ * @desc    Delete an announcement
+ * @access  Super Admin Only
+ */
+admin.delete('/announcements/:id', async (c) => {
+    const user = c.get('user');
+    const id = parseInt(c.req.param('id'));
+
+    if (user.role !== 'super_admin') {
+        return c.json({ success: false, message: "Forbidden: Only Super Admin can delete announcements" }, 403);
+    }
+
+    try {
+        // Delete related views first
+        await db.delete(announcementViews).where(eq(announcementViews.announcementId, id));
+
+        const [deleted] = await db.delete(announcements)
+            .where(eq(announcements.id, id))
+            .returning();
+
+        if (!deleted) return c.json({ success: false, message: "Announcement not found" }, 404);
+
+        return c.json({ success: true, message: "Pengumuman berhasil dihapus" });
+    } catch (error) {
+        console.error("Admin Delete Announcement Error:", error);
+        return c.json({ success: false, message: "Failed to delete announcement" }, 500);
     }
 });
 

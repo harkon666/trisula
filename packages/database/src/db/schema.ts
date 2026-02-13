@@ -120,7 +120,9 @@ export const announcements = pgTable("announcements", {
     title: text("title"),
     videoUrl: text("video_url"),
     content: text("content"),
+    ctaUrl: text("cta_url"),
     isActive: boolean("is_active").default(true),
+    createdAt: timestamp("created_at").defaultNow(),
 });
 
 // 12. Announcement Views (Engagement Tracker)

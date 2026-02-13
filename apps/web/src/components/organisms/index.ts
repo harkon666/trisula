@@ -23,3 +23,4 @@ export * from "./NasabahProductGrid";
 export * from "./AdminUserManager";
 export * from "./AdminUserPointHistory";
 export * from "./MetadataEditor";
+export * from "./AdminAnnouncementManager";

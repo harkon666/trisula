@@ -11,6 +11,7 @@ import contentRoutes from './routes/content.js';
 import monitoringRoutes from './routes/monitoring.js';
 import dashboardRoutes from './routes/dashboard.js';
 import interactionsRoutes from './routes/interactions.js';
+import agentRoutes from './routes/agent.js';
 // import wealthRoutes from './routes/wealth.js';
 // import rewardsRoutes from './routes/rewards.js';
 
@@ -45,6 +46,7 @@ app.route('/api/v1/content', contentRoutes);
 app.route('/api/v1/monitoring', monitoringRoutes);
 app.route('/api/v1/dashboard', dashboardRoutes);
 app.route('/api/v1/interactions', interactionsRoutes);
+app.route('/api/v1/agent', agentRoutes);
 // app.route('/api/v1/wealth', wealthRoutes);
 // app.route('/api/v1/rewards', rewardsRoutes);
 //

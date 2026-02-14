@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/src/hooks/useAuth";
-import { Navbar } from "@/src/components/organisms/Navbar";
+import { AgentNavbar } from "@/src/components/organisms/AgentNavbar";
 import { ReferralTable } from "@/src/components/organisms/ReferralTable";
 import { EarningsChart } from "@/src/components/molecules/EarningsChart";
 import { WatchdogAlert } from "@/src/components/molecules/WatchdogAlert";
@@ -10,12 +10,12 @@ import { Button } from "@/src/components/atoms";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { useRef } from "react";
-import { Users, CreditCard, BarChart3, LogOut, Copy } from "lucide-react";
+import { Users, CreditCard, BarChart3, Copy } from "lucide-react";
 import RoleGuard from "@/src/components/auth/RoleGuard";
 import { toast } from "sonner";
 
 export default function AgentDashboard() {
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
     const { data: stats, isLoading } = useAgentStats();
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -61,7 +61,7 @@ export default function AgentDashboard() {
     return (
         <RoleGuard allowedRoles={['agent']}>
             <div ref={containerRef} className="min-h-screen bg-midnight-950 text-white pb-20">
-                <Navbar />
+                <AgentNavbar />
                 <WatchdogAlert />
 
                 <main className="pt-28 max-w-7xl mx-auto px-6">
@@ -73,10 +73,6 @@ export default function AgentDashboard() {
                             </h1>
                             <p className="text-zinc-400">Welcome back, <span className="text-white font-bold">{user?.userId}</span>. Here is your performance overview.</p>
                         </div>
-                        <Button variant="secondary" onClick={logout} className="border-white/10 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20 text-xs">
-                            <LogOut className="w-4 h-4 mr-2" />
-                            Sign Out
-                        </Button>
                     </div>
 
                     {/* Stats Grid */}

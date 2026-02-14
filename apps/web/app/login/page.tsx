@@ -36,6 +36,8 @@ export default function LoginPage() {
         if (isAuthenticated && user) {
             if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
                 router.push('/admin');
+            } else if (user.role === 'agent') {
+                router.push('/dashboard/agent');
             } else {
                 router.push('/dashboard/nasabah');
             }
@@ -85,7 +87,9 @@ export default function LoginPage() {
                 // Redirect logic based on role
                 const role = response.data.user.role;
                 if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(role)) {
-                    router.push('/admin');
+                    router.push('/dashboard/admin');
+                } else if (role === 'agent') {
+                    router.push('/dashboard/agent');
                 } else {
                     router.push('/dashboard/nasabah');
                 }

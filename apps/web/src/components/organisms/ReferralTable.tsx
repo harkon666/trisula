@@ -6,9 +6,11 @@ import gsap from "gsap";
 import { useAgentReferrals } from "@/src/hooks/useAgentDashboard";
 import { Phone, User, Award, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/src/components/atoms";
+import { useRouter } from "next/navigation";
 
 export const ReferralTable = () => {
     const { data: referrals, isLoading } = useAgentReferrals();
+    const router = useRouter();
     const tableRef = useRef<HTMLDivElement>(null);
 
     useGSAP(() => {
@@ -68,7 +70,11 @@ export const ReferralTable = () => {
                     </thead>
                     <tbody className="divide-y divide-white/5">
                         {referrals.map((user) => (
-                            <tr key={user.id} className="referral-row group hover:bg-white/[0.02] transition-colors">
+                            <tr
+                                key={user.id}
+                                className="referral-row group hover:bg-white/[0.05] transition-colors cursor-pointer"
+                                onClick={() => router.push(`/dashboard/agent/referrals/${user.id}`)}
+                            >
                                 <td className="px-6 py-4 font-medium text-white flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-trisula-600 to-trisula-900 flex items-center justify-center text-xs font-bold border border-white/10">
                                         {user.fullName.charAt(0)}
@@ -101,13 +107,24 @@ export const ReferralTable = () => {
                                 </td>
                                 <td className="px-6 py-4 text-center">
                                     <Button
-                                        variant="outline" // Assuming outline variant exists, otherwise secondary
+                                        variant="outline"
                                         size="sm"
                                         className="h-8 px-3 text-[10px] border-white/10 hover:border-green-500/50 hover:bg-green-500/10 hover:text-green-400"
-                                        onClick={() => window.open(`https://wa.me/${user.whatsapp}`, "_blank")}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            window.open(`https://wa.me/${user.whatsapp}`, "_blank");
+                                        }}
                                     >
                                         <Phone className="w-3 h-3 mr-1.5" />
                                         WhatsApp
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 px-3 ml-2 text-[10px] hover:bg-white/10"
+                                        onClick={() => router.push(`/dashboard/agent/referrals/${user.id}`)}
+                                    >
+                                        Detail
                                     </Button>
                                 </td>
                             </tr>

@@ -78,9 +78,9 @@ agentRoute.get('/stats', rbacMiddleware(), async (c) => {
         return c.json({
             success: true,
             data: {
-                totalReferrals: referralCount.count,
-                totalCommission: totalPoints.total || 0,
-                totalInteractions: interactionCount.count // Placeholder for specific "unanswered" logic
+                totalReferrals: referralCount?.count || 0,
+                totalCommission: totalPoints?.total || 0,
+                totalInteractions: interactionCount?.count || 0 // Placeholder for specific "unanswered" logic
             }
         });
 
@@ -217,6 +217,80 @@ agentRoute.get('/watchdog', rbacMiddleware(), async (c) => {
 
     } catch (error) {
         console.error("Agent Watchdog Error:", error);
+        return c.json({ success: false, message: "Internal Server Error" }, 500);
+    }
+});
+
+/**
+ * @route   GET /api/v1/agent/referrals/:id
+ * @desc    Get Detailed Profile of a specific Referral
+ * @access  Agent (Strict Ownership Check)
+ */
+agentRoute.get('/referrals/:id', rbacMiddleware(), async (c) => {
+    const user = c.get('user');
+    const nasabahId = c.req.param('id');
+
+    if (user.role !== 'agent') {
+        return c.json({ success: false, message: "Unauthorized" }, 403);
+    }
+
+    try {
+        // 1. Security Check: Is this Nasabah referred by THIS agent?
+        const [referralCheck] = await db.select({
+            id: users.id,
+            fullName: profiles.fullName,
+            userId: users.userId,
+            pointsBalance: users.pointsBalance,
+            whatsapp: profiles.whatsapp,
+            email: profiles.email,
+            joinedAt: users.createdAt,
+        })
+            .from(profiles)
+            .innerJoin(users, eq(profiles.userId, users.id))
+            .where(
+                and(
+                    eq(users.id, nasabahId),
+                    eq(profiles.referredByAgentId, user.userId) // CRITICAL SECURITY CHECK
+                )
+            )
+            .limit(1);
+
+        if (!referralCheck) {
+            return c.json({ success: false, message: "Nasabah not found or not in your network." }, 404);
+        }
+
+        // 2. Fetch Active Polis
+        const nasabahPolis = await db.select()
+            .from(polisData)
+            .where(eq(polisData.nasabahId, nasabahId))
+            .orderBy(desc(polisData.createdAt));
+
+        // 3. Fetch Recent Points History (Limit 20)
+        const pointHistory = await db.select()
+            .from(pointsLedger)
+            .where(eq(pointsLedger.userId, nasabahId))
+            .orderBy(desc(pointsLedger.createdAt))
+            .limit(20);
+
+        // 4. Fetch WA Interactions (Limit 20)
+        const interactions = await db.select()
+            .from(waInteractions)
+            .where(eq(waInteractions.nasabahId, nasabahId))
+            .orderBy(desc(waInteractions.clickedAt))
+            .limit(20);
+
+        return c.json({
+            success: true,
+            data: {
+                profile: referralCheck,
+                polis: nasabahPolis,
+                points: pointHistory,
+                interactions: interactions
+            }
+        });
+
+    } catch (error) {
+        console.error("Agent Referral Detail Error:", error);
         return c.json({ success: false, message: "Internal Server Error" }, 500);
     }
 });

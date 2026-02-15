@@ -177,3 +177,27 @@ Implemented on Feb 12, 2026, as a premium destination for Nasabah to exchange po
 177: - **Standardized API Integration**: Refactored all administrative hooks to use the `api-client` singleton for secure, authenticated communication (Authorization Bearer).
 178: - **Premium Tabbed Interface**: Uses GSAP for smooth transitions between operational modules, maintaining the **Royal Blue & Gold Metallic** luxury aesthetic.
 179: - **Authenticated Session Management**: Added clear Logout UX for secure exit from operational environments.
+
+---
+
+## 11. Admin Dashboard Optimization & Announcements (Phase 5)
+Implemented in Feb 15, 2026, focusing on role-specific UX improvements and a global announcement system.
+
+### Global Announcement System
+- **Premium Popup Logic**: A high-visibility modal that triggers on user login, featuring **GSAP Power4** bounce animations.
+- **Rich Media Support**: Supports embedded YouTube videos or direct video links for engaging updates.
+- **Smart Caching**:
+  - **Per-User Tracking**: Uses `localStorage` keyed by `userId` to ensure specific users only see an announcement once.
+  - **Role Isolation**: Prevents cache collisions when switching between Admin and Nasabah accounts on the same device.
+
+### Admin Input Workflow Optimization
+- **Smart Polis Entry Form**:
+  - **Auto-Fill Logic**: Automatically detects and selects the linked **Agent** when a **Nasabah** is chosen, reducing data entry errors.
+  - **Internal Data Access**: Implemented specialized `GET /admin/internal/*` endpoints to allow restricted roles (`admin_input`) to fetch necessary operational data without exposing sensitive global admin routes.
+- **Role-Based Navigation**: Refined dashboard access control to show only relevant tools for `admin_input` (hiding User Base, Product Catalog, etc.).
+
+### UI/UX Refinements
+- **Responsive Command Center**:
+  - **Adaptive Header**: Redesigned the admin header to transition gracefully from a stacked mobile layout to a unified desktop toolbar.
+  - **Smart Navigation**: Implemented a horizontal scrollable menu with **dynamic arrow indicators** that only appear when scrolling is available.
+  - **Clean Aesthetics**: Added a global `.no-scrollbar` utility to hide scrollbars while maintaining functionality, ensuring a polished "app-like" feel.

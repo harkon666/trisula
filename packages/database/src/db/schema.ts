@@ -139,5 +139,7 @@ export const adminActions = pgTable("admin_actions", {
     adminId: uuid("admin_id").references(() => users.id),
     action: text("action").notNull(),
     details: jsonb("details"),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
     createdAt: timestamp("created_at").defaultNow(),
 });

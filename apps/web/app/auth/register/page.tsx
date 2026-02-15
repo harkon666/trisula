@@ -42,7 +42,7 @@ export default function RegisterPage() {
     useEffect(() => {
         if (isAuthenticated && user) {
             if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
-                router.push('/admin');
+                router.push('/dashboard/admin');
             } else {
                 router.push('/dashboard/nasabah');
             }

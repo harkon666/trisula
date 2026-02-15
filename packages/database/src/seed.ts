@@ -8,7 +8,7 @@ async function seed() {
     try {
         // Shared Password Hash
         const salt = await bcrypt.genSalt(10);
-        const passwordHash = await bcrypt.hash("Sultan2026!", salt);
+        const passwordHash = await bcrypt.hash("123456", salt);
         const usersToSeed = [
             {
                 name: "Agent Primary",
@@ -24,6 +24,14 @@ async function seed() {
                 email: "admin1@trisula.com",
                 phone: "628000000001",
                 role: "admin_input",
+                balance: 0
+            },
+            {
+                name: "Admin View",
+                userId: "ADMIN02",
+                email: "admin2@trisula.com",
+                phone: "628000000002",
+                role: "admin_view",
                 balance: 0
             },
             {

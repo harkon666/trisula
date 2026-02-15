@@ -12,6 +12,7 @@ import monitoringRoutes from './routes/monitoring.js';
 import dashboardRoutes from './routes/dashboard.js';
 import interactionsRoutes from './routes/interactions.js';
 import agentRoutes from './routes/agent.js';
+import adminLogsRoutes from './routes/admin-logs.js';
 // import wealthRoutes from './routes/wealth.js';
 // import rewardsRoutes from './routes/rewards.js';
 
@@ -40,6 +41,7 @@ app.route('/api/v1/auth', authRoutes);
 app.route('/api/v1/user', userRoutes);
 app.route('/api/v1/redeem', redeemRoutes);
 app.route('/api/v1/admin', adminRoutes);
+app.route('/api/v1/admin', adminLogsRoutes);
 app.route('/api/v1/products', productsRoutes);
 app.route('/api/v1/polis', polisRoutes);
 app.route('/api/v1/content', contentRoutes);

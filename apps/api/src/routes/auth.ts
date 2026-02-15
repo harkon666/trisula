@@ -257,6 +257,21 @@ auth.post('/login', zValidator('json', LoginSchema), async (c) => {
         const dailyBonus = await PointsService.processDailyLogin(user.id);
         const dailyMessage = dailyBonus.awarded ? " + 10 Poin Harian!" : "";
 
+        // 3.5 Log Admin Login
+        if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
+            const ipAddress = c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown';
+            const userAgent = c.req.header('user-agent');
+
+            await db.insert(adminActions).values({
+                adminId: user.id,
+                action: 'LOGIN',
+                details: { method: 'password' },
+                ipAddress,
+                userAgent,
+                createdAt: new Date(),
+            });
+        }
+
         // 4. Generate JWT (Jose)
         const token = await new SignJWT({
             sub: user.id,

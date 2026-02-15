@@ -3,13 +3,13 @@
 import { useState } from "react";
 import RoleGuard from "@/src/components/auth/RoleGuard";
 import { PageEntrance } from "@/src/components/ui/GsapContext";
-import { AdminRedeemTable, AdminPolisForm, AdminCodeManager, AdminRewardManager, AdminProductManager, AdminUserManager, AdminAnnouncementManager } from "@/src/components/organisms";
-import { Activity, ShieldPlus, UserPlus, LayoutDashboard, LogOut, Ticket, Package, Users, Megaphone } from "lucide-react";
+import { AdminRedeemTable, AdminPolisForm, AdminCodeManager, AdminRewardManager, AdminProductManager, AdminUserManager, AdminAnnouncementManager, AdminLoginHistory } from "@/src/components/organisms";
+import { Activity, ShieldPlus, UserPlus, LayoutDashboard, LogOut, Ticket, Package, Users, Megaphone, History as HistoryIcon } from "lucide-react";
 import { useAuth } from "@/src/hooks/useAuth";
 
 export default function AdminDashboard() {
     const { user, logout } = useAuth();
-    const [activeSection, setActiveSection] = useState<"fulfillment" | "polis" | "codes" | "rewards" | "products" | "users" | "announcements">("fulfillment");
+    const [activeSection, setActiveSection] = useState<"fulfillment" | "polis" | "codes" | "rewards" | "products" | "users" | "announcements" | "security">("fulfillment");
 
     const sections = [
         { id: "fulfillment", label: "Redeem Queue", icon: Activity, component: <AdminRedeemTable />, allowedRoles: ['admin', 'super_admin', 'admin_view', 'admin_input'] },
@@ -19,6 +19,7 @@ export default function AdminDashboard() {
         { id: "codes", label: "Agent Codes", icon: UserPlus, component: <AdminCodeManager />, allowedRoles: ['admin', 'super_admin', 'admin_input'] },
         { id: "rewards", label: "Voucher Catalog", icon: Ticket, component: <AdminRewardManager />, allowedRoles: ['super_admin'] },
         { id: "announcements", label: "Announcements", icon: Megaphone, component: <AdminAnnouncementManager />, allowedRoles: ['super_admin', 'admin_input'] },
+        { id: "security", label: "Login History", icon: HistoryIcon, component: <AdminLoginHistory />, allowedRoles: ['super_admin', 'admin_view'] },
     ];
 
     const visibleSections = sections.filter(s => s.allowedRoles.includes(user?.role || ""));

@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAdminUsers } from "@/src/hooks/useAdminUsers";
+import { useAdminInternal } from "@/src/hooks/useAdminInternal";
 import { useAdminPolis } from "@/src/hooks/useAdminPolis";
 import {
     FileText,
@@ -27,8 +28,7 @@ const PolisSchema = z.object({
 type PolisFormValues = z.infer<typeof PolisSchema>;
 
 export function AdminPolisForm() {
-    const { data: nasabahs, isLoading: loadingNasabah } = useAdminUsers("nasabah");
-    const { data: agents, isLoading: loadingAgent } = useAdminUsers("agent");
+    const { nasabahAgents, isLoadingNasabahAgents, agents, isLoadingAgents } = useAdminInternal();
     const { submitPolis, isSubmitting } = useAdminPolis();
 
     const {
@@ -37,6 +37,7 @@ export function AdminPolisForm() {
         reset,
         watch,
         control,
+        setValue,
         formState: { errors }
     } = useForm<PolisFormValues>({
         resolver: zodResolver(PolisSchema),
@@ -46,7 +47,18 @@ export function AdminPolisForm() {
     });
 
     const premiumAmount = watch("premiumAmount");
+    const nasabahId = watch("nasabahId");
     const estimatedPoints = Math.floor(premiumAmount / 1000);
+
+    // Auto-fill Agent based on selected Nasabah
+    useEffect(() => {
+        if (nasabahId && nasabahAgents) {
+            const selected = nasabahAgents.find(n => n.nasabahId === nasabahId);
+            if (selected?.agent) {
+                setValue("agentId", selected.agent.id);
+            }
+        }
+    }, [nasabahId, nasabahAgents, setValue]);
 
     const onSubmit = (data: PolisFormValues) => {
         submitPolis(data, {
@@ -97,13 +109,13 @@ export function AdminPolisForm() {
                                         className="w-full bg-charcoal-800/50 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white appearance-none focus:outline-none focus:border-gold-metallic/50 focus:ring-1 focus:ring-gold-metallic/20 transition-all"
                                     >
                                         <option value="" className="bg-charcoal-900">-- Pilih Nasabah --</option>
-                                        {nasabahs?.map(n => (
-                                            <option key={n.id} value={n.id} className="bg-charcoal-900">
-                                                {n.fullName || n.userId}
+                                        {nasabahAgents?.map(n => (
+                                            <option key={n.nasabahId} value={n.nasabahId} className="bg-charcoal-900">
+                                                {n.nasabahName || n.nasabahUserId}
                                             </option>
                                         ))}
                                     </select>
-                                    {loadingNasabah && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gold-metallic animate-spin" />}
+                                    {isLoadingNasabahAgents && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gold-metallic animate-spin" />}
                                 </div>
                                 {errors.nasabahId && <p className="text-xs text-red-500 ml-1">{errors.nasabahId.message}</p>}
                             </div>
@@ -124,7 +136,7 @@ export function AdminPolisForm() {
                                             </option>
                                         ))}
                                     </select>
-                                    {loadingAgent && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gold-metallic animate-spin" />}
+                                    {isLoadingAgents && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gold-metallic animate-spin" />}
                                 </div>
                                 {errors.agentId && <p className="text-xs text-red-500 ml-1">{errors.agentId.message}</p>}
                             </div>

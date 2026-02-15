@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/src/lib/api-client";
 import { toast } from "sonner";
+import { useAuth } from "@/src/hooks/useAuth";
 
 export interface Announcement {
     id: number;
@@ -26,11 +27,13 @@ export interface CreateAnnouncementInput {
 export function useAdminAnnouncements() {
     const queryClient = useQueryClient();
 
+    const { user } = useAuth(); // Need user context
+
     // Fetch all announcements with view counts
     const { data: announcements, isLoading } = useQuery<Announcement[]>({
         queryKey: ["admin", "announcements"],
         queryFn: async () => {
-            const res = await api.get("/v1/admin/announcements");
+            const res = await api.get("/v1/admin/internal/announcements");
             return res.data.data;
         },
     });

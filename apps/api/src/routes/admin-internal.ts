@@ -1,0 +1,162 @@
+import { Hono } from 'hono';
+import { db, users, profiles } from '@repo/database';
+import { eq, and, desc } from 'drizzle-orm';
+import { rbacMiddleware } from '../middlewares/rbac';
+
+type Env = {
+    Variables: {
+        user: {
+            id: string;
+            role: string;
+            userId: string;
+        };
+    };
+};
+
+const internal = new Hono<Env>();
+
+/**
+ * Specialized RBAC for Internal Data Fetching
+ * Allows admin_input and admin_view to perform specific GET actions 
+ * that are otherwise restricted in the main admin router.
+ */
+const internalRbac = () => {
+    return async (c: any, next: any) => {
+        const user = c.get('user');
+        if (!user || !['super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
+            return c.json({ success: false, message: 'Forbidden: Insufficient permissions' }, 403);
+        }
+        await next();
+    };
+};
+
+/**
+ * @route   GET /admin/internal/nasabah-agents
+ * @desc    Get list of nasabahs with their linked agents for auto-fill logic
+ * @access  Super Admin, Admin Input, Admin View
+ */
+internal.get('/nasabah-agents', internalRbac(), async (c) => {
+    try {
+        // We need: Nasabah (ID, Name, UserId) + Linked Agent (ID, Name, UserId)
+        const result = await db.select({
+            id: users.id,
+            userId: users.userId,
+            fullName: profiles.fullName,
+            agentUserId: profiles.referredByAgentId, // This is the string ID of the agent
+        })
+            .from(users)
+            .innerJoin(profiles, eq(users.id, profiles.userId))
+            .where(eq(users.role, 'nasabah'))
+            .orderBy(desc(users.createdAt));
+
+        // Now we need to fetch the agents to map the agentUserId strings to actual UUIDs and Names
+        // To be efficient, we can either join or do a second query if the list is small.
+        // Joining is cleaner.
+
+        // Refined Query with Join to get Agent Details
+        // We'll use aliases for clarity if drizzle supports them well in this context, 
+        // or just join profiles twice.
+
+        // Let's do a more robust join:
+        const nasabahWithAgents = await db.transaction(async (tx) => {
+            const list = await tx.select({
+                nasabahId: users.id,
+                nasabahUserId: users.userId,
+                nasabahName: profiles.fullName,
+                agentUserId: profiles.referredByAgentId,
+            })
+                .from(users)
+                .innerJoin(profiles, eq(users.id, profiles.userId))
+                .where(eq(users.role, 'nasabah'));
+
+            // Fetch all agents and their profiles for mapping
+            const allAgents = await tx.select({
+                id: users.id,
+                userId: users.userId,
+                fullName: profiles.fullName,
+            })
+                .from(users)
+                .innerJoin(profiles, eq(users.id, profiles.userId))
+                .where(eq(users.role, 'agent'));
+
+            const agentMap = new Map(allAgents.map(a => [a.userId, a]));
+
+            return list.map(n => ({
+                ...n,
+                agent: n.agentUserId ? agentMap.get(n.agentUserId) || null : null
+            }));
+        });
+
+        return c.json({ success: true, data: nasabahWithAgents });
+    } catch (error) {
+        console.error("Internal Nasabah-Agents Error:", error);
+        return c.json({ success: false, message: "Failed to fetch internal data" }, 500);
+    }
+});
+
+/**
+ * @route   GET /admin/internal/agents
+ * @desc    Get plain list of agents (needed as fallback or separate selection)
+ * @access  Super Admin, Admin Input
+ */
+internal.get('/agents', internalRbac(), async (c) => {
+    try {
+        const agents = await db.select({
+            id: users.id,
+            userId: users.userId,
+            fullName: profiles.fullName,
+        })
+            .from(users)
+            .innerJoin(profiles, eq(users.id, profiles.userId))
+            .where(eq(users.role, 'agent'))
+            .orderBy(desc(users.createdAt));
+
+        return c.json({ success: true, data: agents });
+    } catch (error) {
+        console.error("Internal Agents Error:", error);
+        return c.json({ success: false, message: "Failed to fetch agents" }, 500);
+    }
+});
+
+/**
+ * @route   GET /admin/internal/announcements
+ * @desc    List all announcements with view counts
+ * @access  Super Admin, Admin Input, Admin View
+ */
+internal.get('/announcements', internalRbac(), async (c) => {
+    const { announcements, announcementViews } = await import('@repo/database');
+    const { count } = await import('drizzle-orm');
+
+    try {
+        const result = await db
+            .select({
+                id: announcements.id,
+                title: announcements.title,
+                videoUrl: announcements.videoUrl,
+                content: announcements.content,
+                ctaUrl: announcements.ctaUrl,
+                isActive: announcements.isActive,
+                createdAt: announcements.createdAt,
+                totalViews: count(announcementViews.id),
+            })
+            .from(announcements)
+            .leftJoin(announcementViews, eq(announcements.id, announcementViews.announcementId))
+            .groupBy(
+                announcements.id,
+                announcements.title,
+                announcements.videoUrl,
+                announcements.content,
+                announcements.ctaUrl,
+                announcements.isActive,
+                announcements.createdAt
+            )
+            .orderBy(desc(announcements.createdAt));
+
+        return c.json({ success: true, data: result });
+    } catch (error) {
+        console.error("Internal List Announcements Error:", error);
+        return c.json({ success: false, message: "Failed to fetch announcements" }, 500);
+    }
+});
+
+export default internal;

@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import redeemRoutes from './routes/redeem.js';
 import adminRoutes from './routes/admin.js';
+import adminInternalRoutes from './routes/admin-internal.js';
 import productsRoutes from './routes/products.js';
 import polisRoutes from './routes/polis.js';
 import contentRoutes from './routes/content.js';
@@ -40,6 +41,7 @@ app.get('/', (c) => c.text('TRISULA API Orchestrator (Vercel Best Practice Test)
 app.route('/api/v1/auth', authRoutes);
 app.route('/api/v1/user', userRoutes);
 app.route('/api/v1/redeem', redeemRoutes);
+app.route('/api/v1/admin/internal', adminInternalRoutes); // Mount internal BEFORE generic admin
 app.route('/api/v1/admin', adminRoutes);
 app.route('/api/v1/admin', adminLogsRoutes);
 app.route('/api/v1/products', productsRoutes);

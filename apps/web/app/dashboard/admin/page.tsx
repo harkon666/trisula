@@ -12,11 +12,11 @@ export default function AdminDashboard() {
     const [activeSection, setActiveSection] = useState<"fulfillment" | "polis" | "codes" | "rewards" | "products" | "users" | "announcements" | "security">("fulfillment");
 
     const sections = [
-        { id: "fulfillment", label: "Redeem Queue", icon: Activity, component: <AdminRedeemTable />, allowedRoles: ['admin', 'super_admin', 'admin_view', 'admin_input'] },
-        { id: "users", label: "User Base", icon: Users, component: <AdminUserManager />, allowedRoles: ['super_admin', 'admin_input'] },
-        { id: "products", label: "Product Catalog", icon: Package, component: <AdminProductManager />, allowedRoles: ['super_admin', 'admin_input'] },
+        { id: "fulfillment", label: "Redeem Queue", icon: Activity, component: <AdminRedeemTable />, allowedRoles: ['admin', 'super_admin', 'admin_view'] },
+        { id: "users", label: "User Base", icon: Users, component: <AdminUserManager />, allowedRoles: ['super_admin'] },
+        { id: "products", label: "Product Catalog", icon: Package, component: <AdminProductManager />, allowedRoles: ['super_admin'] },
         { id: "polis", label: "Polis Entry", icon: ShieldPlus, component: <AdminPolisForm />, allowedRoles: ['admin', 'super_admin', 'admin_input'] },
-        { id: "codes", label: "Agent Codes", icon: UserPlus, component: <AdminCodeManager />, allowedRoles: ['admin', 'super_admin', 'admin_input'] },
+        { id: "codes", label: "Agent Codes", icon: UserPlus, component: <AdminCodeManager />, allowedRoles: ['admin', 'super_admin'] },
         { id: "rewards", label: "Voucher Catalog", icon: Ticket, component: <AdminRewardManager />, allowedRoles: ['super_admin'] },
         { id: "announcements", label: "Announcements", icon: Megaphone, component: <AdminAnnouncementManager />, allowedRoles: ['super_admin', 'admin_input'] },
         { id: "security", label: "Login History", icon: HistoryIcon, component: <AdminLoginHistory />, allowedRoles: ['super_admin', 'admin_view'] },

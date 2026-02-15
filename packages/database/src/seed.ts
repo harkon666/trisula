@@ -1,4 +1,4 @@
-import { db, users, profiles, rewards } from "./index";
+import { db, users, profiles, rewards, waInteractions } from "./index";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
@@ -96,12 +96,7 @@ async function seed() {
             { title: "Samsung Galaxy S24", requiredPoints: 50000, description: "Smartphone flagship untuk member sultan." },
         ];
 
-        // Drizzle doesn't have native "UPSERT" based on non-unique columns easily without constraints, 
-        // so we just check count or ignore. For simplicity, we just insert if table empty or use onConflict if we had unique constraint on title.
-        // Assuming no unique constraint on title in schema, so let's check first.
-
         for (const item of catalogItems) {
-            // Simple check to avoid dupes purely by title for this seed script
             const existing = await db.query.rewards.findFirst({
                 where: (rewards, { eq }) => eq(rewards.title, item.title),
             });
@@ -112,7 +107,45 @@ async function seed() {
         }
         console.log("✅ Rewards seeded.");
 
-        console.log("✨ Seeding completed successfully!");
+        // Seeding Watchdog Interactions
+        console.log("🛡️ Seeding Watchdog Interactions...");
+        const agent = await db.query.users.findFirst({
+            where: (users, { eq }) => eq(users.userId, "SULTAN01"),
+        });
+        const nasabah = await db.query.users.findFirst({
+            where: (users, { eq }) => eq(users.userId, "NASABAH01"),
+        });
+
+        if (agent && nasabah) {
+            const now = new Date();
+            const interactions = [
+                {
+                    nasabahId: nasabah.id,
+                    agentId: agent.id,
+                    clickedAt: new Date(now.getTime() - 1000 * 60 * 1), // 1 min ago (Safe)
+                    isAdminNotified: false
+                },
+                {
+                    nasabahId: nasabah.id,
+                    agentId: agent.id,
+                    clickedAt: new Date(now.getTime() - 1000 * 60 * 4), // 4 mins ago (Warning)
+                    isAdminNotified: false
+                },
+                {
+                    nasabahId: nasabah.id,
+                    agentId: agent.id,
+                    clickedAt: new Date(now.getTime() - 1000 * 60 * 10), // 10 mins ago (URGENT)
+                    isAdminNotified: false
+                }
+            ];
+
+            // Clean up old seeds to avoid clutter if needed, or just append
+            // await db.delete(waInteractions); // Optional, maybe too aggressive
+
+            for (const interaction of interactions) {
+                await db.insert(waInteractions).values(interaction);
+            }
+        }
 
     } catch (error) {
         console.error("❌ Seeding failed:", error);

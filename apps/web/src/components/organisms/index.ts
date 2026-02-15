@@ -27,3 +27,5 @@ export * from "./AdminAnnouncementManager";
 export * from "./AnnouncementModal";
 export * from "./GlobalAnnouncementTrigger";
 export * from "./AdminLoginHistory";
+export * from "./AdminWatchdogTable";
+export * from "./GlobalWatchdogAlert";

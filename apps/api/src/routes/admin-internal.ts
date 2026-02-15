@@ -1,7 +1,11 @@
 import { Hono } from 'hono';
-import { db, users, profiles } from '@repo/database';
+import { db, users, profiles, waInteractions, adminActions } from '@repo/database'; // Added waInteractions, adminActions
 import { eq, and, desc } from 'drizzle-orm';
 import { rbacMiddleware } from '../middlewares/rbac';
+
+// ... (other codes)
+
+
 
 type Env = {
     Variables: {
@@ -156,6 +160,99 @@ internal.get('/announcements', internalRbac(), async (c) => {
     } catch (error) {
         console.error("Internal List Announcements Error:", error);
         return c.json({ success: false, message: "Failed to fetch announcements" }, 500);
+    }
+});
+
+/**
+ * @route   GET /admin/internal/watchdog/alerts
+ * @desc    Get unhandled WA interactions for Watchdog Monitor
+ * @access  Super Admin, Admin Input, Admin View
+ */
+internal.get('/watchdog/alerts', internalRbac(), async (c) => {
+    const { waInteractions, users, profiles } = await import('@repo/database');
+    const { eq, and, asc } = await import('drizzle-orm');
+    const { alias } = await import('drizzle-orm/pg-core');
+
+    try {
+        // Alias profiles for Agent to distinguish from Nasabah
+        const agentProfiles = alias(profiles, "agent_profiles");
+        const nasabahProfiles = alias(profiles, "nasabah_profiles");
+
+        const alerts = await db.select({
+            id: waInteractions.id,
+            clickedAt: waInteractions.clickedAt,
+            nasabah: {
+                id: waInteractions.nasabahId,
+                name: nasabahProfiles.fullName,
+                whatsapp: nasabahProfiles.whatsapp,
+            },
+            agent: {
+                id: waInteractions.agentId,
+                name: agentProfiles.fullName,
+            }
+        })
+            .from(waInteractions)
+            // Join for Nasabah Profile
+            .leftJoin(nasabahProfiles, eq(waInteractions.nasabahId, nasabahProfiles.userId))
+            // Join for Agent Profile
+            .leftJoin(agentProfiles, eq(waInteractions.agentId, agentProfiles.userId))
+            .where(eq(waInteractions.isAdminNotified, false))
+            .orderBy(asc(waInteractions.clickedAt));
+
+        return c.json({ success: true, data: alerts });
+    } catch (error) {
+        console.error("Watchdog Alerts Error:", error);
+        return c.json({ success: false, message: "Failed to fetch watchdog alerts" }, 500);
+    }
+});
+
+/**
+ * @route   PATCH /admin/internal/watchdog/resolve/:id
+ * @desc    Mark interaction as resolved by admin
+ * @access  Super Admin, Admin Input
+ */
+internal.patch('/watchdog/resolve/:id', internalRbac(), async (c) => {
+    const id = parseInt(c.req.param('id'));
+    const user = c.get('user');
+
+    // Static imports used (waInteractions, adminActions)
+
+    if (isNaN(id)) return c.json({ success: false, message: "Invalid ID" }, 400);
+
+    console.log(`[WATCHDOG RESOLVE] Attempting to resolve ID: ${id}`);
+    console.log(`[WATCHDOG RESOLVE] Admin: ${JSON.stringify(user)}`);
+
+    try {
+        await db.transaction(async (tx) => {
+            // 1. Update Interaction Status
+            await tx.update(waInteractions)
+                .set({ isAdminNotified: true })
+                .where(eq(waInteractions.id, id));
+
+            // 2. Log Admin Action
+            const ipAddress = c.req.header('x-forwarded-for') || 'unknown';
+            const userAgent = c.req.header('user-agent') || 'unknown';
+
+            console.log(`[WATCHDOG LOG] Inserting admin action... IP: ${ipAddress}`);
+
+            await tx.insert(adminActions).values({
+                adminId: user.id,
+                action: 'WATCHDOG_RESOLVE',
+                details: { interactionId: id },
+                ipAddress: ipAddress,
+                userAgent: userAgent,
+                createdAt: new Date(),
+            });
+        });
+
+        console.log(`[WATCHDOG RESOLVE] Success for ID: ${id}`);
+        return c.json({ success: true, message: "Alert resolved" });
+    } catch (error) {
+        console.error("Watchdog Resolve Error Full Stack:", error);
+        if (error instanceof Error) {
+            console.error(error.stack);
+        }
+        return c.json({ success: false, message: "Failed to resolve alert", error: String(error) }, 500);
     }
 });
 

@@ -7,16 +7,17 @@ import { useAuth } from "@/src/hooks/useAuth";
 
 export function useAnnouncements() {
     const queryClient = useQueryClient();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
 
     // Fetch latest unviewed announcement
     const { data: latestAnnouncement, isLoading } = useQuery<Announcement | null>({
-        queryKey: ["announcements", "latest"],
+        queryKey: ["announcements", "latest", user?.userId], // Scope by user to prevent stale cache between logins
         queryFn: async () => {
+            if (!isAuthenticated) return null;
             const res = await api.get("/v1/content/announcements/latest");
             return res.data.data;
         },
-        enabled: isAuthenticated,
+        enabled: isAuthenticated && !!user?.userId,
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
 

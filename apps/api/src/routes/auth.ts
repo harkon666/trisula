@@ -15,6 +15,7 @@ const RegisterAgentSchema = z.object({
     userId: z.string().min(4),
     password: z.string().min(6),
     fullName: z.string().min(2),
+    email: z.string().email("Email tidak valid"),
     whatsapp: z.string().min(10),
     activationCode: z.string().min(5),
 });
@@ -23,6 +24,7 @@ const RegisterNasabahSchema = z.object({
     userId: z.string().min(4),
     password: z.string().min(6),
     fullName: z.string().min(2),
+    email: z.string().email("Email tidak valid"),
     whatsapp: z.string().min(10),
     referredByAgentId: z.string().min(4), // User ID of the agent
 });
@@ -37,7 +39,7 @@ const LoginSchema = z.object({
  * @desc    Registrasi Agent dengan Kode Aktivasi
  */
 auth.post('/register/agent', zValidator('json', RegisterAgentSchema), async (c) => {
-    const { userId, password, fullName, whatsapp, activationCode } = c.req.valid('json');
+    const { userId, password, fullName, email, whatsapp, activationCode } = c.req.valid('json');
 
     try {
         return await db.transaction(async (tx) => {
@@ -78,6 +80,7 @@ auth.post('/register/agent', zValidator('json', RegisterAgentSchema), async (c) 
             await tx.insert(profiles).values({
                 userId: newUser.id,
                 fullName,
+                email,
                 whatsapp,
             });
 
@@ -126,7 +129,7 @@ auth.post('/register/agent', zValidator('json', RegisterAgentSchema), async (c) 
  * @desc    Registrasi Nasabah dengan Referral Agent
  */
 auth.post('/register/nasabah', zValidator('json', RegisterNasabahSchema), async (c) => {
-    const { userId, password, fullName, whatsapp, referredByAgentId } = c.req.valid('json');
+    const { userId, password, fullName, email, whatsapp, referredByAgentId } = c.req.valid('json');
 
     try {
         return await db.transaction(async (tx) => {
@@ -163,6 +166,7 @@ auth.post('/register/nasabah', zValidator('json', RegisterNasabahSchema), async 
             await tx.insert(profiles).values({
                 userId: newUser.id,
                 fullName,
+                email,
                 whatsapp,
                 referredByAgentId: agent.userId, // Store Agent User ID
             });

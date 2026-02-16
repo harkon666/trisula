@@ -3,12 +3,19 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "@/src/lib/api-client";
 import { format } from "date-fns";
-import { ShieldCheck, Calendar, Globe, Monitor } from "lucide-react";
+import { ShieldCheck, Calendar, Globe, Monitor, Users, Lock } from "lucide-react";
+import { useState } from "react";
 
-interface AdminLog {
+interface LogEntry {
     id: number;
-    adminName: string | null;
-    adminRole: string | null;
+    // Admin Fields
+    adminName?: string | null;
+    adminRole?: string | null;
+    // User Fields
+    userName?: string | null;
+    userRole?: string | null;
+    userId?: string | null;
+
     action: string;
     ipAddress: string | null;
     userAgent: string | null;
@@ -16,10 +23,12 @@ interface AdminLog {
 }
 
 export function AdminLoginHistory() {
+    const [logType, setLogType] = useState<'admin' | 'user'>('admin');
+
     const { data, isLoading, isError } = useQuery({
-        queryKey: ["admin-logs", "LOGIN"],
+        queryKey: ["admin-logs", "LOGIN", logType],
         queryFn: async () => {
-            const res = await api.get<{ success: boolean; data: AdminLog[] }>("/v1/admin/logs?type=LOGIN&limit=50");
+            const res = await api.get<{ success: boolean; data: LogEntry[] }>(`/v1/admin/logs?type=LOGIN&limit=50&target=${logType}`);
             return res.data.data;
         },
     });
@@ -47,11 +56,30 @@ export function AdminLoginHistory() {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-black text-white tracking-tight">Security Audit</h2>
-                    <p className="text-zinc-400 text-sm">Recent admin access logs</p>
+                    <p className="text-zinc-400 text-sm">Recent access logs</p>
                 </div>
-                <div className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                    <span className="text-xs font-bold text-emerald-500 uppercase tracking-wider">Secure</span>
+
+                <div className="flex bg-charcoal-800 p-1 rounded-xl border border-white/5">
+                    <button
+                        onClick={() => setLogType('admin')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${logType === 'admin'
+                                ? 'bg-gold-metallic text-charcoal-950 shadow-lg'
+                                : 'text-zinc-400 hover:text-white'
+                            }`}
+                    >
+                        <ShieldCheck className="w-4 h-4" />
+                        ADMIN
+                    </button>
+                    <button
+                        onClick={() => setLogType('user')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${logType === 'user'
+                                ? 'bg-blue-500 text-white shadow-lg'
+                                : 'text-zinc-400 hover:text-white'
+                            }`}
+                    >
+                        <Users className="w-4 h-4" />
+                        USER
+                    </button>
                 </div>
             </div>
 
@@ -60,7 +88,9 @@ export function AdminLoginHistory() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="border-b border-white/5 bg-white/5">
-                                <th className="p-5 text-xs font-black uppercase tracking-widest text-zinc-500">Admin</th>
+                                <th className="p-5 text-xs font-black uppercase tracking-widest text-zinc-500">
+                                    {logType === 'admin' ? 'Administrator' : 'User'}
+                                </th>
                                 <th className="p-5 text-xs font-black uppercase tracking-widest text-zinc-500">Access Time</th>
                                 <th className="p-5 text-xs font-black uppercase tracking-widest text-zinc-500">Network</th>
                                 <th className="p-5 text-xs font-black uppercase tracking-widest text-zinc-500">Device</th>
@@ -72,10 +102,10 @@ export function AdminLoginHistory() {
                                     <td className="p-5">
                                         <div className="flex flex-col">
                                             <span className="font-bold text-white group-hover:text-gold-metallic transition-colors">
-                                                {log.adminName || "Unknown Admin"}
+                                                {logType === 'admin' ? (log.adminName || "Unknown Admin") : (log.userName || "Unknown User")}
                                             </span>
                                             <span className="text-xs font-mono text-zinc-500 uppercase px-2 py-0.5 bg-white/5 rounded w-fit mt-1">
-                                                {log.adminRole?.replace('_', ' ')}
+                                                {logType === 'admin' ? log.adminRole?.replace('_', ' ') : log.userRole}
                                             </span>
                                         </div>
                                     </td>

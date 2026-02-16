@@ -11,15 +11,25 @@ export const GlobalWatchdogAlert = ({ onFocus }: { onFocus: () => void }) => {
     const { data: alerts } = useWatchdogAlerts();
     const [urgentCount, setUrgentCount] = useState(0);
 
+    // Ticker to check urgency every 5 seconds
     useEffect(() => {
-        if (alerts) {
-            const urgent = alerts.filter(a => {
-                const diff = Date.now() - new Date(a.clickedAt).getTime();
-                return diff > 5 * 60 * 1000; // > 5 mins
-            });
-            setUrgentCount(urgent.length);
-        }
-    }, [alerts]);
+        const checkUrgency = () => {
+            if (alerts) {
+                const urgent = alerts.filter(a => {
+                    const diff = Date.now() - new Date(a.clickedAt).getTime();
+                    return diff > 5 * 60 * 1000; // > 5 mins
+                });
+                setUrgentCount(urgent.length);
+            }
+        };
+
+        // Initial check
+        checkUrgency();
+
+        // Interval check
+        const interval = setInterval(checkUrgency, 5000);
+        return () => clearInterval(interval);
+    }, [alerts]); // Re-run if data changes, but also keeps checking on interval
 
     useGSAP(() => {
         if (urgentCount > 0) {

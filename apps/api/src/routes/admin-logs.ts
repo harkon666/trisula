@@ -27,37 +27,67 @@ adminLogs.use('*', rbacMiddleware());
  */
 adminLogs.get('/logs', async (c) => {
     const limit = Number(c.req.query('limit')) || 100;
-    const type = c.req.query('type'); // Optional filter: 'LOGIN' or others
+    const type = c.req.query('type'); // Filter by action type (e.g., 'LOGIN')
+    const target = c.req.query('target') || 'admin'; // 'admin' or 'user'
 
     try {
-        const query = db.select({
-            id: adminActions.id,
-            adminId: adminActions.adminId,
-            adminName: profiles.fullName,
-            adminRole: users.role,
-            action: adminActions.action,
-            details: adminActions.details,
-            ipAddress: adminActions.ipAddress,
-            userAgent: adminActions.userAgent,
-            createdAt: adminActions.createdAt,
-        })
-            .from(adminActions)
-            .leftJoin(users, eq(adminActions.adminId, users.id))
-            .leftJoin(profiles, eq(users.id, profiles.userId))
-            .orderBy(desc(adminActions.createdAt))
-            .limit(limit);
+        let query;
 
-        if (type) {
-            //@ts-ignore
-            query.where(eq(adminActions.action, type));
+        if (target === 'user') {
+            const { userActivityLogs } = await import('@repo/database');
+
+            query = db.select({
+                id: userActivityLogs.id,
+                userId: userActivityLogs.userId,
+                userName: profiles.fullName,
+                userRole: users.role,
+                action: userActivityLogs.action,
+                details: userActivityLogs.details,
+                ipAddress: userActivityLogs.ipAddress,
+                userAgent: userActivityLogs.userAgent,
+                createdAt: userActivityLogs.createdAt,
+            })
+                .from(userActivityLogs)
+                .leftJoin(users, eq(userActivityLogs.userId, users.id))
+                .leftJoin(profiles, eq(users.id, profiles.userId))
+                .orderBy(desc(userActivityLogs.createdAt))
+                .limit(limit);
+
+            if (type) {
+                //@ts-ignore
+                query.where(eq(userActivityLogs.action, type));
+            }
+
+        } else {
+            // Default: Admin Logs
+            query = db.select({
+                id: adminActions.id,
+                adminId: adminActions.adminId, // key matches frontend expected 'adminId' or we map it? frontend expects 'adminName'
+                adminName: profiles.fullName,
+                adminRole: users.role,
+                action: adminActions.action,
+                details: adminActions.details,
+                ipAddress: adminActions.ipAddress,
+                userAgent: adminActions.userAgent,
+                createdAt: adminActions.createdAt,
+            })
+                .from(adminActions)
+                .leftJoin(users, eq(adminActions.adminId, users.id))
+                .leftJoin(profiles, eq(users.id, profiles.userId))
+                .orderBy(desc(adminActions.createdAt))
+                .limit(limit);
+
+            if (type) {
+                //@ts-ignore
+                query.where(eq(adminActions.action, type));
+            }
         }
 
         const logs = await query;
-
         return c.json({ success: true, data: logs });
     } catch (error) {
-        console.error("Fetch Admin Logs Error:", error);
-        return c.json({ success: false, message: "Failed to fetch admin logs" }, 500);
+        console.error("Fetch Logs Error:", error);
+        return c.json({ success: false, message: "Failed to fetch logs" }, 500);
     }
 });
 

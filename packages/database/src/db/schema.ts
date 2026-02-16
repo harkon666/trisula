@@ -143,3 +143,14 @@ export const adminActions = pgTable("admin_actions", {
     userAgent: text("user_agent"),
     createdAt: timestamp("created_at").defaultNow(),
 });
+
+// 14. User Activity Logs (Audit Trail Perilaku User)
+export const userActivityLogs = pgTable("user_activity_logs", {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id").references(() => users.id),
+    action: text("action").notNull(),
+    details: jsonb("details"),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at").defaultNow(),
+});

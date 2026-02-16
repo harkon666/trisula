@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { db, users, profiles, agentActivationCodes, adminActions, pointsLedger } from '@repo/database';
+import { db, users, profiles, agentActivationCodes, adminActions, pointsLedger, userActivityLogs } from '@repo/database';
 import { eq, and, or } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
@@ -262,12 +262,22 @@ auth.post('/login', zValidator('json', LoginSchema), async (c) => {
         const dailyMessage = dailyBonus.awarded ? " + 10 Poin Harian!" : "";
 
         // 3.5 Log Admin Login
-        if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
-            const ipAddress = c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown';
-            const userAgent = c.req.header('user-agent');
+        const ipAddress = c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown';
+        const userAgent = c.req.header('user-agent');
 
+        if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
             await db.insert(adminActions).values({
                 adminId: user.id,
+                action: 'LOGIN',
+                details: { method: 'password' },
+                ipAddress,
+                userAgent,
+                createdAt: new Date(),
+            });
+        } else {
+            // Log User Login
+            await db.insert(userActivityLogs).values({
+                userId: user.id,
                 action: 'LOGIN',
                 details: { method: 'password' },
                 ipAddress,

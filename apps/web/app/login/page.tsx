@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/src/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import api from '@/src/lib/api-client';
 import { toast } from 'sonner';
 import gsap from 'gsap';
@@ -23,6 +24,7 @@ export default function LoginPage() {
     const { login, isAuthenticated, user } = useAuth();
     const [loading, setLoading] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const queryClient = useQueryClient();
 
     const {
         register,
@@ -76,6 +78,10 @@ export default function LoginPage() {
 
     const onSubmit = async (data: LoginForm) => {
         setLoading(true);
+        // Clear previous session cache
+        queryClient.removeQueries();
+        queryClient.clear();
+
         try {
             const response = await api.post('/v1/auth/login', data);
 

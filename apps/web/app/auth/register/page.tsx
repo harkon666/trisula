@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/src/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 import api from "@/src/lib/api-client";
 import { toast } from "sonner";
 import { GoldCard } from "@/src/components/ui/GoldCard";
@@ -57,6 +58,7 @@ export default function RegisterPage() {
     const { login, isAuthenticated, user } = useAuth();
     const [activeTab, setActiveTab] = useState<'nasabah' | 'agent'>('nasabah');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const queryClient = useQueryClient();
 
     // Redirect if already authenticated
     useEffect(() => {
@@ -80,6 +82,10 @@ export default function RegisterPage() {
 
     const onNasabahSubmit = async (data: NasabahFormData) => {
         setIsSubmitting(true);
+        // Clear previous session cache
+        queryClient.removeQueries();
+        queryClient.clear();
+
         try {
             const response = await api.post('/v1/auth/register/nasabah', data);
             if (response.data.success && response.data.token) {
@@ -98,6 +104,10 @@ export default function RegisterPage() {
 
     const onAgentSubmit = async (data: AgentFormData) => {
         setIsSubmitting(true);
+        // Clear previous session cache
+        queryClient.removeQueries();
+        queryClient.clear();
+
         try {
             const response = await api.post('/v1/auth/register/agent', data);
             if (response.data.success && response.data.token) {

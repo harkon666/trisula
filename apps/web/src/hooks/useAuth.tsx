@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api-client';
 import { useRouter } from 'next/navigation';
 
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     useEffect(() => {
         // Check for token and load user data
@@ -51,6 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
+        queryClient.removeQueries(); // Clear all cache
+        queryClient.clear();
         router.push('/login');
     };
 

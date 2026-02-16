@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation"; // Added navigation hooks
 import RoleGuard from "@/src/components/auth/RoleGuard";
 import { PageEntrance } from "@/src/components/ui/GsapContext";
 import { AdminRedeemTable, AdminPolisForm, AdminCodeManager, AdminRewardManager, AdminProductManager, AdminUserManager, AdminAnnouncementManager, AdminLoginHistory, AdminWatchdogTable, GlobalWatchdogAlert } from "@/src/components/organisms";
@@ -9,7 +10,20 @@ import { useAuth } from "@/src/hooks/useAuth";
 
 export default function AdminDashboard() {
     const { user, logout } = useAuth();
-    const [activeSection, setActiveSection] = useState<"fulfillment" | "polis" | "codes" | "rewards" | "products" | "users" | "announcements" | "security" | "login-history" | "watchdog">("fulfillment");
+
+    // URL-based Navigation State
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
+
+    // Default to 'fulfillment' if no tab param exists
+    const activeSection = searchParams.get('tab') || 'fulfillment';
+
+    const setActiveSection = (tab: string) => {
+        const params = new URLSearchParams(searchParams);
+        params.set('tab', tab);
+        router.push(`${pathname}?${params.toString()}`);
+    };
 
     // Scroll Logic
     const scrollContainerRef = useRef<HTMLElement>(null);
@@ -153,12 +167,13 @@ export default function AdminDashboard() {
                         {visibleSections.find(s => s.id === activeSection)?.component}
                     </div>
                 </main>
-
-
             </PageEntrance>
 
-            <GlobalWatchdogAlert onFocus={() => setActiveSection('watchdog')} />
+            {/* Only show Alert if NOT on Watchdog tab */}
+            {activeSection !== 'watchdog' && (
+                <GlobalWatchdogAlert onFocus={() => setActiveSection('watchdog')} />
+            )}
 
-        </RoleGuard >
+        </RoleGuard>
     );
 }

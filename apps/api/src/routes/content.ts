@@ -118,7 +118,7 @@ contentRoute.get('/announcements/latest', rbacMiddleware(), async (c) => {
  * @desc    Create Announcement
  * @access  Admin Input, Super Admin
  */
-contentRoute.post('/announcements', rbacMiddleware(), zValidator('json', CreateAnnouncementSchema), async (c) => {
+contentRoute.post('/announcements', rbacMiddleware('announcements'), zValidator('json', CreateAnnouncementSchema), async (c) => {
     const body = c.req.valid('json');
 
     try {
@@ -170,7 +170,7 @@ contentRoute.post('/announcements/:id/view', rbacMiddleware(), async (c) => {
  * @desc    Toggle Active Status
  * @access  Super Admin
  */
-contentRoute.patch('/announcements/:id', rbacMiddleware(), zValidator('json', z.object({ isActive: z.boolean() })), async (c) => {
+contentRoute.patch('/announcements/:id', rbacMiddleware('announcements'), zValidator('json', z.object({ isActive: z.boolean() })), async (c) => {
     const id = parseInt(c.req.param('id'));
     const { isActive } = c.req.valid('json');
 

@@ -345,6 +345,7 @@ function RedeemOverlay({
         return createPortal(
             <RedeemSuccessCertificate
                 rewardName={selectedReward.title}
+                csWhatsappNumber={selectedReward.csWhatsappNumber}
                 onDone={closeModal}
             />,
             portalContainer

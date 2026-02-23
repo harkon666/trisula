@@ -201,3 +201,19 @@ Implemented in Feb 15, 2026, focusing on role-specific UX improvements and a glo
   - **Adaptive Header**: Redesigned the admin header to transition gracefully from a stacked mobile layout to a unified desktop toolbar.
   - **Smart Navigation**: Implemented a horizontal scrollable menu with **dynamic arrow indicators** that only appear when scrolling is available.
   - **Clean Aesthetics**: Added a global `.no-scrollbar` utility to hide scrollbars while maintaining functionality, ensuring a polished "app-like" feel.
+---
+
+## 12. Real-Time Monitoring & Security Audit (Phase 6)
+Implemented in Feb 2026, focusing on data integrity, session security, and proactive monitoring.
+
+### Proactive Watchdog Refinement
+- **Real-Time Alert Ticker**: Enhanced the `GlobalWatchdogAlert` with a **client-side internal ticker (5s interval)**. 
+- **Active Re-evaluation**: The system now recalculates the "Sultan" service SLA (5-minute threshold) every few seconds locally. This ensures alerts appear the exact moment they become urgent, even if the admin page is idle or the server poll hasn't triggered yet.
+
+### User Security & Activity Tracking
+- **User Activity Audit**: Implemented a dedicated `user_activity_logs` table to track non-admin behavior (Logins, Device, IP). This is separate from the `loginLogs` (which remains a lightweight daily bonus tracker) to ensure optimal performance.
+- **Unified Security UI**: The Admin "Login History" tab now features a **Double-Toggle (ADMIN / USER)** view, allowing administrators to audit access logs for both management staff and regular members in a single interface.
+
+### Session Isolation & Cache Integrity
+- **Stateless Cache Purge**: Resolved a critical session persistence bug where User B could see User A's cached data after account switching on the same device.
+- **Global Reset Logic**: Updated `AuthProvider`, `LoginPage`, and `RegisterPage` to call `queryClient.clear()` and `removeQueries()` upon logout or new registration. This ensures that every login starts with a **100% clean state**, preventing sensitive cross-account data leakage from the React Query cache.

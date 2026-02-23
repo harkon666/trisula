@@ -29,3 +29,4 @@ export * from "./GlobalAnnouncementTrigger";
 export * from "./AdminLoginHistory";
 export * from "./AdminWatchdogTable";
 export * from "./GlobalWatchdogAlert";
+export * from "./AdminPermissionsEditor";

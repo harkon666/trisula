@@ -4,10 +4,27 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/src/hooks/useAuth";
 import { Button } from "@/src/components/atoms";
-import { LogOut, Home, Users, PieChart } from "lucide-react";
+import { LogOut, Home, Users, PieChart, Bell } from "lucide-react";
+import { useAgentReminders } from "@/src/hooks/useAgentDashboard";
+import { useState, useRef, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 export function AgentNavbar() {
     const { logout } = useAuth();
+    const { data: reminders } = useAgentReminders();
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     return (
         <nav className="fixed top-0 w-full z-50 bg-midnight-950/80 backdrop-blur-xl border-b border-white/5 transition-all duration-300">
@@ -45,6 +62,64 @@ export function AgentNavbar() {
                         <Users className="w-4 h-4" />
                         <span className="hidden sm:inline">Nasabah</span>
                     </Button> */}
+                    {/* Reminder Bell */}
+                    <div className="relative" ref={dropdownRef}>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            className="relative text-zinc-400 hover:text-white min-w-[32px] min-h-[32px] p-2"
+                        >
+                            <Bell className="w-5 h-5" />
+                            {reminders && reminders.length > 0 && (
+                                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                            )}
+                        </Button>
+
+                        <AnimatePresence>
+                            {isDropdownOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="absolute right-0 mt-2 w-80 bg-midnight-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                                >
+                                    <div className="p-4 border-b border-white/5 bg-midnight-950/50">
+                                        <h3 className="font-bold text-white text-sm">Reminders</h3>
+                                        <p className="text-xs text-zinc-500 mt-1">Jatuh tempo polis nasabah</p>
+                                    </div>
+                                    <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+                                        {reminders && reminders.length > 0 ? (
+                                            <div className="p-2 space-y-1">
+                                                {reminders.map((r, i) => (
+                                                    <div key={i} className="p-3 hover:bg-white/5 rounded-xl transition-colors">
+                                                        <div className="flex items-start justify-between gap-3 mb-1">
+                                                            <p className="text-sm font-bold text-white">{r.nasabahName}</p>
+                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 whitespace-nowrap">
+                                                                {r.monthsLeft} Bulan
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-zinc-400 mb-1">Polis #{r.polisNumber}</p>
+                                                        <p className="text-[10px] text-zinc-500">{r.message}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="p-8 text-center">
+                                                <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                    <Bell className="w-5 h-5 text-zinc-600" />
+                                                </div>
+                                                <p className="text-sm text-zinc-400 font-medium">Tidak ada reminder</p>
+                                                <p className="text-xs text-zinc-600 mt-1">Semua polis aman</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
                     <Button
                         variant="ghost"
                         size="sm"

@@ -1,9 +1,10 @@
 import { Context, Next } from 'hono';
-import { roleEnum } from '@repo/database';
+import { db, users, roleEnum } from '@repo/database';
+import { eq } from 'drizzle-orm';
 
 type UserRole = (typeof roleEnum.enumValues)[number];
 
-export const rbacMiddleware = () => {
+export const rbacMiddleware = (moduleName?: string) => {
     return async (c: Context, next: Next) => {
         // In a real scenario, user role is attached to context by auth middleware
         // For now, let's assume it's in c.get('user')?.role or we mock it for testing if needed
@@ -27,22 +28,38 @@ export const rbacMiddleware = () => {
             return;
         }
 
-        if (role === 'admin_input') {
-            if (method === 'POST') {
-                await next();
-                return;
-            } else {
-                return c.json({ success: false, message: 'Forbidden: Admin Input can only perform POST actions' }, 403);
-            }
-        }
+        // Dynamic RBAC Logic for admin roles
+        if (role === 'admin') {
+            const requiredPermission = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) ? 'write' : 'read';
 
-        if (role === 'admin_view') {
-            if (method === 'GET') {
-                await next();
-                return;
-            } else {
-                return c.json({ success: false, message: 'Forbidden: Admin View can only perform GET actions' }, 403);
+            // Fetch fresh metadata from database to get the latest permissions instantly
+            const [freshUser] = await db.select({
+                additionalMetadata: users.additionalMetadata
+            }).from(users).where(eq(users.id, user.id)).limit(1);
+
+            const permissionsObj: Record<string, string[]> | undefined = (freshUser?.additionalMetadata as any)?.permissions;
+
+            // Check dynamic module permissions if moduleName is provided
+            if (moduleName && permissionsObj && permissionsObj[moduleName]) {
+                const modulePermissions = permissionsObj[moduleName];
+
+                if (modulePermissions.includes(requiredPermission)) {
+                    await next();
+                    return;
+                }
+
+                // If they have the permissions object AND this module is explicitly defined but lacks this specific access, deny immediately.
+                return c.json({
+                    success: false,
+                    message: `Forbidden: Lacks '${requiredPermission}' permission for module '${moduleName}'`
+                }, 403);
             }
+
+            // Deny by default if module is missing or permission is lacking
+            return c.json({
+                success: false,
+                message: `Forbidden: Lacks '${requiredPermission}' permission for module '${moduleName}' or module not configured.`
+            }, 403);
         }
 
         // Default allow for agent and nasabah, assuming route handlers have specific logic

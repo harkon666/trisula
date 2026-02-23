@@ -16,7 +16,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const NasabahSchema = z.object({
     fullName: z.string().min(2, "Nama terlalu pendek"),
-    userId: z.string().min(4, "User ID minimal 4 karakter"),
     password: z.string().min(6, "Password minimal 6 karakter"),
     confirmPassword: z.string().min(6, "Konfirmasi password minimal 6 karakter"),
     email: z.string().email("Email tidak valid"),
@@ -34,7 +33,6 @@ const NasabahSchema = z.object({
 
 const AgentSchema = z.object({
     fullName: z.string().min(2, "Nama terlalu pendek"),
-    userId: z.string().min(4, "User ID minimal 4 karakter"),
     password: z.string().min(6, "Password minimal 6 karakter"),
     confirmPassword: z.string().min(6, "Konfirmasi password minimal 6 karakter"),
     email: z.string().email("Email tidak valid"),
@@ -63,7 +61,7 @@ export default function RegisterPage() {
     // Redirect if already authenticated
     useEffect(() => {
         if (isAuthenticated && user) {
-            if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
+            if (['admin', 'super_admin'].includes(user.role)) {
                 router.push('/dashboard/admin');
             } else {
                 router.push('/dashboard/nasabah');
@@ -171,7 +169,6 @@ export default function RegisterPage() {
                                     className="space-y-5"
                                 >
                                     <InputField label="Full Name" name="fullName" register={nasabahForm.register} error={nasabahForm.formState.errors.fullName} placeholder="John Doe" />
-                                    <InputField label="User ID" name="userId" register={nasabahForm.register} error={nasabahForm.formState.errors.userId} placeholder="JOHN01" />
                                     <InputField label="Email" name="email" type="email" register={nasabahForm.register} error={nasabahForm.formState.errors.email} placeholder="john@example.com" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <InputField label="Password" name="password" type="password" register={nasabahForm.register} error={nasabahForm.formState.errors.password} placeholder="••••••••" />
@@ -193,7 +190,6 @@ export default function RegisterPage() {
                                     className="space-y-5"
                                 >
                                     <InputField label="Full Name" name="fullName" register={agentForm.register} error={agentForm.formState.errors.fullName} placeholder="Agent Smith" />
-                                    <InputField label="User ID" name="userId" register={agentForm.register} error={agentForm.formState.errors.userId} placeholder="AGENT01" />
                                     <InputField label="Email" name="email" type="email" register={agentForm.register} error={agentForm.formState.errors.email} placeholder="agent@example.com" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <InputField label="Password" name="password" type="password" register={agentForm.register} error={agentForm.formState.errors.password} placeholder="••••••••" />

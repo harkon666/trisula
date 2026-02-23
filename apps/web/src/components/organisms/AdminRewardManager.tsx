@@ -13,7 +13,8 @@ import {
     Loader2,
     ShieldAlert,
     X,
-    CheckCircle2
+    CheckCircle2,
+    Phone
 } from "lucide-react";
 import { Button, Input } from "@/src/components/atoms";
 import { toast } from "sonner";
@@ -42,11 +43,12 @@ export function AdminRewardManager() {
         title: "",
         description: "",
         requiredPoints: 0,
+        csWhatsappNumber: "",
         isActive: true
     });
 
     const handleOpenAdd = () => {
-        setRewardFormData({ title: "", description: "", requiredPoints: 0, isActive: true });
+        setRewardFormData({ title: "", description: "", requiredPoints: 0, csWhatsappNumber: "", isActive: true });
         setIsAddModalOpen(true);
     };
 
@@ -56,6 +58,7 @@ export function AdminRewardManager() {
             title: reward.title,
             description: reward.description || "",
             requiredPoints: reward.requiredPoints,
+            csWhatsappNumber: reward.csWhatsappNumber || "",
             isActive: reward.isActive
         });
     };
@@ -241,6 +244,17 @@ export function AdminRewardManager() {
                                     value={rewardFormData.description}
                                     onChange={(e) => setRewardFormData({ ...rewardFormData, description: e.target.value })}
                                     className="w-full bg-charcoal-800/50 border border-white/5 rounded-2xl px-5 py-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-gold-metallic/50 transition-all min-h-[100px]"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest pl-1">Nomer WhatsApp CS (Opsional)</label>
+                                <Input
+                                    placeholder="Format: 628123456789"
+                                    value={rewardFormData.csWhatsappNumber || ""}
+                                    onChange={(e) => setRewardFormData({ ...rewardFormData, csWhatsappNumber: e.target.value })}
+                                    className="h-14 rounded-2xl bg-charcoal-800/50 border-white/5 text-white placeholder:text-zinc-600 focus:border-gold-metallic/50 pl-12"
+                                    icon={<Phone className="w-4 h-4 text-zinc-400" />}
                                 />
                             </div>
 

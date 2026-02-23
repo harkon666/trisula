@@ -295,4 +295,57 @@ agentRoute.get('/referrals/:id', rbacMiddleware(), async (c) => {
     }
 });
 
+/**
+ * @route   GET /api/v1/agent/reminders
+ * @desc    Get Polis expiration reminders (1, 2, 3 months away from 1 year)
+ * @access  Agent
+ */
+agentRoute.get('/reminders', rbacMiddleware(), async (c) => {
+    const user = c.get('user');
+
+    if (user.role !== 'agent') {
+        return c.json({ success: false, message: "Unauthorized" }, 403);
+    }
+
+    try {
+        const agentPolis = await db.select({
+            id: polisData.id,
+            polisNumber: polisData.polisNumber,
+            createdAt: polisData.createdAt,
+            nasabahName: profiles.fullName,
+        })
+            .from(polisData)
+            .leftJoin(users, eq(polisData.nasabahId, users.id))
+            .leftJoin(profiles, eq(users.id, profiles.userId))
+            .where(eq(polisData.agentId, user.id));
+
+        const now = new Date();
+        const reminders = agentPolis.map(p => {
+            if (!p.createdAt) return null;
+
+            // Calculate months difference
+            let months = (now.getFullYear() - p.createdAt.getFullYear()) * 12;
+            months -= p.createdAt.getMonth();
+            months += now.getMonth();
+
+            // Limit to 1, 2, 3 months left from a 12-month anniversary
+            const monthsLeft = 12 - months;
+
+            if (monthsLeft === 1 || monthsLeft === 2 || monthsLeft === 3) {
+                return {
+                    ...p,
+                    monthsLeft,
+                    message: `Polis #${p.polisNumber} atas nama ${p.nasabahName} jatuh tempo dalam ${monthsLeft} bulan.`
+                };
+            }
+            return null;
+        }).filter(Boolean);
+
+        return c.json({ success: true, data: reminders });
+    } catch (error) {
+        console.error("Agent Reminders Error:", error);
+        return c.json({ success: false, message: "Internal Server Error" }, 500);
+    }
+});
+
 export default agentRoute;

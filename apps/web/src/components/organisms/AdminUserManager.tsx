@@ -18,7 +18,9 @@ import {
 } from "lucide-react";
 import { Button, Input, Card, Badge } from "@/src/components/atoms";
 import { MetadataEditor } from "./MetadataEditor";
+import { AdminPermissionsEditor } from "./AdminPermissionsEditor";
 import { AdminUserPointHistory } from "./AdminUserPointHistory";
+import { useAuth } from "@/src/hooks/useAuth";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -30,8 +32,9 @@ export function AdminUserManager() {
     const { data: users, isLoading } = useAdminUsers();
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<"metadata" | "history">("metadata");
+    const [activeTab, setActiveTab] = useState<"metadata" | "history" | "permissions">("metadata");
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const { user: currentUser } = useAuth();
 
     const { data: userDetail, isLoading: isLoadingDetail } = useAdminUserDetail(selectedUserId);
 
@@ -132,6 +135,23 @@ export function AdminUserManager() {
                             <History className="w-4 h-4" />
                             Point History
                         </button>
+
+                        {/* Only super_admin can edit permissions of standard admins */}
+                        {currentUser?.role === 'super_admin' &&
+                            (userDetail?.role === 'admin') && (
+                                <button
+                                    onClick={() => setActiveTab("permissions")}
+                                    className={cn(
+                                        "flex items-center gap-2.5 px-4 sm:px-6 py-2.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                                        activeTab === "permissions"
+                                            ? "bg-gold-metallic text-charcoal-950 shadow-lg shadow-gold-metallic/20"
+                                            : "text-zinc-500 hover:text-white"
+                                    )}
+                                >
+                                    <ShieldCheck className="w-4 h-4" />
+                                    Permissions
+                                </button>
+                            )}
                     </div>
                 </div>
 
@@ -173,6 +193,12 @@ export function AdminUserManager() {
                                         onSuccess={() => setSelectedUserId(null)}
                                     />
                                 </div>
+                            ) : activeTab === "permissions" ? (
+                                <AdminPermissionsEditor
+                                    userId={userDetail.id}
+                                    initialMetadata={userDetail.additionalMetadata || {}}
+                                    onSuccess={() => setSelectedUserId(null)}
+                                />
                             ) : (
                                 <AdminUserPointHistory userId={userDetail.id} />
                             )}
@@ -188,14 +214,14 @@ export function AdminUserManager() {
     );
 
     const filteredUsers = users?.filter(user =>
-        user.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.userId && user.userId.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (user.fullName && user.fullName.toLowerCase().includes(searchTerm.toLowerCase()))
     ) || [];
 
     const getRoleIcon = (role: string) => {
         switch (role) {
             case 'super_admin': return <ShieldCheck className="w-3.5 h-3.5" />;
-            case 'admin_input': return <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />;
+            case 'admin': return <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />;
             case 'agent': return <UserCheck className="w-3.5 h-3.5 text-emerald-400" />;
             default: return <UserCircle2 className="w-3.5 h-3.5" />;
         }
@@ -271,6 +297,7 @@ export function AdminUserManager() {
                                                 className={cn(
                                                     "gap-1.5 px-3 py-1 bg-white/[0.02] border-white/10 text-[10px] font-black uppercase tracking-widest",
                                                     user.role === 'super_admin' && "text-gold-metallic border-gold-metallic/20 bg-gold-metallic/5",
+                                                    user.role === 'admin' && "text-blue-400 border-blue-500/20 bg-blue-500/5",
                                                     user.role === 'agent' && "text-emerald-400 border-emerald-500/20 bg-emerald-500/5",
                                                     user.role === 'nasabah' && "text-blue-400 border-blue-500/20 bg-blue-500/5"
                                                 )}

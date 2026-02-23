@@ -12,7 +12,6 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super_sec
 
 // --- Schemas ---
 const RegisterAgentSchema = z.object({
-    userId: z.string().min(4),
     password: z.string().min(6),
     fullName: z.string().min(2),
     email: z.string().email("Email tidak valid"),
@@ -21,7 +20,6 @@ const RegisterAgentSchema = z.object({
 });
 
 const RegisterNasabahSchema = z.object({
-    userId: z.string().min(4),
     password: z.string().min(6),
     fullName: z.string().min(2),
     email: z.string().email("Email tidak valid"),
@@ -39,7 +37,9 @@ const LoginSchema = z.object({
  * @desc    Registrasi Agent dengan Kode Aktivasi
  */
 auth.post('/register/agent', zValidator('json', RegisterAgentSchema), async (c) => {
-    const { userId, password, fullName, email, whatsapp, activationCode } = c.req.valid('json');
+    const { password, fullName, email, whatsapp, activationCode } = c.req.valid('json');
+
+    const userId = activationCode; // Use activation code as userId
 
     try {
         return await db.transaction(async (tx) => {
@@ -129,7 +129,7 @@ auth.post('/register/agent', zValidator('json', RegisterAgentSchema), async (c) 
  * @desc    Registrasi Nasabah dengan Referral Agent
  */
 auth.post('/register/nasabah', zValidator('json', RegisterNasabahSchema), async (c) => {
-    const { userId, password, fullName, email, whatsapp, referredByAgentId } = c.req.valid('json');
+    const { password, fullName, email, whatsapp, referredByAgentId } = c.req.valid('json');
 
     try {
         return await db.transaction(async (tx) => {
@@ -142,11 +142,7 @@ auth.post('/register/nasabah', zValidator('json', RegisterNasabahSchema), async 
                 return c.json({ success: false, message: "Agent Referral ID tidak ditemukan" }, 400);
             }
 
-            // 2. Check User ID Uniqueness
-            const [existingUser] = await tx.select().from(users).where(eq(users.userId, userId)).limit(1);
-            if (existingUser) {
-                return c.json({ success: false, message: "User ID sudah digunakan" }, 400);
-            }
+            // 2. Removed User ID Uniqueness check since Nasabah don't have User ID
 
             // 3. Hash Password
             const salt = await bcrypt.genSalt(10);
@@ -154,7 +150,6 @@ auth.post('/register/nasabah', zValidator('json', RegisterNasabahSchema), async 
 
             // 4. Create User (Nasabah)
             const [newUser] = await tx.insert(users).values({
-                userId,
                 password: hashedPassword,
                 role: 'nasabah',
                 isActive: true,
@@ -180,7 +175,7 @@ auth.post('/register/nasabah', zValidator('json', RegisterNasabahSchema), async 
             // 7. Log Admin Action
             await tx.insert(adminActions).values({
                 action: 'NASABAH_REGISTER',
-                details: { userId, referredBy: referredByAgentId },
+                details: { referredBy: referredByAgentId },
                 createdAt: new Date(),
             });
 
@@ -222,9 +217,16 @@ auth.post('/login', zValidator('json', LoginSchema), async (c) => {
     try {
         console.log(`[LOGIN ATTEMPT] userId: '${userId}'`);
 
-        // 1. Find User by ID or Email
         const [userWithProfile] = await db.select({
-            user: users,
+            user: {
+                id: users.id,
+                userId: users.userId,
+                role: users.role,
+                isActive: users.isActive,
+                password: users.password,
+                pointsBalance: users.pointsBalance,
+                additionalMetadata: users.additionalMetadata
+            },
             profile: profiles
         })
             .from(users)
@@ -265,7 +267,7 @@ auth.post('/login', zValidator('json', LoginSchema), async (c) => {
         const ipAddress = c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || 'unknown';
         const userAgent = c.req.header('user-agent');
 
-        if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
+        if (['admin', 'super_admin'].includes(user.role)) {
             await db.insert(adminActions).values({
                 adminId: user.id,
                 action: 'LOGIN',
@@ -304,7 +306,8 @@ auth.post('/login', zValidator('json', LoginSchema), async (c) => {
             user: {
                 userId: user.userId,
                 role: user.role,
-                points: user.pointsBalance + (dailyBonus.awarded ? 10 : 0) // Reflect updated balance if bonus awarded
+                points: user.pointsBalance + (dailyBonus.awarded ? 10 : 0),
+                additionalMetadata: user.additionalMetadata
             }
         });
 

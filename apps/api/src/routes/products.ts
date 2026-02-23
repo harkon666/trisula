@@ -32,8 +32,8 @@ productsRoute.get('/', async (c) => {
         let query = db.select().from(products);
 
         // Filter active only for non-admin or if all=true is not explicitly requested
-        // Admin roles: super_admin, admin_input, admin_view
-        const isAdmin = user && ['super_admin', 'admin_input', 'admin_view'].includes(user.role);
+        // Admin roles: super_admin, admin
+        const isAdmin = user && ['super_admin', 'admin'].includes(user.role);
 
         if (!showAll || !isAdmin) {
             // @ts-ignore
@@ -53,7 +53,7 @@ productsRoute.get('/', async (c) => {
  * @desc    Create new product
  * @access  Admin Input, Super Admin
  */
-productsRoute.post('/', rbacMiddleware(), zValidator('json', CreateProductSchema), async (c) => {
+productsRoute.post('/', rbacMiddleware('products'), zValidator('json', CreateProductSchema), async (c) => {
     const body = c.req.valid('json');
 
     try {
@@ -70,7 +70,7 @@ productsRoute.post('/', rbacMiddleware(), zValidator('json', CreateProductSchema
  * @desc    Update product details
  * @access  Admin Input, Super Admin
  */
-productsRoute.patch('/:id', rbacMiddleware(), zValidator('json', UpdateProductSchema), async (c) => {
+productsRoute.patch('/:id', rbacMiddleware('products'), zValidator('json', UpdateProductSchema), async (c) => {
     const id = parseInt(c.req.param('id'));
     const body = c.req.valid('json');
 
@@ -102,7 +102,7 @@ productsRoute.patch('/:id', rbacMiddleware(), zValidator('json', UpdateProductSc
  *          For now, rbacMiddleware defaults to blocking unknown roles/methods unless Super Admin.
  *          Wait, Admin Input is specific: if POST -> next. So DELETE will fall through to 'Forbidden' unless Super Admin.
  */
-productsRoute.delete('/:id', rbacMiddleware(), async (c) => {
+productsRoute.delete('/:id', rbacMiddleware('products'), async (c) => {
     const id = parseInt(c.req.param('id'));
 
     if (isNaN(id)) return c.json({ success: false, message: "Invalid ID" }, 400);

@@ -11,6 +11,7 @@ export interface Reward {
     title: string;
     description: string | null;
     requiredPoints: number;
+    csWhatsappNumber: string | null;
     isActive: boolean;
 }
 

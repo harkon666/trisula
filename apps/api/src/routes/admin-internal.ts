@@ -20,26 +20,11 @@ type Env = {
 const internal = new Hono<Env>();
 
 /**
- * Specialized RBAC for Internal Data Fetching
- * Allows admin_input and admin_view to perform specific GET actions 
- * that are otherwise restricted in the main admin router.
- */
-const internalRbac = () => {
-    return async (c: any, next: any) => {
-        const user = c.get('user');
-        if (!user || !['super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
-            return c.json({ success: false, message: 'Forbidden: Insufficient permissions' }, 403);
-        }
-        await next();
-    };
-};
-
-/**
  * @route   GET /admin/internal/nasabah-agents
  * @desc    Get list of nasabahs with their linked agents for auto-fill logic
  * @access  Super Admin, Admin Input, Admin View
  */
-internal.get('/nasabah-agents', internalRbac(), async (c) => {
+internal.get('/nasabah-agents', rbacMiddleware('polis'), async (c) => {
     try {
         // We need: Nasabah (ID, Name, UserId) + Linked Agent (ID, Name, UserId)
         const result = await db.select({
@@ -103,7 +88,7 @@ internal.get('/nasabah-agents', internalRbac(), async (c) => {
  * @desc    Get plain list of agents (needed as fallback or separate selection)
  * @access  Super Admin, Admin Input
  */
-internal.get('/agents', internalRbac(), async (c) => {
+internal.get('/agents', rbacMiddleware('polis'), async (c) => {
     try {
         const agents = await db.select({
             id: users.id,
@@ -127,7 +112,7 @@ internal.get('/agents', internalRbac(), async (c) => {
  * @desc    List all announcements with view counts
  * @access  Super Admin, Admin Input, Admin View
  */
-internal.get('/announcements', internalRbac(), async (c) => {
+internal.get('/announcements', rbacMiddleware('announcements'), async (c) => {
     const { announcements, announcementViews } = await import('@repo/database');
     const { count } = await import('drizzle-orm');
 
@@ -168,7 +153,7 @@ internal.get('/announcements', internalRbac(), async (c) => {
  * @desc    Get unhandled WA interactions for Watchdog Monitor
  * @access  Super Admin, Admin Input, Admin View
  */
-internal.get('/watchdog/alerts', internalRbac(), async (c) => {
+internal.get('/watchdog/alerts', rbacMiddleware('watchdog'), async (c) => {
     const { waInteractions, users, profiles } = await import('@repo/database');
     const { eq, and, asc } = await import('drizzle-orm');
     const { alias } = await import('drizzle-orm/pg-core');
@@ -211,7 +196,7 @@ internal.get('/watchdog/alerts', internalRbac(), async (c) => {
  * @desc    Mark interaction as resolved by admin
  * @access  Super Admin, Admin Input
  */
-internal.patch('/watchdog/resolve/:id', internalRbac(), async (c) => {
+internal.patch('/watchdog/resolve/:id', rbacMiddleware('watchdog'), async (c) => {
     const id = parseInt(c.req.param('id'));
     const user = c.get('user');
 

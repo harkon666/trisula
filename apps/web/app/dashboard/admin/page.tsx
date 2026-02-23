@@ -16,8 +16,38 @@ export default function AdminDashboard() {
     const router = useRouter();
     const pathname = usePathname();
 
-    // Default to 'fulfillment' if no tab param exists
-    const activeSection = searchParams.get('tab') || 'fulfillment';
+    const sections = [
+        { id: "fulfillment", label: "Redeem Queue", icon: Activity, component: <AdminRedeemTable />, allowedRoles: ['admin', 'super_admin'] },
+        { id: "users", label: "User Base", icon: Users, component: <AdminUserManager />, allowedRoles: ['super_admin'] },
+        { id: "products", label: "Product Catalog", icon: Package, component: <AdminProductManager />, allowedRoles: ['super_admin'] },
+        { id: "watchdog", label: "Watchdog Monitor", icon: ShieldAlert, component: <AdminWatchdogTable />, allowedRoles: ['super_admin', 'admin'] },
+        { id: "polis", label: "Polis Entry", icon: ShieldPlus, component: <AdminPolisForm />, allowedRoles: ['admin', 'super_admin'] },
+        { id: "codes", label: "Agent Codes", icon: UserPlus, component: <AdminCodeManager />, allowedRoles: ['admin', 'super_admin'] },
+        { id: "rewards", label: "Voucher Catalog", icon: Ticket, component: <AdminRewardManager />, allowedRoles: ['super_admin'] },
+        { id: "announcements", label: "Announcements", icon: Megaphone, component: <AdminAnnouncementManager />, allowedRoles: ['super_admin', 'admin'] },
+        { id: "security", label: "Login History", icon: HistoryIcon, component: <AdminLoginHistory />, allowedRoles: ['super_admin', 'admin'] },
+    ];
+
+    const visibleSections = sections.filter(section => {
+        // 1. Super admin sees everything
+        if (user?.role === 'super_admin') return true;
+
+        // 2. Dynamic Permissions Check overrides legacy roles
+        let hasDynamicPerm = false;
+        if (user?.additionalMetadata?.permissions) {
+            const modulePerms = user.additionalMetadata.permissions[section.id] || [];
+            hasDynamicPerm = modulePerms.includes('read') || modulePerms.includes('write');
+        }
+
+        // Return true IF they have dynamic permission OR they qualify via legacy roles fallback
+        return hasDynamicPerm || section.allowedRoles.includes(user?.role || "");
+    });
+
+    // Default to the first available section if no param exists or is blocked
+    const activeSectionParam = searchParams.get('tab');
+    const activeSection = visibleSections.some(s => s.id === activeSectionParam)
+        ? activeSectionParam
+        : (visibleSections[0]?.id || 'fulfillment');
 
     const setActiveSection = (tab: string) => {
         const params = new URLSearchParams(searchParams);
@@ -57,22 +87,10 @@ export default function AdminDashboard() {
         };
     }, []); // Check on mount
 
-    const sections = [
-        { id: "fulfillment", label: "Redeem Queue", icon: Activity, component: <AdminRedeemTable />, allowedRoles: ['admin', 'super_admin', 'admin_view'] },
-        { id: "users", label: "User Base", icon: Users, component: <AdminUserManager />, allowedRoles: ['super_admin'] },
-        { id: "products", label: "Product Catalog", icon: Package, component: <AdminProductManager />, allowedRoles: ['super_admin'] },
-        { id: "watchdog", label: "Watchdog Monitor", icon: ShieldAlert, component: <AdminWatchdogTable />, allowedRoles: ['super_admin', 'admin_view', 'admin_input'] },
-        { id: "polis", label: "Polis Entry", icon: ShieldPlus, component: <AdminPolisForm />, allowedRoles: ['admin', 'super_admin', 'admin_input'] },
-        { id: "codes", label: "Agent Codes", icon: UserPlus, component: <AdminCodeManager />, allowedRoles: ['admin', 'super_admin'] },
-        { id: "rewards", label: "Voucher Catalog", icon: Ticket, component: <AdminRewardManager />, allowedRoles: ['super_admin'] },
-        { id: "announcements", label: "Announcements", icon: Megaphone, component: <AdminAnnouncementManager />, allowedRoles: ['super_admin', 'admin_input'] },
-        { id: "security", label: "Login History", icon: HistoryIcon, component: <AdminLoginHistory />, allowedRoles: ['super_admin', 'admin_view'] },
-    ];
 
-    const visibleSections = sections.filter(s => s.allowedRoles.includes(user?.role || ""));
 
     return (
-        <RoleGuard allowedRoles={['admin', 'super_admin', 'admin_input', 'admin_view']}>
+        <RoleGuard allowedRoles={['admin', 'super_admin']}>
             <PageEntrance className="min-h-screen bg-midnight-950 text-white selection:bg-gold-metallic/30 pb-20">
                 {/* Header Section */}
                 <div className="bg-charcoal-900/50 border-b border-white/5 backdrop-blur-md sticky top-0 z-40">

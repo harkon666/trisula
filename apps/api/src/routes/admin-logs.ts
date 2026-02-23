@@ -17,8 +17,8 @@ type Env = {
 
 const adminLogs = new Hono<Env>();
 
-// Apply Strict RBAC Middleware - Only Admins can access
-adminLogs.use('*', rbacMiddleware());
+// Apply Strict RBAC Middleware - Module: security
+adminLogs.use('*', rbacMiddleware('security'));
 
 /**
  * @route   GET /admin/logs

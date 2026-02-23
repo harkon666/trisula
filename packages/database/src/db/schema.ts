@@ -5,7 +5,7 @@ import {
 
 // --- ENUMS ---
 export const roleEnum = pgEnum("user_role", [
-    "super_admin", "admin_input", "admin_view", "agent", "nasabah"
+    "super_admin", "admin", "agent", "nasabah"
 ]);
 
 export const redeemStatusEnum = pgEnum("redeem_status", [
@@ -17,7 +17,7 @@ export const redeemStatusEnum = pgEnum("redeem_status", [
 // 1. Users (Identity & Core Balance)
 export const users = pgTable("users", {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: text("user_id").unique().notNull(),
+    userId: text("user_id").unique(),
     password: text("password").notNull(),
     role: roleEnum("role").notNull(),
     pointsBalance: integer("points_balance").notNull().default(0),
@@ -62,6 +62,7 @@ export const rewards = pgTable("rewards", {
     title: text("title").notNull(),
     description: text("description"),
     requiredPoints: integer("required_points").notNull(),
+    csWhatsappNumber: text("cs_whatsapp_number"), // New field for CS Whatsapp
     isActive: boolean("is_active").default(true),
 });
 

@@ -94,3 +94,23 @@ export function useAgentReferralDetail(id: string) {
         staleTime: 1000 * 60 * 1, // 1 minute
     });
 }
+
+export interface ReminderData {
+    id: number;
+    polisNumber: string;
+    createdAt: string;
+    nasabahName: string | null;
+    monthsLeft: number;
+    message: string;
+}
+
+export function useAgentReminders() {
+    return useQuery<ReminderData[]>({
+        queryKey: ["agent", "reminders"],
+        queryFn: async () => {
+            const res = await api.get("/v1/agent/reminders");
+            return res.data.data;
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+}

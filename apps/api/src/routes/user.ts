@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { db, users, pointsLedger, profiles, agentActivationCodes } from '@repo/database';
+import { db, users, pointsLedger, profiles, agentActivationCodes, redeemRequests, rewards } from '@repo/database';
 import { eq, desc, sql } from 'drizzle-orm';
 import { rbacMiddleware } from '../middlewares/rbac';
 import { AuthUser } from '../types/hono';
@@ -78,9 +78,31 @@ user.get('/activity', async (c) => {
             .orderBy(desc(pointsLedger.createdAt))
             .limit(50);
 
+        // Fetch redeem requests for this user to map csWhatsappNumber
+        const userRedeems = await db.select({
+            itemName: rewards.title,
+            csWhatsappNumber: rewards.csWhatsappNumber,
+        })
+            .from(redeemRequests)
+            .leftJoin(rewards, eq(redeemRequests.rewardId, rewards.id))
+            .where(eq(redeemRequests.nasabahId, contextUser.id));
+
+        // Map csWhatsappNumber back to history
+        const enrichedHistory = history.map(log => {
+            if (log.source === 'redeem') {
+                const title = log.description?.replace("Penukaran untuk ", "") || "";
+                const matchedRedeem = userRedeems.find(r => r.itemName === title);
+                return {
+                    ...log,
+                    csWhatsappNumber: matchedRedeem?.csWhatsappNumber || null
+                };
+            }
+            return log;
+        });
+
         return c.json({
             success: true,
-            data: history
+            data: enrichedHistory
         });
 
     } catch (error) {

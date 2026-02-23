@@ -7,8 +7,12 @@ import { useRouter } from 'next/navigation';
 
 interface User {
     userId: string;
-    role: 'nasabah' | 'agent' | 'admin' | 'super_admin' | 'admin_input' | 'admin_view';
+    role: 'nasabah' | 'agent' | 'admin' | 'super_admin';
     pointsBalance: number;
+    additionalMetadata?: {
+        permissions?: Record<string, string[]>;
+        [key: string]: any;
+    };
 }
 
 interface AuthContextType {

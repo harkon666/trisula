@@ -22,7 +22,7 @@ const InputPolisSchema = z.object({
  * @desc    Input Data Polis (Sales Tracker)
  * @access  Admin Input, Super Admin
  */
-polisRoute.post('/', rbacMiddleware(), zValidator('json', InputPolisSchema), async (c) => {
+polisRoute.post('/', rbacMiddleware('polis'), zValidator('json', InputPolisSchema), async (c) => {
     const { polisNumber, nasabahId, agentId, premiumAmount } = c.req.valid('json');
     const adminUser = c.get('user');
 
@@ -79,7 +79,7 @@ polisRoute.post('/', rbacMiddleware(), zValidator('json', InputPolisSchema), asy
  * @desc    List All Polis Data
  * @access  Admin View, Super Admin
  */
-polisRoute.get('/', rbacMiddleware(), async (c) => {
+polisRoute.get('/', rbacMiddleware('polis'), async (c) => {
     try {
         const list = await db.select({
             id: polisData.id,

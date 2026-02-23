@@ -15,7 +15,7 @@ dashboardRoute.get('/stats', rbacMiddleware(), async (c) => {
     // RBAC check is done by middleware, but ensure it's admin
     const user = c.get('user');
     // If we want stricter check for "Admin View" specifically or allow all admins:
-    // rbacMiddleware allows "admin_view" and "super_admin" for GET.
+    // rbacMiddleware allows "admin" and "super_admin" for GET.
 
     try {
         // Parallel Usage for Performance

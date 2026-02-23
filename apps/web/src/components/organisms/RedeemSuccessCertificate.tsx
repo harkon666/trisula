@@ -3,15 +3,16 @@
 import { useRef, useEffect } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { ShieldCheck, Download, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, MessageCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/src/components/atoms";
 
 interface RedeemSuccessCertificateProps {
     rewardName: string;
+    csWhatsappNumber?: string | null;
     onDone: () => void;
 }
 
-export function RedeemSuccessCertificate({ rewardName, onDone }: RedeemSuccessCertificateProps) {
+export function RedeemSuccessCertificate({ rewardName, csWhatsappNumber, onDone }: RedeemSuccessCertificateProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const certRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
@@ -96,7 +97,10 @@ export function RedeemSuccessCertificate({ rewardName, onDone }: RedeemSuccessCe
                 className="relative w-full max-w-2xl max-h-[90dvh] md:max-h-[92vh] flex flex-col bg-royal-800 border-[2px] md:border-[3px] border-gold-metallic/50 p-1 shadow-[0_0_80px_rgba(212,175,55,0.2)] rounded-sm overflow-hidden"
             >
                 {/* Inner Border & Gradient Background */}
-                <div className="relative flex-1 border border-gold-metallic/30 p-6 md:p-12 bg-gradient-to-br from-royal-blue via-charcoal-deep to-black overflow-y-auto rounded-[2px] custom-scrollbar overscroll-contain touch-pan-y">
+                <div
+                    className="relative flex-1 border border-gold-metallic/30 p-6 md:p-12 bg-gradient-to-br from-royal-blue via-charcoal-deep to-black overflow-y-auto rounded-[2px] custom-scrollbar"
+                    onWheel={(e) => { e.stopPropagation(); }}
+                >
 
                     {/* Animated Glow Sweep FX */}
                     <div
@@ -162,15 +166,21 @@ export function RedeemSuccessCertificate({ rewardName, onDone }: RedeemSuccessCe
                                 onClick={onDone}
                                 className="px-6 md:px-10 py-3 md:py-4 bg-gold-metallic text-royal-blue font-black rounded-sm hover:bg-white transition-all transform hover:scale-105 active:scale-95 shadow-xl text-sm md:text-base"
                             >
-                                Kembali ke Dashboard
+                                Kembali
                             </Button>
-                            <Button
-                                variant="outline"
-                                className="px-6 md:px-10 py-3 md:py-4 border-gold-metallic/50 text-gold-metallic font-bold rounded-sm hover:bg-gold-metallic/10 group text-sm md:text-base"
-                            >
-                                <Download size={18} className="group-hover:translate-y-1 transition-transform" />
-                                <span>Simpan Digital</span>
-                            </Button>
+                            {csWhatsappNumber && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const message = encodeURIComponent(`Halo Admin Trisula, saya baru saja menukarkan poin saya untuk reward: ${rewardName}. Mohon info proses selanjutnya.`);
+                                        window.open(`https://wa.me/${csWhatsappNumber}?text=${message}`, '_blank');
+                                    }}
+                                    className="px-6 md:px-10 py-3 md:py-4 border-gold-metallic/50 text-gold-metallic font-bold rounded-sm hover:bg-gold-metallic/10 group text-sm md:text-base"
+                                >
+                                    <MessageCircle size={18} className="group-hover:-translate-y-1 transition-transform" />
+                                    <span>Chat WA CS</span>
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>

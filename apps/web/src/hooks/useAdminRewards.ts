@@ -9,6 +9,7 @@ export interface Reward {
     title: string;
     description: string | null;
     requiredPoints: number;
+    csWhatsappNumber: string | null;
     isActive: boolean;
 }
 
@@ -16,6 +17,7 @@ export interface CreateRewardInput {
     title: string;
     description?: string;
     requiredPoints: number;
+    csWhatsappNumber?: string;
     isActive?: boolean;
 }
 

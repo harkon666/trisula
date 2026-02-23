@@ -36,7 +36,7 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (isAuthenticated && user) {
-            if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(user.role)) {
+            if (['admin', 'super_admin'].includes(user.role)) {
                 router.push('/dashboard/admin');
             } else if (user.role === 'agent') {
                 router.push('/dashboard/agent');
@@ -92,7 +92,7 @@ export default function LoginPage() {
                 // Redirect logic based on role
                 // Redirect logic based on role
                 const role = response.data.user.role;
-                if (['admin', 'super_admin', 'admin_input', 'admin_view'].includes(role)) {
+                if (['admin', 'super_admin'].includes(role)) {
                     router.push('/dashboard/admin');
                 } else if (role === 'agent') {
                     router.push('/dashboard/agent');

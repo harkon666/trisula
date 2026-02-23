@@ -32,7 +32,7 @@ export function useAdminInternal() {
             const res = await api.get("/v1/admin/internal/nasabah-agents");
             return res.data.data;
         },
-        enabled: isAuthenticated && (user?.role === 'super_admin' || user?.role === 'admin_input' || user?.role === 'admin_view'),
+        enabled: isAuthenticated && (user?.role === 'super_admin' || user?.role === 'admin'),
     });
 
     // Fetch plain Agents list (for fallback/manual selection)
@@ -42,7 +42,7 @@ export function useAdminInternal() {
             const res = await api.get("/v1/admin/internal/agents");
             return res.data.data;
         },
-        enabled: isAuthenticated && (user?.role === 'super_admin' || user?.role === 'admin_input' || user?.role === 'admin_view'),
+        enabled: isAuthenticated && (user?.role === 'super_admin' || user?.role === 'admin'),
     });
 
     return {

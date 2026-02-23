@@ -17,7 +17,7 @@ export function useAnnouncements() {
             const res = await api.get("/v1/content/announcements/latest");
             return res.data.data;
         },
-        enabled: isAuthenticated && !!user?.userId && user?.role !== 'admin_input',
+        enabled: isAuthenticated && !!user?.userId && user?.role !== 'admin',
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
 

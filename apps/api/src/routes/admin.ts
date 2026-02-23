@@ -17,8 +17,12 @@ type Env = {
 
 const admin = new Hono<Env>();
 
-// Apply Strict RBAC Middleware
-admin.use('*', rbacMiddleware());
+// Apply Module-Specific RBAC Middleware
+admin.use('/redeem/*', rbacMiddleware('fulfillment'));
+admin.use('/codes/*', rbacMiddleware('codes'));
+admin.use('/users/*', rbacMiddleware('users'));
+admin.use('/rewards/*', rbacMiddleware('rewards'));
+admin.use('/announcements/*', rbacMiddleware('announcements'));
 
 // Schema for Verify Request
 const UpdateRedeemStatusSchema = z.object({
@@ -349,6 +353,7 @@ admin.post('/rewards', zValidator('json', z.object({
     title: z.string().min(3),
     description: z.string().optional(),
     requiredPoints: z.number().int().positive(),
+    csWhatsappNumber: z.string().optional(),
     isActive: z.boolean().default(true),
 })), async (c) => {
     const user = c.get('user');
@@ -379,6 +384,7 @@ admin.patch('/rewards/:id', zValidator('json', z.object({
     title: z.string().min(3).optional(),
     description: z.string().optional(),
     requiredPoints: z.number().int().positive().optional(),
+    csWhatsappNumber: z.string().optional(),
     isActive: z.boolean().optional(),
 })), async (c) => {
     const user = c.get('user');
@@ -447,9 +453,9 @@ admin.patch('/users/:id/metadata', zValidator('json', z.object({
     const targetUserId = c.req.param('id');
     const { metadata } = c.req.valid('json');
 
-    // RBAC: Only admin_input or super_admin
-    if (adminUser.role !== 'super_admin' && adminUser.role !== 'admin_input') {
-        return c.json({ success: false, message: "Forbidden: Insufficient permissions" }, 403);
+    // RBAC: Only super_admin can configure permissions
+    if (adminUser.role !== 'super_admin') {
+        return c.json({ success: false, message: "Forbidden: Only super_admin can modify metadata" }, 403);
     }
 
     try {
@@ -541,7 +547,7 @@ const CreateAnnouncementSchema = z.object({
 admin.post('/announcements', zValidator('json', CreateAnnouncementSchema), async (c) => {
     const user = c.get('user');
 
-    if (user.role !== 'super_admin' && user.role !== 'admin_input') {
+    if (user.role !== 'super_admin' && user.role !== 'admin') {
         return c.json({ success: false, message: "Forbidden: Insufficient permissions" }, 403);
     }
 
@@ -595,7 +601,7 @@ admin.patch('/announcements/:id', zValidator('json', UpdateAnnouncementSchema), 
     const user = c.get('user');
     const id = parseInt(c.req.param('id'));
 
-    if (user.role !== 'super_admin' && user.role !== 'admin_input') {
+    if (user.role !== 'super_admin' && user.role !== 'admin') {
         return c.json({ success: false, message: "Forbidden: Insufficient permissions" }, 403);
     }
 

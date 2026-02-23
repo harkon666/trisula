@@ -24,6 +24,7 @@ export interface ActivityLog {
     description: string;
     source: string;
     createdAt: string;
+    csWhatsappNumber?: string | null;
 }
 
 interface DailyCheckInResponse {

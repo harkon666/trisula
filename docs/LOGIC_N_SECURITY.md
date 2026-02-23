@@ -1,16 +1,13 @@
 📂 Bundle 3: Logic & Security (The Brain/Backend)
 Dokumentasi ini memberikan instruksi mendalam bagi AI Agent untuk mengimplementasikan logika backend menggunakan Hono API (atau framework pilihan) dan Drizzle ORM. Fokus utama adalah pada keamanan akses (RBAC), integritas poin, dan sistem otomasi pengawasan.
 
-1. Implementasi Strict RBAC Middleware
-Keamanan TRISULA bergantung pada pemisahan hak akses yang kaku. AI Agent harus membangun middleware yang memvalidasi role pengguna sebelum memproses permintaan.
+1. Implementasi Strict RBAC Middleware & Dynamic Permissions
+Keamanan TRISULA bergantung pada pemisahan hak akses yang modular. AI Agent harus membangun middleware yang memvalidasi role pengguna sebelum memproses permintaan.
 
-- Admin 1 (Input-Only): Hanya diizinkan melakukan metode POST. Jika mencoba melakukan GET, PATCH, PUT, atau DELETE, sistem harus mengembalikan 403 Forbidden.
+- Admin: Akses operasional didefinisikan secara spesifik per modul (contoh: `watchdog`, `products`) di dalam kolom JSON `additionalMetadata.permissions` milik admin tersebut. Sebuah array akses mendikte apakah mereka boleh melakukan `read` (GET) atau `write` (POST/PATCH/DELETE).
+- Super Admin: Akses penuh dan absolute ke semua metode, endpoint, dan kontrol hak cipta permission.
 
-- Admin 2 (View-Only): Hanya diizinkan melakukan metode GET. Jika mencoba melakukan mutasi data (POST, PATCH, dll), akses harus ditolak.
-
-- Super Admin: Akses penuh ke semua metode dan endpoint.
-
-- Logic Path: if (user.role === 'admin_input' && request.method !== 'POST') return Error(403); if (user.role === 'admin_view' && request.method !== 'GET') return Error(403);
+- Logic Path Sidebar: Frontend akan secara adaptif menyembunyikan navigasi tab sesuai dengan permission yang diberikan. Middlewares di backend akan menangkap semua interaksi jika lolos UI secara paksa.
 
 2. Mekanisme Otomasi Poin (Atomic Transactions)
 Poin adalah aset berharga bagi Nasabah Sultan. AI Agent wajib menggunakan Database Transactions untuk setiap perubahan saldo guna menghindari race conditions.
@@ -56,8 +53,8 @@ Agent tidak bisa login sebelum akunnya diaktivasi.
 
 Hubungkan user_id baru ke kode tersebut dan set is_used = true.
 
-B. Login via User ID
-Otentikasi tidak menggunakan email sebagai username, melainkan User ID unik (contoh: 12345). AI Agent harus memastikan pengecekan userId bersifat case-sensitive dan unik di seluruh database.
+B. Login Flow
+Otentikasi untuk Agen dan Admin menggunakan User ID unik, sedangkan Nasabah dapat menggunakan Email. Tidak ada Nasabah yang mempunyai User ID kaku, ID mereka didelegasikan oleh sistem ke Email.
 
 5. Audit Log (Transparency)
 Setiap mutasi data yang dilakukan oleh Admin (terutama Admin 1 & 2) wajib memicu penulisan ke tabel admin_actions.

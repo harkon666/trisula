@@ -34,6 +34,8 @@ A. Dashboard Nasabah (The Private Vault)
 B. Dashboard Agen (The Performance Hub)
 - Revenue Analytics: Tampilan angka omset dan jumlah polis dengan visualisasi yang bersih.
 
+- Polis Reminders: Indikator ikon lonceng berkedip halus (unobtrusive) yang menginformasikan Agen ketika sebuah polis Nasabah akan jatuh tempo dalam kurun waktu 1, 2, atau 3 bulan ke depan.
+
 - Unique Code Manager: Area khusus bagi agen untuk mengelola kode aktivasi agen baru dari Admin.
 
 - Nasabah Directory: Daftar nasabah di bawah naungan agen tersebut dengan akses cepat ke WhatsApp.

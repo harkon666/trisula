@@ -5,7 +5,7 @@ Tepat sekali, Maestro! Ketelitian kamu luar biasa. Memang ada 13 tabel utama yan
 
 // --- ENUMS ---
 export const roleEnum = pgEnum("user_role", [
-  "super_admin", "admin_input", "admin_view", "agent", "nasabah"
+  "super_admin", "admin", "agent", "nasabah"
 ]);
 
 export const redeemStatusEnum = pgEnum("redeem_status", [
@@ -17,7 +17,7 @@ export const redeemStatusEnum = pgEnum("redeem_status", [
 // 1. Users (Identity & Core Balance)
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id").unique().notNull(), 
+  userId: text("user_id").unique(), // Nullable for Nasabah 
   password: text("password").notNull(),
   role: roleEnum("role").notNull(),
   pointsBalance: integer("points_balance").default(0),
@@ -62,6 +62,7 @@ export const rewards = pgTable("rewards", {
   title: text("title").notNull(),
   description: text("description"),
   requiredPoints: integer("required_points").notNull(),
+  csWhatsappNumber: text("cs_whatsapp_number"), // Dynamic CS contact
   isActive: boolean("is_active").default(true),
 });
 
@@ -138,4 +139,4 @@ export const adminActions = pgTable("admin_actions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-2. Logika Integritas (The "Sultan" Standard)Poin Harian: Logic pengecekan dilakukan di backend menggunakan tabel login_logs.$$Poin_{Daily} = \begin{cases} +10, & \text{jika } \text{count(login\_logs)} = 0 \text{ untuk hari ini} \\ 0, & \text{sebaliknya} \end{cases}$$Audit Keamanan: Setiap kali Admin 1 (admin_input) memasukkan data polis_data, sistem wajib mencatat entri di admin_actions untuk akuntabilitas.Dynamic Fields: Manfaatkan kolom additionalMetadata pada tabel users untuk menyimpan atribut unik yang ditambahkan Super Admin secara real-time.
+2. Logika Integritas (The "Sultan" Standard)Poin Harian: Logic pengecekan dilakukan di backend menggunakan tabel login_logs.$$Poin_{Daily} = \begin{cases} +10, & \text{jika } \text{count(login\_logs)} = 0 \text{ untuk hari ini} \\ 0, & \text{sebaliknya} \end{cases}$$Audit Keamanan: Setiap kali Admin memasukkan data polis_data, sistem wajib mencatat entri di admin_actions untuk akuntabilitas.Dynamic Fields: Manfaatkan kolom additionalMetadata pada tabel users untuk menyimpan atribut unik (termasuk permission object) yang ditambahkan Super Admin secara real-time.

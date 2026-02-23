@@ -10,10 +10,9 @@ This document summarizes the core features, architectural decisions, and impleme
 
 ### Role-Based Access Control (RBAC)
 Dedicated middleware verifies user roles before granting access to protected routes:
-- **Super Admin**: Full system access, including sensitive data deletion.
-- **Admin Input**: Can verify and process data (e.g., redeem requests, generating codes).
-- **Admin View**: Read-only access to dashboards and reports.
-- **Agent**: Can refer Nasabah and earn points.
+- **Super Admin**: Full system access, including sensitive data deletion and permission assignment.
+- **Admin**: Operational access determined dynamically by `additionalMetadata.permissions` JSON payload assigned by the Super Admin.
+- **Agent**: Can refer Nasabah, track point analytics, and manage client reminders.
 - **Nasabah**: End-user who can redeem rewards.
 
 ### Auto-Login Flow
@@ -53,7 +52,8 @@ To control the onboarding of Agents (Partners), we implemented an activation cod
 ### Admin Flow
 1. **Queue Management**: Admins view a list of pending requests.
 2. **Approval/Rejection**: Admins can approve (deduct points ledger) or reject (refund points if held).
-3. **Audit Trail**: All actions are logged in the `pointsLedger` with source `redeem` or `refund`.
+3. **CS Follow-up**: Upon redemption, the user is redirected automatically to the designated Customer Service WhatsApp number appended to the reward record.
+4. **Audit Trail**: All actions are logged in the `pointsLedger` with source `redeem` or `refund`.
 
 ---
 
@@ -124,7 +124,7 @@ In Feb 2026, a dedicated dashboard for Nasabah users was implemented as a core l
 
 ### Interactive Components
 - **GoldCardOverview**: A high-end balance card featuring a GSAP shimmer effect, animated points counter (`AnimatedCounter` — ref-based DOM update, Strict Mode compatible), and premium loading skeletons.
-- **NasabahActivityTable**: A responsive activity log with desktop table + mobile card-list views, mapping point sources to consistent Lucide icons. Supports 100+ entries with fixed-height scroll and sticky header.
+- **NasabahActivityTable**: A responsive activity log with desktop table + mobile card-list views, mapping point sources to consistent Lucide icons. Hidden by default to save space, but expands elegantly on "Lihat Detail".
 - **useNasabahDashboard**: A centralized data hook leveraging TanStack Query v5 for seamless cache invalidation across the dashboard after any points mutation.
 
 ### Developer Utilities
@@ -163,9 +163,9 @@ Implemented on Feb 12, 2026, as a premium destination for Nasabah to exchange po
 ---
 
 ## 10. Admin Operational Dashboard (Phase 4)
-166: Implemented in Feb 2026 as a high-fidelity command center for administrative roles (`admin`, `super_admin`, `admin_input`, `admin_view`).
-167: 
-168: ### Operational Modules
+Implemented in Feb 2026 as a high-fidelity command center for administrative roles (`admin`, `super_admin`).
+
+### Operational Modules
 169: - **Service Fulfillment Queue**: Real-time management of redemption requests with a multi-stage workflow (`pending` → `processing` → `completed`).
 170: - **Atomic Point Engine (Polis Entry)**: A sophisticated data entry tool that links Nasabah and Agents to new Polis records. 
 171:   - **Automatic Injection**: Awards **1 point per Rp 1.000 premium** atomically via database transactions.
@@ -190,11 +190,11 @@ Implemented in Feb 15, 2026, focusing on role-specific UX improvements and a glo
   - **Per-User Tracking**: Uses `localStorage` keyed by `userId` to ensure specific users only see an announcement once.
   - **Role Isolation**: Prevents cache collisions when switching between Admin and Nasabah accounts on the same device.
 
-### Admin Input Workflow Optimization
+### Admin Entry Workflow Optimization
 - **Smart Polis Entry Form**:
   - **Auto-Fill Logic**: Automatically detects and selects the linked **Agent** when a **Nasabah** is chosen, reducing data entry errors.
-  - **Internal Data Access**: Implemented specialized `GET /admin/internal/*` endpoints to allow restricted roles (`admin_input`) to fetch necessary operational data without exposing sensitive global admin routes.
-- **Role-Based Navigation**: Refined dashboard access control to show only relevant tools for `admin_input` (hiding User Base, Product Catalog, etc.).
+  - **Internal Data Access**: Implemented specialized `GET /admin/internal/*` endpoints to allow restricted roles to fetch necessary operational data without exposing sensitive global admin routes.
+- **Role-Based Navigation**: Refined dashboard access control to dynamically construct the UI based only on the modules the user's `permissions` JSON indicates they have access to.
 
 ### UI/UX Refinements
 - **Responsive Command Center**:
@@ -217,3 +217,14 @@ Implemented in Feb 2026, focusing on data integrity, session security, and proac
 ### Session Isolation & Cache Integrity
 - **Stateless Cache Purge**: Resolved a critical session persistence bug where User B could see User A's cached data after account switching on the same device.
 - **Global Reset Logic**: Updated `AuthProvider`, `LoginPage`, and `RegisterPage` to call `queryClient.clear()` and `removeQueries()` upon logout or new registration. This ensures that every login starts with a **100% clean state**, preventing sensitive cross-account data leakage from the React Query cache.
+
+---
+
+## 13. System Revisions & Feature Enhancements (v2.1)
+The following major refinements were implemented to streamline UX and backend security:
+
+1. **Simplified Registration**: Eliminated the `userId` requirement for Nasabah. Nasabah now log in seamlessly via Email, allowing standard login paths without redundant IDs.
+2. **Nasabah Point History Visibility**: Activity tables in the Nasabah dashboard are now hidden by default to prioritize screen real estate, expanding elegantly via a "Lihat Detail" toggle button.
+3. **Agent Policy Reminders**: Agents now have an unobtrusive bell indicator on their navigation bar that pulses a red dot when a client's policy is approaching its 1-year anniversary (triggering visibly at 3, 2, and 1-month intervals).
+4. **Customer Service WhatsApp Integration**: Reward redemptions now deduct points via the admin approval panel but initially trigger an automatic redirect to a specific Customer Service WhatsApp number appended dynamically to each catalog item by the Administrator.
+5. **Unified Admin Permissions**: Sunsetted the rigid `admin_input` and `admin_view` roles in favor of a singular `admin` role governed entirely by a flexible JSON `permissions` state managed exclusively by the Super Admin.

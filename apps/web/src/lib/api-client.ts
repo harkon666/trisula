@@ -23,7 +23,7 @@ api.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            if (typeof window !== 'undefined') {
+            if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
                 window.location.href = '/login';
             }
         } else if (error.response?.status === 403) {

@@ -35,7 +35,8 @@ async function seed() {
                         security: ["read", "write"],
                         watchdog: ["read", "write"],
                         fulfillment: ["read", "write"],
-                        announcements: ["read", "write"]
+                        announcements: ["read", "write"],
+                        performance: ["read", "write"]
                     }
                 }
             },

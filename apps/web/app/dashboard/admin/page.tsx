@@ -4,8 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation"; // Added navigation hooks
 import RoleGuard from "@/src/components/auth/RoleGuard";
 import { PageEntrance } from "@/src/components/ui/GsapContext";
-import { AdminRedeemTable, AdminPolisForm, AdminCodeManager, AdminRewardManager, AdminProductManager, AdminUserManager, AdminAnnouncementManager, AdminLoginHistory, AdminWatchdogTable, GlobalWatchdogAlert } from "@/src/components/organisms";
-import { Activity, ShieldPlus, UserPlus, LayoutDashboard, LogOut, Ticket, Package, Users, Megaphone, History as HistoryIcon, ChevronLeft, ChevronRight, ShieldAlert } from "lucide-react";
+import { AdminRedeemTable, AdminPolisForm, AdminCodeManager, AdminRewardManager, AdminProductManager, AdminUserManager, AdminAnnouncementManager, AdminLoginHistory, AdminWatchdogTable, GlobalWatchdogAlert, AdminAgentLeaderboard } from "@/src/components/organisms";
+import { Activity, ShieldPlus, UserPlus, LayoutDashboard, LogOut, Ticket, Package, Users, Megaphone, History as HistoryIcon, ChevronLeft, ChevronRight, ShieldAlert, Trophy } from "lucide-react";
 import { useAuth } from "@/src/hooks/useAuth";
 
 export default function AdminDashboard() {
@@ -17,6 +17,7 @@ export default function AdminDashboard() {
     const pathname = usePathname();
 
     const sections = [
+        { id: "performance", label: "Agent Performance", icon: Trophy, component: <AdminAgentLeaderboard />, allowedRoles: ['admin', 'super_admin'] },
         { id: "fulfillment", label: "Redeem Queue", icon: Activity, component: <AdminRedeemTable />, allowedRoles: ['admin', 'super_admin'] },
         { id: "users", label: "User Base", icon: Users, component: <AdminUserManager />, allowedRoles: ['super_admin'] },
         { id: "products", label: "Product Catalog", icon: Package, component: <AdminProductManager />, allowedRoles: ['super_admin'] },
@@ -47,7 +48,7 @@ export default function AdminDashboard() {
     const activeSectionParam = searchParams.get('tab');
     const activeSection = visibleSections.some(s => s.id === activeSectionParam)
         ? activeSectionParam
-        : (visibleSections[0]?.id || 'fulfillment');
+        : (visibleSections[0]?.id || 'performance');
 
     const setActiveSection = (tab: string) => {
         const params = new URLSearchParams(searchParams);

@@ -23,6 +23,7 @@ admin.use('/codes/*', rbacMiddleware('codes'));
 admin.use('/users/*', rbacMiddleware('users'));
 admin.use('/rewards/*', rbacMiddleware('rewards'));
 admin.use('/announcements/*', rbacMiddleware('announcements'));
+admin.use('/performance/*', rbacMiddleware('performance'));
 
 // Schema for Verify Request
 const UpdateRedeemStatusSchema = z.object({
@@ -649,6 +650,45 @@ admin.delete('/announcements/:id', async (c) => {
     } catch (error) {
         console.error("Admin Delete Announcement Error:", error);
         return c.json({ success: false, message: "Failed to delete announcement" }, 500);
+    }
+});
+
+// ============================================================
+// PARTNER PERFORMANCE (LEADERBOARD)
+// ============================================================
+
+/**
+ * @route   GET /performance/leaderboard
+ * @desc    Get Agent Leaderboard ranked by total referred Nasabah
+ * @access  Admin explicitly granted 'performance' access
+ */
+admin.get('/performance/leaderboard', async (c) => {
+    try {
+        // We use a raw SQL query to elegantly LEFT JOIN profiles onto itself to count referrals.
+        // This is highly performant and aggregates all necessary Agent data in one pass.
+        const leaderboardQuery = sql`
+            SELECT 
+                u.id, 
+                u.user_id as "userId", 
+                p.full_name as "fullName", 
+                p.whatsapp,
+                COUNT(rp.id)::int as "totalReferrals"
+            FROM users u
+            LEFT JOIN profiles p ON u.id = p.user_id
+            LEFT JOIN profiles rp ON u.user_id = rp.referred_by_agent_id
+            WHERE u.role = 'agent'
+            GROUP BY u.id, u.user_id, p.full_name, p.whatsapp
+            ORDER BY "totalReferrals" DESC
+        `;
+
+        const result = await db.execute(leaderboardQuery);
+        // db.execute returns an object with a 'rows' array in postgres
+        const data = (result as any).rows || result;
+
+        return c.json({ success: true, data });
+    } catch (error) {
+        console.error("Admin Fetch Leaderboard Error:", error);
+        return c.json({ success: false, message: "Failed to fetch leaderboard" }, 500);
     }
 });
 

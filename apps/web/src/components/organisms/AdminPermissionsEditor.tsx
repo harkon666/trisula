@@ -29,6 +29,7 @@ const MODULES = [
     { id: "rewards", label: "Voucher Catalog" },
     { id: "announcements", label: "Announcements" },
     { id: "security", label: "Login History" },
+    { id: "performance", label: "Agent Performance" },
 ];
 
 export function AdminPermissionsEditor({ userId, initialMetadata, onSuccess }: AdminPermissionsEditorProps) {

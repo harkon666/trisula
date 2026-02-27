@@ -16,7 +16,8 @@ async function seed() {
                 email: "agent1@trisula.com",
                 phone: "628123456789",
                 role: "agent",
-                balance: 1000
+                balance: 1000,
+                dob: "1990-01-01"
             },
             {
                 name: "Admin User",
@@ -38,7 +39,8 @@ async function seed() {
                         announcements: ["read", "write"],
                         performance: ["read", "write"]
                     }
-                }
+                },
+                dob: "1985-06-15"
             },
             {
                 name: "Super Admin",
@@ -46,7 +48,8 @@ async function seed() {
                 email: "super1@trisula.com",
                 phone: "628000000000",
                 role: "super_admin",
-                balance: 999999
+                balance: 999999,
+                dob: "1980-12-30"
             },
             {
                 name: "Nasabah Sultan",
@@ -54,7 +57,8 @@ async function seed() {
                 email: "nasabah1@trisula.com",
                 phone: "628999999999",
                 role: "nasabah",
-                balance: 150 // Including welcome bonus
+                balance: 150, // Including welcome bonus
+                dob: "1995-08-20"
             }
         ];
 
@@ -90,6 +94,7 @@ async function seed() {
                 fullName: u.name,
                 email: u.email,
                 whatsapp: u.phone,
+                dateOfBirth: (u as any).dob,
             });
 
             console.log(`✅ User created: ${newUser.userId} (${u.role})`);

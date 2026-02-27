@@ -17,6 +17,7 @@ const RegisterAgentSchema = z.object({
     email: z.string().email("Email tidak valid"),
     whatsapp: z.string().min(10),
     activationCode: z.string().min(5),
+    dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal salah (YYYY-MM-DD)"),
 });
 
 const RegisterNasabahSchema = z.object({
@@ -25,6 +26,7 @@ const RegisterNasabahSchema = z.object({
     email: z.string().email("Email tidak valid"),
     whatsapp: z.string().min(10),
     referredByAgentId: z.string().min(4), // User ID of the agent
+    dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal salah (YYYY-MM-DD)"),
 });
 
 const LoginSchema = z.object({
@@ -37,7 +39,7 @@ const LoginSchema = z.object({
  * @desc    Registrasi Agent dengan Kode Aktivasi
  */
 auth.post('/register/agent', zValidator('json', RegisterAgentSchema), async (c) => {
-    const { password, fullName, email, whatsapp, activationCode } = c.req.valid('json');
+    const { password, fullName, email, whatsapp, activationCode, dateOfBirth } = c.req.valid('json');
 
     const userId = activationCode; // Use activation code as userId
 
@@ -82,6 +84,7 @@ auth.post('/register/agent', zValidator('json', RegisterAgentSchema), async (c) 
                 fullName,
                 email,
                 whatsapp,
+                dateOfBirth,
             });
 
             // 6. Mark Code as Used
@@ -129,7 +132,7 @@ auth.post('/register/agent', zValidator('json', RegisterAgentSchema), async (c) 
  * @desc    Registrasi Nasabah dengan Referral Agent
  */
 auth.post('/register/nasabah', zValidator('json', RegisterNasabahSchema), async (c) => {
-    const { password, fullName, email, whatsapp, referredByAgentId } = c.req.valid('json');
+    const { password, fullName, email, whatsapp, referredByAgentId, dateOfBirth } = c.req.valid('json');
 
     try {
         return await db.transaction(async (tx) => {
@@ -164,6 +167,7 @@ auth.post('/register/nasabah', zValidator('json', RegisterNasabahSchema), async 
                 email,
                 whatsapp,
                 referredByAgentId: agent.userId, // Store Agent User ID
+                dateOfBirth,
             });
 
             // 6. Welcome Bonus (+100 Points)

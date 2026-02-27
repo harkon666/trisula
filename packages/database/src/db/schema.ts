@@ -44,6 +44,7 @@ export const profiles = pgTable("profiles", {
     email: text("email"),
     whatsapp: text("whatsapp").notNull(),
     referredByAgentId: text("referred_by_agent_id"), // Relasi ke Agent
+    dateOfBirth: date("date_of_birth"),
 });
 
 // 4. Products (Menu Produk: Beli -> Dapat Poin)

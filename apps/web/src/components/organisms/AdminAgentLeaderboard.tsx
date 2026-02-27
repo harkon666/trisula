@@ -81,11 +81,11 @@ export function AdminAgentLeaderboard() {
     return (
         <div className="space-y-6" ref={containerRef}>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <div>
-                    <h2 className="text-xl font-serif text-gold-500 mb-1 flex items-center gap-2">
-                        <Trophy className="w-5 h-5" /> Agent Performance
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                        <Trophy className="w-6 h-6 text-gold-metallic" /> Agent Performance
                     </h2>
-                    <p className="text-sm text-gray-400">Peringkat agen berdasarkan total akuisisi nasabah.</p>
+                    <p className="text-sm text-zinc-500">Peringkat agen berdasarkan total akuisisi nasabah.</p>
                 </div>
                 <button
                     onClick={() => refetch()}

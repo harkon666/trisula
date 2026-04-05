@@ -348,4 +348,57 @@ agentRoute.get('/reminders', rbacMiddleware(), async (c) => {
     }
 });
 
+/**
+ * @route   GET /api/v1/agent/birthdays
+ * @desc    Get upcoming Nasabah birthdays (Today & Tomorrow)
+ * @access  Agent
+ */
+agentRoute.get('/birthdays', rbacMiddleware(), async (c) => {
+    const user = c.get('user');
+
+    if (user.role !== 'agent') {
+        return c.json({ success: false, message: "Unauthorized" }, 403);
+    }
+
+    try {
+        // Find profiles referred by this agent where Month and Day match today or tomorrow
+        const timeZoneOffset = '+07:00'; // Assume WIB / standardized localized offset for the app
+
+        const birthdayQuery = sql`
+            SELECT 
+                p.id,
+                p.user_id as "userId",
+                p.full_name as "fullName",
+                p.whatsapp,
+                p.date_of_birth as "dateOfBirth",
+                EXTRACT(YEAR FROM CURRENT_DATE AT TIME ZONE ${timeZoneOffset}) - EXTRACT(YEAR FROM p.date_of_birth) AS age,
+                CASE 
+                    WHEN EXTRACT(MONTH FROM p.date_of_birth) = EXTRACT(MONTH FROM CURRENT_DATE AT TIME ZONE ${timeZoneOffset}) 
+                         AND EXTRACT(DAY FROM p.date_of_birth) = EXTRACT(DAY FROM CURRENT_DATE AT TIME ZONE ${timeZoneOffset}) 
+                    THEN 'today'
+                    ELSE 'tomorrow'
+                END as "birthdayWhen"
+            FROM profiles p
+            WHERE p.referred_by_agent_id = ${user.userId}
+              AND p.date_of_birth IS NOT NULL
+              AND (
+                  (EXTRACT(MONTH FROM p.date_of_birth) = EXTRACT(MONTH FROM CURRENT_DATE AT TIME ZONE ${timeZoneOffset}) 
+                   AND EXTRACT(DAY FROM p.date_of_birth) = EXTRACT(DAY FROM CURRENT_DATE AT TIME ZONE ${timeZoneOffset}))
+                  OR 
+                  (EXTRACT(MONTH FROM p.date_of_birth) = EXTRACT(MONTH FROM (CURRENT_DATE + INTERVAL '1 day') AT TIME ZONE ${timeZoneOffset}) 
+                   AND EXTRACT(DAY FROM p.date_of_birth) = EXTRACT(DAY FROM (CURRENT_DATE + INTERVAL '1 day') AT TIME ZONE ${timeZoneOffset}))
+              )
+            ORDER BY "birthdayWhen" DESC, "fullName" ASC
+        `;
+
+        const result = await db.execute(birthdayQuery);
+        const data = (result as any).rows || result;
+
+        return c.json({ success: true, data });
+    } catch (error) {
+        console.error("Agent Birthdays Error:", error);
+        return c.json({ success: false, message: "Failed to fetch birthdays" }, 500);
+    }
+});
+
 export default agentRoute;

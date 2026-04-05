@@ -58,7 +58,7 @@ async function seed() {
                 phone: "628999999999",
                 role: "nasabah",
                 balance: 150, // Including welcome bonus
-                dob: "1995-08-20"
+                dob: `${new Date().getFullYear() - 30}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}` // Turns 30 today
             }
         ];
 

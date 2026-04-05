@@ -1,6 +1,6 @@
 revisi
 
-- tambahkan field deskripsi produk, seperti rentang umur target (menunggu konfirmasi jangan dikerjakan dulu)
+- tambahkan field deskripsi produk, seperti rentang umur target (menunggu konfirmasi lagi, karena aku masih bingung)
 - user id pada field register di hilangkan (done)
 - pada page nasabah riwayat poin di hide namun ada button lihat detail (done)
 - agent punya menu reminder rentang 3 bulan, 2 bulan, 1 bulan, mirip seperti watchdog namun tidak memunculkan pop up besar, mungkin ada dot merah kedip (done)

@@ -5,6 +5,7 @@ import { AgentNavbar } from "@/src/components/organisms/AgentNavbar";
 import { ReferralTable } from "@/src/components/organisms/ReferralTable";
 import { EarningsChart } from "@/src/components/molecules/EarningsChart";
 import { WatchdogAlert } from "@/src/components/molecules/WatchdogAlert";
+import { BirthdayWidget } from "@/src/components/organisms/BirthdayWidget";
 import { useAgentStats } from "@/src/hooks/useAgentDashboard";
 import { Button } from "@/src/components/atoms";
 import { useGSAP } from "@gsap/react";
@@ -120,8 +121,8 @@ export default function AgentDashboard() {
                         </div>
 
                         {/* Right: Quick Actions / Future Expansion */}
-                        <div className="lg:col-span-1 space-y-6">
-                            <div className="p-8 rounded-[2rem] bg-gradient-to-br from-trisula-900/20 to-midnight-900/50 border border-trisula-500/20 h-full flex flex-col justify-center items-center text-center relative overflow-hidden">
+                        <div className="lg:col-span-1 flex flex-col gap-6">
+                            <div className="flex-1 p-8 rounded-[2rem] bg-gradient-to-br from-trisula-900/20 to-midnight-900/50 border border-trisula-500/20 flex flex-col justify-center items-center text-center relative overflow-hidden min-h-[250px]">
                                 <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
                                 <h4 className="text-xl font-bold text-white mb-2 relative z-10">Invite New Nasabah</h4>
                                 <p className="text-zinc-400 text-sm mb-6 relative z-10">Share your unique agent code to start earning commissions.</p>
@@ -135,6 +136,9 @@ export default function AgentDashboard() {
                                     Copy Invite Link
                                 </Button>
                             </div>
+
+                            {/* Birthday Tracking Widget */}
+                            <BirthdayWidget role="agent" />
                         </div>
                     </div>
 

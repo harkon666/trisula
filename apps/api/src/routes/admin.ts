@@ -692,4 +692,51 @@ admin.get('/performance/leaderboard', async (c) => {
     }
 });
 
+/**
+ * @route   GET /api/v1/admin/internal/birthdays
+ * @desc    Get all upcoming Nasabah birthdays across all agents
+ * @access  Admin explicitly granted 'users' access
+ */
+admin.get('/birthdays', rbacMiddleware('users'), async (c) => {
+    try {
+        const timeZoneOffset = '+07:00';
+
+        const birthdayQuery = sql`
+            SELECT 
+                p.id,
+                p.full_name as "fullName",
+                p.whatsapp,
+                p.referred_by_agent_id as "agentUserId",
+                p.date_of_birth as "dateOfBirth",
+                EXTRACT(YEAR FROM CURRENT_DATE AT TIME ZONE ${timeZoneOffset}) - EXTRACT(YEAR FROM p.date_of_birth) AS age,
+                CASE 
+                    WHEN EXTRACT(MONTH FROM p.date_of_birth) = EXTRACT(MONTH FROM CURRENT_DATE AT TIME ZONE ${timeZoneOffset}) 
+                         AND EXTRACT(DAY FROM p.date_of_birth) = EXTRACT(DAY FROM CURRENT_DATE AT TIME ZONE ${timeZoneOffset}) 
+                    THEN 'today'
+                    ELSE 'tomorrow'
+                END as "birthdayWhen"
+            FROM profiles p
+            JOIN users u ON p.user_id = u.id
+            WHERE u.role = 'nasabah'
+              AND p.date_of_birth IS NOT NULL
+              AND (
+                  (EXTRACT(MONTH FROM p.date_of_birth) = EXTRACT(MONTH FROM CURRENT_DATE AT TIME ZONE ${timeZoneOffset}) 
+                   AND EXTRACT(DAY FROM p.date_of_birth) = EXTRACT(DAY FROM CURRENT_DATE AT TIME ZONE ${timeZoneOffset}))
+                  OR 
+                  (EXTRACT(MONTH FROM p.date_of_birth) = EXTRACT(MONTH FROM (CURRENT_DATE + INTERVAL '1 day') AT TIME ZONE ${timeZoneOffset}) 
+                   AND EXTRACT(DAY FROM p.date_of_birth) = EXTRACT(DAY FROM (CURRENT_DATE + INTERVAL '1 day') AT TIME ZONE ${timeZoneOffset}))
+              )
+            ORDER BY "birthdayWhen" DESC, "fullName" ASC
+        `;
+
+        const result = await db.execute(birthdayQuery);
+        const data = (result as any).rows || result;
+
+        return c.json({ success: true, data });
+    } catch (error) {
+        console.error("Admin Fetch Birthdays Error:", error);
+        return c.json({ success: false, message: "Failed to fetch birthdays" }, 500);
+    }
+});
+
 export default admin;

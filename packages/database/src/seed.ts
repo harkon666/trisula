@@ -14,7 +14,7 @@ async function seed() {
                 name: "Agent Primary",
                 userId: "SULTAN01", // Used as Handle/Referral Code
                 email: "agent1@trisula.com",
-                phone: "628123456789",
+                phone: "08123456789",
                 role: "agent",
                 balance: 1000,
                 dob: "1990-01-01"
@@ -171,6 +171,11 @@ async function seed() {
 
         if (agent && nasabahProfile && admin) {
             const now = new Date();
+            // Reminder simulates polis approaching 1-year anniversary
+            // monthsLeft = 12 - monthsSinceCreation
+            // For 3 months left: createdAt should be 9 months ago (12 - 9 = 3)
+            // For 2 months left: createdAt should be 10 months ago (12 - 10 = 2)
+            // For 1 month left: createdAt should be 11 months ago (12 - 11 = 1)
             const samplePolis = [
                 {
                     polisNumber: "POL-REM-3BLN",
@@ -178,7 +183,7 @@ async function seed() {
                     nasabahId: nasabahProfile.userId,
                     premiumAmount: 5000000,
                     inputBy: admin.id,
-                    createdAt: new Date(now.getFullYear(), now.getMonth() - 9, now.getDate()) // 3 months until 1yr
+                    createdAt: new Date(now.getFullYear(), now.getMonth() - 9, now.getDate()) // 3 months until 1yr anniversary
                 },
                 {
                     polisNumber: "POL-REM-2BLN",
@@ -186,7 +191,7 @@ async function seed() {
                     nasabahId: nasabahProfile.userId,
                     premiumAmount: 7500000,
                     inputBy: admin.id,
-                    createdAt: new Date(now.getFullYear(), now.getMonth() - 10, now.getDate()) // 2 months until 1yr
+                    createdAt: new Date(now.getFullYear(), now.getMonth() - 10, now.getDate()) // 2 months until 1yr anniversary
                 },
                 {
                     polisNumber: "POL-REM-1BLN",
@@ -194,7 +199,7 @@ async function seed() {
                     nasabahId: nasabahProfile.userId,
                     premiumAmount: 10000000,
                     inputBy: admin.id,
-                    createdAt: new Date(now.getFullYear(), now.getMonth() - 11, now.getDate()) // 1 month until 1yr
+                    createdAt: new Date(now.getFullYear(), now.getMonth() - 11, now.getDate()) // 1 month until 1yr anniversary
                 }
             ];
 

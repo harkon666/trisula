@@ -357,11 +357,6 @@ admin.post('/rewards', zValidator('json', z.object({
     csWhatsappNumber: z.string().optional(),
     isActive: z.boolean().default(true),
 })), async (c) => {
-    const user = c.get('user');
-    if (user.role !== 'super_admin') {
-        return c.json({ success: false, message: "Forbidden: Only Super Admin can manage catalog" }, 403);
-    }
-
     const data = c.req.valid('json');
 
     try {
@@ -388,13 +383,7 @@ admin.patch('/rewards/:id', zValidator('json', z.object({
     csWhatsappNumber: z.string().optional(),
     isActive: z.boolean().optional(),
 })), async (c) => {
-    const user = c.get('user');
     const id = parseInt(c.req.param('id'));
-
-    if (user.role !== 'super_admin') {
-        return c.json({ success: false, message: "Forbidden: Only Super Admin can manage catalog" }, 403);
-    }
-
     const data = c.req.valid('json');
 
     try {
@@ -418,12 +407,7 @@ admin.patch('/rewards/:id', zValidator('json', z.object({
  * @access  Super Admin Only
  */
 admin.delete('/rewards/:id', async (c) => {
-    const user = c.get('user');
     const id = parseInt(c.req.param('id'));
-
-    if (user.role !== 'super_admin') {
-        return c.json({ success: false, message: "Forbidden: Only Super Admin can delete rewards" }, 403);
-    }
 
     try {
         // Warning: Deleting rewards might break references in redeemRequests if not handled.
@@ -547,11 +531,6 @@ const CreateAnnouncementSchema = z.object({
 
 admin.post('/announcements', zValidator('json', CreateAnnouncementSchema), async (c) => {
     const user = c.get('user');
-
-    if (user.role !== 'super_admin' && user.role !== 'admin') {
-        return c.json({ success: false, message: "Forbidden: Insufficient permissions" }, 403);
-    }
-
     const data = c.req.valid('json');
 
     try {
@@ -599,13 +578,7 @@ const UpdateAnnouncementSchema = z.object({
 });
 
 admin.patch('/announcements/:id', zValidator('json', UpdateAnnouncementSchema), async (c) => {
-    const user = c.get('user');
     const id = parseInt(c.req.param('id'));
-
-    if (user.role !== 'super_admin' && user.role !== 'admin') {
-        return c.json({ success: false, message: "Forbidden: Insufficient permissions" }, 403);
-    }
-
     const data = c.req.valid('json');
 
     try {
@@ -629,12 +602,7 @@ admin.patch('/announcements/:id', zValidator('json', UpdateAnnouncementSchema), 
  * @access  Super Admin Only
  */
 admin.delete('/announcements/:id', async (c) => {
-    const user = c.get('user');
     const id = parseInt(c.req.param('id'));
-
-    if (user.role !== 'super_admin') {
-        return c.json({ success: false, message: "Forbidden: Only Super Admin can delete announcements" }, 403);
-    }
 
     try {
         // Delete related views first

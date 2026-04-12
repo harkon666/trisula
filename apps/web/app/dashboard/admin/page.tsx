@@ -33,15 +33,15 @@ export default function AdminDashboard() {
         // 1. Super admin sees everything
         if (user?.role === 'super_admin') return true;
 
-        // 2. Dynamic Permissions Check overrides legacy roles
-        let hasDynamicPerm = false;
+        // 2. If user has explicit permissions config, use ONLY that (not fallback)
         if (user?.additionalMetadata?.permissions) {
             const modulePerms = user.additionalMetadata.permissions[section.id] || [];
-            hasDynamicPerm = modulePerms.includes('read') || modulePerms.includes('write');
+            // Only visible if they have at least read OR write permission
+            return modulePerms.includes('read') || modulePerms.includes('write');
         }
 
-        // Return true IF they have dynamic permission OR they qualify via legacy roles fallback
-        return hasDynamicPerm || section.allowedRoles.includes(user?.role || "");
+        // 3. No permissions config? Fall back to legacy allowedRoles
+        return section.allowedRoles.includes(user?.role || "");
     });
 
     // Default to the first available section if no param exists or is blocked

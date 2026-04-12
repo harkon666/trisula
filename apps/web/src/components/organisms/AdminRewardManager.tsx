@@ -248,8 +248,9 @@ export function AdminRewardManager() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest pl-1">Nomer WhatsApp CS (Opsional)</label>
+                                <label className="text-xs font-black text-zinc-500 uppercase tracking-widest pl-1">Nomer WhatsApp CS</label>
                                 <Input
+                                    required
                                     placeholder="Format: 628123456789"
                                     value={rewardFormData.csWhatsappNumber || ""}
                                     onChange={(e) => setRewardFormData({ ...rewardFormData, csWhatsappNumber: e.target.value })}

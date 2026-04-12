@@ -22,7 +22,7 @@ export const rbacMiddleware = (moduleName?: string) => {
         const role = user.role as UserRole;
         const method = c.req.method;
 
-        // Strict RBAC Logic
+        // Strict RBAC Logic - Super Admin bypasses ALL permission checks (absolute authority)
         if (role === 'super_admin') {
             await next();
             return;
@@ -32,34 +32,41 @@ export const rbacMiddleware = (moduleName?: string) => {
         if (role === 'admin') {
             const requiredPermission = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) ? 'write' : 'read';
 
-            // Fetch fresh metadata from database to get the latest permissions instantly
-            const [freshUser] = await db.select({
-                additionalMetadata: users.additionalMetadata
-            }).from(users).where(eq(users.id, user.id)).limit(1);
+            // Only check dynamic permissions if moduleName is provided
+            if (moduleName) {
+                // Fetch fresh metadata from database to get the latest permissions instantly
+                const [freshUser] = await db.select({
+                    additionalMetadata: users.additionalMetadata
+                }).from(users).where(eq(users.id, user.id)).limit(1);
 
-            const permissionsObj: Record<string, string[]> | undefined = (freshUser?.additionalMetadata as any)?.permissions;
+                const permissionsObj: Record<string, string[]> | undefined = (freshUser?.additionalMetadata as any)?.permissions;
 
-            // Check dynamic module permissions if moduleName is provided
-            if (moduleName && permissionsObj && permissionsObj[moduleName]) {
-                const modulePermissions = permissionsObj[moduleName];
+                // If module has explicit permissions config, check it
+                if (permissionsObj && Array.isArray(permissionsObj[moduleName])) {
+                    const modulePermissions = permissionsObj[moduleName];
 
-                if (modulePermissions.includes(requiredPermission)) {
-                    await next();
-                    return;
+                    if (modulePermissions.includes(requiredPermission)) {
+                        await next();
+                        return;
+                    }
+
+                    // Module is explicitly configured but lacks this specific access -> deny
+                    return c.json({
+                        success: false,
+                        message: `Forbidden: Lacks '${requiredPermission}' permission for module '${moduleName}'`
+                    }, 403);
                 }
 
-                // If they have the permissions object AND this module is explicitly defined but lacks this specific access, deny immediately.
+                // Module NOT configured in permissions at all -> deny (must be explicitly granted)
                 return c.json({
                     success: false,
-                    message: `Forbidden: Lacks '${requiredPermission}' permission for module '${moduleName}'`
+                    message: `Forbidden: Module '${moduleName}' not configured for this admin`
                 }, 403);
             }
 
-            // Deny by default if module is missing or permission is lacking
-            return c.json({
-                success: false,
-                message: `Forbidden: Lacks '${requiredPermission}' permission for module '${moduleName}' or module not configured.`
-            }, 403);
+            // No moduleName specified, allow admin to proceed
+            await next();
+            return;
         }
 
         // Default allow for agent and nasabah, assuming route handlers have specific logic

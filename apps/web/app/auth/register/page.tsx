@@ -176,7 +176,7 @@ export default function RegisterPage() {
                                         <InputField label="Password" name="password" type="password" register={nasabahForm.register} error={nasabahForm.formState.errors.password} placeholder="••••••••" />
                                         <InputField label="Confirm Password" name="confirmPassword" type="password" register={nasabahForm.register} error={nasabahForm.formState.errors.confirmPassword} placeholder="••••••••" />
                                     </div>
-                                    <InputField label="WhatsApp" name="whatsapp" register={nasabahForm.register} error={nasabahForm.formState.errors.whatsapp} placeholder="628123456789" />
+                                    <InputField label="WhatsApp" name="whatsapp" register={nasabahForm.register} error={nasabahForm.formState.errors.whatsapp} placeholder="08123456789" />
                                     <InputField label="Date of Birth" name="dateOfBirth" type="date" register={nasabahForm.register} error={nasabahForm.formState.errors.dateOfBirth} className="[color-scheme:dark]" />
                                     <InputField label="Referral Agent ID (Required)" name="referredByAgentId" register={nasabahForm.register} error={nasabahForm.formState.errors.referredByAgentId} placeholder="SULTAN01" className="bg-trisula-500/10 border-trisula-500/30 focus:border-trisula-500/50 placeholder:text-trisula-500/30 text-trisula-200" />
 

@@ -27,7 +27,12 @@ api.interceptors.response.use(
                 window.location.href = '/login';
             }
         } else if (error.response?.status === 403) {
-            toast.error("Akses Ditolak: Anda tidak memiliki wewenang");
+            // Only show toast for non-super_admin roles
+            const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+            const user = userStr ? JSON.parse(userStr) : null;
+            if (user?.role !== 'super_admin') {
+                toast.error("Akses Ditolak: Anda tidak memiliki wewenang");
+            }
         }
         return Promise.reject(error);
     }

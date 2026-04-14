@@ -1,9 +1,5 @@
 {
-    "installCommand": "bun install",
-    "rewrites": [
-        {
-            "source": "/api/(.*)",
-            "destination": "/api"
-        }
-    ]
+    "framework": null,
+    "buildCommand": "cd ../.. && npx turbo run build --filter=api",
+    "installCommand": "cd ../.. && bun install"
 }

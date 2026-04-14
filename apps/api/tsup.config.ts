@@ -5,6 +5,6 @@ export default defineConfig({
   outDir: 'api',
   format: ['esm'],
   clean: true,
-  noExternal: ['@repo/database', '@repo/shared'],
+  noExternal: [/.*/],
   splitting: false,
 });

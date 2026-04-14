@@ -360,7 +360,7 @@ function $c(r, e) {
   });
   return { callback: i, result: s };
 }
-var io, Ce, so, oo, ao, uo, co, a, z, I, se, Tn, Te, O, _, Bn, Ln, Kn, S, x, E, w, y, m, p, ge, He, zo, Ge, si, U, Ve, oi, Wt, Ht, $t, Vt, li, pi, mi, wi, Ai, Ti, Ri, Mi, Xe, et, tt, ji, ir, sr, or, ar, ur, lu, cr, Wi, lr, hr, Hi, Ki, Zi, Xi, wt, ts, Bu, rs, ns, mr, ss, bt, ls, ys, ws, gs, ms, v, _e, St, Xr, bs, xs, Es, As, hn, Cs, Ts, pn, Fs, Us, Os, Ic, Ns, qs, Ws, Vs, En, It, Bt, Zs, Js, Pt, pe, zs, Wc, to, Qe, An, _n, Cn, export_ClientBase, export_Connection, export_DatabaseError, export_Query, export_defaults, export_types;
+var io, Ce, so, oo, ao, uo, co, a, z, I, se, Tn, Te, O, _, Bn, Ln, Kn, S, x, E, w, y, m, p, ge, He, zo, Ge, si, U, Ve, oi, Wt, Ht, $t, Vt, li, pi, mi, wi, Ai, Ti, Ri, Mi, Xe, et, tt, ji, ir, sr, or, ar, ur, lu, cr, Wi, lr, hr, Hi, Ki, Zi, Xi, wt, ts, Bu, rs, ns, mr, ss, bt, ls, ys, ws, gs, ms, v, _e, St, Xr, bs, xs, Es, As, hn, Cs, Ts, pn, Fs, Us, Os, Ic, Ns, qs, Ws, Vs, En, It, Bt, Zs, Js, Pt, pe, zs, Wc, to, Qe, An, _n, Cn, eo, export_ClientBase, export_Connection, export_DatabaseError, export_Query, export_defaults, export_types;
 var init_serverless = __esm({
   "../../node_modules/.bun/@neondatabase+serverless@0.10.4/node_modules/@neondatabase/serverless/index.mjs"() {
     "use strict";
@@ -5394,6 +5394,7 @@ var init_serverless = __esm({
       }
     };
     a(Cn, "NeonPool");
+    eo = Cn;
     export_ClientBase = Qe.ClientBase;
     export_Connection = Qe.Connection;
     export_DatabaseError = Qe.DatabaseError;
@@ -5424,7 +5425,7 @@ __export(dist_exports, {
   users: () => users,
   waInteractions: () => waInteractions
 });
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle } from "drizzle-orm/neon-serverless";
 import {
   pgTable,
   serial,
@@ -5437,7 +5438,7 @@ import {
   jsonb,
   date
 } from "drizzle-orm/pg-core";
-var __defProp2, __export2, schema_exports, roleEnum, redeemStatusEnum, users, agentActivationCodes, profiles, products, rewards, pointsLedger, loginLogs, polisData, redeemRequests, waInteractions, announcements, announcementViews, adminActions, userActivityLogs, sql, db;
+var __defProp2, __export2, schema_exports, roleEnum, redeemStatusEnum, users, agentActivationCodes, profiles, products, rewards, pointsLedger, loginLogs, polisData, redeemRequests, waInteractions, announcements, announcementViews, adminActions, userActivityLogs, pool, db;
 var init_dist = __esm({
   "../../packages/database/dist/index.mjs"() {
     "use strict";
@@ -5599,8 +5600,8 @@ var init_dist = __esm({
       userAgent: text("user_agent"),
       createdAt: timestamp("created_at").defaultNow()
     });
-    sql = Xs(process.env.DATABASE_URL);
-    db = drizzle(sql, { schema: schema_exports });
+    pool = new eo({ connectionString: process.env.DATABASE_URL });
+    db = drizzle(pool, { schema: schema_exports });
   }
 });
 
@@ -5620,7 +5621,7 @@ import { SignJWT } from "jose";
 
 // src/services/points.ts
 init_dist();
-import { eq, sql as sql2, and } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 var PointsService = {
   /**
    * Add points to a user and record it in the ledger.
@@ -5628,7 +5629,7 @@ var PointsService = {
    */
   async addPoints(userId, amount, source, description, tx) {
     const operation = async (transaction) => {
-      await transaction.update(users).set({ pointsBalance: sql2`${users.pointsBalance} + ${amount}` }).where(eq(users.id, userId));
+      await transaction.update(users).set({ pointsBalance: sql`${users.pointsBalance} + ${amount}` }).where(eq(users.id, userId));
       await transaction.insert(pointsLedger).values({
         userId,
         amount,
@@ -5649,7 +5650,7 @@ var PointsService = {
    */
   async updateUserBalance(userId) {
     await db.transaction(async (tx) => {
-      const [result] = await tx.select({ total: sql2`cast(coalesce(sum(${pointsLedger.amount}), 0) as int)` }).from(pointsLedger).where(eq(pointsLedger.userId, userId));
+      const [result] = await tx.select({ total: sql`cast(coalesce(sum(${pointsLedger.amount}), 0) as int)` }).from(pointsLedger).where(eq(pointsLedger.userId, userId));
       const total = result?.total || 0;
       await tx.update(users).set({ pointsBalance: total }).where(eq(users.id, userId));
     });
@@ -5670,7 +5671,7 @@ var PointsService = {
           userId,
           loginDate: today
         });
-        await tx.update(users).set({ pointsBalance: sql2`${users.pointsBalance} + 10` }).where(eq(users.id, userId));
+        await tx.update(users).set({ pointsBalance: sql`${users.pointsBalance} + 10` }).where(eq(users.id, userId));
         await tx.insert(pointsLedger).values({
           userId,
           amount: 10,
@@ -6116,7 +6117,7 @@ var user_default = user;
 init_dist();
 import { Hono as Hono3 } from "hono";
 import { zValidator as zValidator2 } from "@hono/zod-validator";
-import { eq as eq5, sql as sql4, desc as desc2 } from "drizzle-orm";
+import { eq as eq5, sql as sql3, desc as desc2 } from "drizzle-orm";
 import { z as z3 } from "zod";
 var redeem = new Hono3();
 redeem.use("*", rbacMiddleware());
@@ -6169,7 +6170,7 @@ redeem.post("/", zValidator2("json", RedeemInputSchema), async (c) => {
       if (currentBalance < item.requiredPoints) {
         throw new Error("Poin tidak mencukupi");
       }
-      await tx.update(users).set({ pointsBalance: sql4`${users.pointsBalance} - ${item.requiredPoints}` }).where(eq5(users.id, user2.id));
+      await tx.update(users).set({ pointsBalance: sql3`${users.pointsBalance} - ${item.requiredPoints}` }).where(eq5(users.id, user2.id));
       await tx.insert(pointsLedger).values({
         userId: user2.id,
         amount: -item.requiredPoints,
@@ -6235,7 +6236,7 @@ redeem.post("/:id/cancel", zValidator2("json", CancelInputSchema), async (c) => 
         }, 400);
       }
       const pointCost = request.metadata?.price || request.requiredPoints || 0;
-      await tx.update(users).set({ pointsBalance: sql4`${users.pointsBalance} + ${pointCost}` }).where(eq5(users.id, user2.id));
+      await tx.update(users).set({ pointsBalance: sql3`${users.pointsBalance} + ${pointCost}` }).where(eq5(users.id, user2.id));
       await tx.insert(pointsLedger).values({
         userId: user2.id,
         amount: pointCost,
@@ -6265,7 +6266,7 @@ var redeem_default = redeem;
 init_dist();
 import { Hono as Hono4 } from "hono";
 import { zValidator as zValidator3 } from "@hono/zod-validator";
-import { eq as eq6, inArray, sql as sql5, desc as desc3, count } from "drizzle-orm";
+import { eq as eq6, inArray, sql as sql4, desc as desc3, count } from "drizzle-orm";
 import { z as z4 } from "zod";
 var admin = new Hono4();
 admin.use("/redeem/*", rbacMiddleware("fulfillment"));
@@ -6327,7 +6328,7 @@ admin.patch("/redeem/:id", zValidator3("json", UpdateRedeemStatusSchema), async 
       if (status === "rejected") {
         const pointsToRefund = request.pointsRequired || 0;
         console.log(`\u{1F504} Refunding ${pointsToRefund} points to user ${request.userId} (Admin Rejection)`);
-        await tx.update(users).set({ pointsBalance: sql5`${users.pointsBalance} + ${pointsToRefund}` }).where(eq6(users.id, request.userId));
+        await tx.update(users).set({ pointsBalance: sql4`${users.pointsBalance} + ${pointsToRefund}` }).where(eq6(users.id, request.userId));
         await tx.insert(pointsLedger).values({
           userId: request.userId,
           amount: pointsToRefund,
@@ -6405,7 +6406,7 @@ admin.delete("/codes/:id", async (c) => {
     return c.json({ success: false, message: "Forbidden: Only Super Admin can delete codes" }, 403);
   }
   try {
-    const [deleted] = await db.delete(agentActivationCodes).where(sql5`${agentActivationCodes.id} = ${codeId} AND ${agentActivationCodes.isUsed} = false`).returning();
+    const [deleted] = await db.delete(agentActivationCodes).where(sql4`${agentActivationCodes.id} = ${codeId} AND ${agentActivationCodes.isUsed} = false`).returning();
     if (!deleted) {
       return c.json({ success: false, message: "Code not found or already used" }, 404);
     }
@@ -6645,7 +6646,7 @@ admin.delete("/announcements/:id", async (c) => {
 });
 admin.get("/performance/leaderboard", async (c) => {
   try {
-    const leaderboardQuery = sql5`
+    const leaderboardQuery = sql4`
             SELECT 
                 u.id, 
                 u.user_id as "userId", 
@@ -6670,7 +6671,7 @@ admin.get("/performance/leaderboard", async (c) => {
 admin.get("/birthdays", rbacMiddleware("users"), async (c) => {
   try {
     const timeZoneOffset = "+07:00";
-    const birthdayQuery = sql5`
+    const birthdayQuery = sql4`
             SELECT 
                 p.id,
                 p.full_name as "fullName",
@@ -7013,7 +7014,7 @@ init_dist();
 import { Hono as Hono8 } from "hono";
 import { zValidator as zValidator6 } from "@hono/zod-validator";
 import { z as z7 } from "zod";
-import { eq as eq10, desc as desc7, and as and6, sql as sql6 } from "drizzle-orm";
+import { eq as eq10, desc as desc7, and as and6, sql as sql5 } from "drizzle-orm";
 var contentRoute = new Hono8();
 var CreateAnnouncementSchema2 = z7.object({
   title: z7.string().min(3),
@@ -7063,7 +7064,7 @@ contentRoute.get("/announcements/latest", rbacMiddleware(), async (c) => {
     ).where(
       and6(
         eq10(announcements.isActive, true),
-        sql6`${announcementViews.id} IS NULL`
+        sql5`${announcementViews.id} IS NULL`
       )
     ).orderBy(desc7(announcements.createdAt)).limit(1);
     return c.json({ success: true, data: latestUnviewed || null });
@@ -7180,7 +7181,7 @@ var monitoring_default = monitoringRoute;
 // src/routes/dashboard.ts
 init_dist();
 import { Hono as Hono10 } from "hono";
-import { eq as eq12, count as count2, sql as sql7, desc as desc8 } from "drizzle-orm";
+import { eq as eq12, count as count2, sql as sql6, desc as desc8 } from "drizzle-orm";
 var dashboardRoute = new Hono10();
 dashboardRoute.get("/stats", rbacMiddleware(), async (c) => {
   const user2 = c.get("user");
@@ -7199,7 +7200,7 @@ dashboardRoute.get("/stats", rbacMiddleware(), async (c) => {
       db.select({ count: count2() }).from(polisData),
       // 4. Total Points (Approximation from Ledger where amount > 0)
       // or sum of all user points? Let's do sum of current user points
-      db.select({ total: sql7`sum(${users.pointsBalance})` }).from(users)
+      db.select({ total: sql6`sum(${users.pointsBalance})` }).from(users)
     ]);
     const recentActions = await db.select().from(adminActions).orderBy(desc8(adminActions.createdAt)).limit(5);
     return c.json({
@@ -7282,7 +7283,7 @@ var interactions_default = interactions;
 // src/routes/agent.ts
 init_dist();
 import { Hono as Hono12 } from "hono";
-import { eq as eq14, count as count3, sql as sql8, and as and9, desc as desc9, gte } from "drizzle-orm";
+import { eq as eq14, count as count3, sql as sql7, and as and9, desc as desc9, gte } from "drizzle-orm";
 var agentRoute = new Hono12();
 agentRoute.get("/stats", rbacMiddleware(), async (c) => {
   const user2 = c.get("user");
@@ -7292,7 +7293,7 @@ agentRoute.get("/stats", rbacMiddleware(), async (c) => {
   try {
     const [referralCount] = await db.select({ count: count3() }).from(profiles).where(eq14(profiles.referredByAgentId, user2.userId));
     const [totalPoints] = await db.select({
-      total: sql8`sum(${pointsLedger.amount})`
+      total: sql7`sum(${pointsLedger.amount})`
     }).from(pointsLedger).where(
       and9(
         eq14(pointsLedger.userId, user2.id),
@@ -7356,7 +7357,7 @@ agentRoute.get("/chart/growth", rbacMiddleware(), async (c) => {
     return c.json({ success: false, message: "Unauthorized" }, 403);
   }
   try {
-    const growthData = await db.execute(sql8`
+    const growthData = await db.execute(sql7`
             SELECT 
                 TO_CHAR(u.created_at, 'Mon') as name,
                 COUNT(u.id) as value
@@ -7388,7 +7389,7 @@ agentRoute.get("/watchdog", rbacMiddleware(), async (c) => {
         eq14(waInteractions.agentId, user2.id),
         gte(waInteractions.clickedAt, twentyFourHoursAgo),
         // lte(waInteractions.clickedAt, fiveMinutesAgo) // Valid if we want EXACTLY > 5 mins
-        sql8`${waInteractions.clickedAt} <= ${fiveMinutesAgo}`
+        sql7`${waInteractions.clickedAt} <= ${fiveMinutesAgo}`
       )
     ).limit(5);
     return c.json({
@@ -7484,7 +7485,7 @@ agentRoute.get("/birthdays", rbacMiddleware(), async (c) => {
   }
   try {
     const timeZoneOffset = "+07:00";
-    const birthdayQuery = sql8`
+    const birthdayQuery = sql7`
             SELECT 
                 p.id,
                 p.user_id as "userId",

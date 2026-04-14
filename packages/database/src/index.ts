@@ -5,25 +5,14 @@ import * as schema from './db/schema';
 // Environment variables are automatically available in Vercel serverless
 // For local development, use: bun --env-file=../../.env run dev
 
-let _db: any = null;
-
-export const db = new Proxy({} as any, {
-    get(target, prop) {
-        if (!_db) {
-            console.log("📦 Initializing database connection (Lazy)...");
-            const connectionString = process.env.DATABASE_URL;
-            if (!connectionString) {
-                throw new Error("DATABASE_URL is not configured");
-            }
-            const client = postgres(connectionString, {
-                prepare: false,
-                connect_timeout: 10,
-                ssl: 'require',
-            });
-            _db = drizzle(client, { schema });
-        }
-        return Reflect.get(_db, prop);
-    }
-}) as PostgresJsDatabase<typeof schema> & { $client: postgres.Sql };
+// Using postgres driver with connection pooling for serverless compatibility
+// Neon Pooler handles connection pooling efficiently
+const client = postgres(process.env.DATABASE_URL!, {
+  ssl: 'require',
+  max: 1, // critical for serverless - limits connections per function instance
+  idle_timeout: 20,
+  connect_timeout: 10,
+});
+export const db = drizzle(client, { schema });
 
 export * from "./db/schema";

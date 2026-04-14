@@ -1,6 +1,6 @@
 "use client";
 
-import { useAgentBirthdays, useAdminBirthdays, BirthdayNasabah } from "@/src/hooks/useBirthdays";
+import { useBirthdays, BirthdayNasabah } from "@/src/hooks/useBirthdays";
 import { Gift, CalendarDays, ExternalLink } from "lucide-react";
 
 interface BirthdayWidgetProps {
@@ -8,13 +8,8 @@ interface BirthdayWidgetProps {
 }
 
 export function BirthdayWidget({ role }: BirthdayWidgetProps) {
-    const { data: agentData, isLoading: agentLoading } = useAgentBirthdays();
-    const { data: adminData, isLoading: adminLoading } = useAdminBirthdays();
-
-    // In agent role, use agent hook, else use admin hook (if the user has permission; the hook handles throwing auth errors if not).
-    // Note: the component assumes the parent only mounts it if the user is authorized.
-    const isLoading = role === 'agent' ? agentLoading : adminLoading;
-    const data = role === 'agent' ? agentData : adminData;
+    // Use unified hook that calls correct endpoint based on role
+    const { data, isLoading } = useBirthdays(role);
 
     if (isLoading) {
         return (

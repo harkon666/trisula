@@ -28,7 +28,8 @@
         "!.next/cache/**",
         "dist/**",
         ".vercel/output/**",
-        "api/**"
+        "api/**",
+        "apps/api/dist/**"
       ],
       "env": [
         "DATABASE_URL",

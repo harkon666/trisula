@@ -31,6 +31,6 @@
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
-    "postgres": "^3.4.8"
+    "@neondatabase/serverless": "^0.10.1"
   }
 }

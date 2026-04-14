@@ -8679,9 +8679,9 @@ var init_postgres_js = __esm(() => {
   init_session2();
 });
 
-// ../../packages/database/src/db/schema.ts
-var exports_schema = {};
-__export(exports_schema, {
+// ../../packages/database/dist/index.mjs
+var exports_dist = {};
+__export(exports_dist, {
   waInteractions: () => waInteractions,
   users: () => users,
   userActivityLogs: () => userActivityLogs,
@@ -8694,14 +8694,40 @@ __export(exports_schema, {
   polisData: () => polisData,
   pointsLedger: () => pointsLedger,
   loginLogs: () => loginLogs,
+  db: () => db2,
   announcements: () => announcements,
   announcementViews: () => announcementViews,
   agentActivationCodes: () => agentActivationCodes,
   adminActions: () => adminActions
 });
-var roleEnum, redeemStatusEnum, users, agentActivationCodes, profiles, products, rewards, pointsLedger, loginLogs, polisData, redeemRequests, waInteractions, announcements, announcementViews, adminActions, userActivityLogs;
-var init_schema2 = __esm(() => {
+var __defProp2, __export2 = (target, all) => {
+  for (var name2 in all)
+    __defProp2(target, name2, { get: all[name2], enumerable: true });
+}, schema_exports, roleEnum, redeemStatusEnum, users, agentActivationCodes, profiles, products, rewards, pointsLedger, loginLogs, polisData, redeemRequests, waInteractions, announcements, announcementViews, adminActions, userActivityLogs, client, db2;
+var init_dist = __esm(() => {
+  init_postgres_js();
+  init_src();
   init_pg_core();
+  __defProp2 = Object.defineProperty;
+  schema_exports = {};
+  __export2(schema_exports, {
+    adminActions: () => adminActions,
+    agentActivationCodes: () => agentActivationCodes,
+    announcementViews: () => announcementViews,
+    announcements: () => announcements,
+    loginLogs: () => loginLogs,
+    pointsLedger: () => pointsLedger,
+    polisData: () => polisData,
+    products: () => products,
+    profiles: () => profiles,
+    redeemRequests: () => redeemRequests,
+    redeemStatusEnum: () => redeemStatusEnum,
+    rewards: () => rewards,
+    roleEnum: () => roleEnum,
+    userActivityLogs: () => userActivityLogs,
+    users: () => users,
+    waInteractions: () => waInteractions
+  });
   roleEnum = pgEnum("user_role", [
     "super_admin",
     "admin",
@@ -8831,42 +8857,13 @@ var init_schema2 = __esm(() => {
     userAgent: text("user_agent"),
     createdAt: timestamp("created_at").defaultNow()
   });
-});
-
-// ../../packages/database/src/index.ts
-var exports_src = {};
-__export(exports_src, {
-  waInteractions: () => waInteractions,
-  users: () => users,
-  userActivityLogs: () => userActivityLogs,
-  roleEnum: () => roleEnum,
-  rewards: () => rewards,
-  redeemStatusEnum: () => redeemStatusEnum,
-  redeemRequests: () => redeemRequests,
-  profiles: () => profiles,
-  products: () => products,
-  polisData: () => polisData,
-  pointsLedger: () => pointsLedger,
-  loginLogs: () => loginLogs,
-  db: () => db2,
-  announcements: () => announcements,
-  announcementViews: () => announcementViews,
-  agentActivationCodes: () => agentActivationCodes,
-  adminActions: () => adminActions
-});
-var client, db2;
-var init_src2 = __esm(() => {
-  init_postgres_js();
-  init_src();
-  init_schema2();
-  init_schema2();
   client = src_default(process.env.DATABASE_URL, {
     ssl: "require",
     max: 1,
     idle_timeout: 20,
     connect_timeout: 10
   });
-  db2 = drizzle(client, { schema: exports_schema });
+  db2 = drizzle(client, { schema: schema_exports });
 });
 
 // ../../node_modules/.bun/drizzle-orm@0.45.1+fec1b190122f2af7/node_modules/drizzle-orm/index.js
@@ -24398,7 +24395,7 @@ function date4(params) {
 // ../../node_modules/.bun/zod@4.3.6/node_modules/zod/v4/classic/external.js
 config(en_default());
 // src/routes/auth.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 
 // ../../node_modules/.bun/bcryptjs@3.0.3/node_modules/bcryptjs/index.js
@@ -27472,7 +27469,7 @@ class SignJWT {
   }
 }
 // src/services/points.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var PointsService = {
   async addPoints(userId, amount, source, description, tx) {
@@ -27742,11 +27739,11 @@ auth.post("/login", zValidator("json", LoginSchema), async (c) => {
 var auth_default = auth;
 
 // src/routes/user.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 
 // src/middlewares/rbac.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var rbacMiddleware = (moduleName) => {
   return async (c, next) => {
@@ -27932,7 +27929,7 @@ user.post("/dev-reset-daily", async (c) => {
 var user_default = user;
 
 // src/routes/redeem.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var redeem = new Hono2;
 redeem.use("*", rbacMiddleware());
@@ -28077,7 +28074,7 @@ redeem.post("/:id/cancel", zValidator("json", CancelInputSchema), async (c) => {
 var redeem_default = redeem;
 
 // src/routes/admin.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var admin = new Hono2;
 admin.use("/redeem/*", rbacMiddleware("fulfillment"));
@@ -28511,7 +28508,7 @@ admin.get("/birthdays", rbacMiddleware("users"), async (c) => {
 var admin_default = admin;
 
 // src/routes/admin-internal.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var internal = new Hono2;
 internal.get("/nasabah-agents", rbacMiddleware("polis"), async (c) => {
@@ -28560,7 +28557,7 @@ internal.get("/agents", rbacMiddleware("polis"), async (c) => {
   }
 });
 internal.get("/announcements", rbacMiddleware("announcements"), async (c) => {
-  const { announcements: announcements2, announcementViews: announcementViews2 } = await Promise.resolve().then(() => (init_src2(), exports_src));
+  const { announcements: announcements2, announcementViews: announcementViews2 } = await Promise.resolve().then(() => (init_dist(), exports_dist));
   const { count: count2 } = await Promise.resolve().then(() => (init_drizzle_orm(), exports_drizzle_orm));
   try {
     const result = await db2.select({
@@ -28580,7 +28577,7 @@ internal.get("/announcements", rbacMiddleware("announcements"), async (c) => {
   }
 });
 internal.get("/watchdog/alerts", rbacMiddleware("watchdog"), async (c) => {
-  const { waInteractions: waInteractions2, users: users2, profiles: profiles2 } = await Promise.resolve().then(() => (init_src2(), exports_src));
+  const { waInteractions: waInteractions2, users: users2, profiles: profiles2 } = await Promise.resolve().then(() => (init_dist(), exports_dist));
   const { eq: eq2, and: and4, asc: asc2 } = await Promise.resolve().then(() => (init_drizzle_orm(), exports_drizzle_orm));
   const { alias: alias4 } = await Promise.resolve().then(() => (init_pg_core(), exports_pg_core));
   try {
@@ -28640,7 +28637,7 @@ internal.patch("/watchdog/resolve/:id", rbacMiddleware("watchdog"), async (c) =>
 var admin_internal_default = internal;
 
 // src/routes/products.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var productsRoute = new Hono2;
 var CreateProductSchema = exports_external.object({
@@ -28711,7 +28708,7 @@ productsRoute.delete("/:id", rbacMiddleware("products"), async (c) => {
 var products_default = productsRoute;
 
 // src/routes/polis.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var polisRoute = new Hono2;
 var InputPolisSchema = exports_external.object({
@@ -28788,7 +28785,7 @@ polisRoute.get("/my-polis", rbacMiddleware(), async (c) => {
 var polis_default = polisRoute;
 
 // src/routes/content.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var contentRoute = new Hono2;
 var CreateAnnouncementSchema2 = exports_external.object({
@@ -28882,7 +28879,7 @@ contentRoute.patch("/announcements/:id", rbacMiddleware("announcements"), zValid
 var content_default = contentRoute;
 
 // src/routes/monitoring.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var monitoringRoute = new Hono2;
 var CRON_SECRET = process.env.CRON_SECRET || "secure_cron_secret_123";
@@ -28933,7 +28930,7 @@ monitoringRoute.post("/watchdog", async (c) => {
 var monitoring_default = monitoringRoute;
 
 // src/routes/dashboard.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var dashboardRoute = new Hono2;
 dashboardRoute.get("/stats", rbacMiddleware(), async (c) => {
@@ -28969,7 +28966,7 @@ dashboardRoute.get("/stats", rbacMiddleware(), async (c) => {
 var dashboard_default = dashboardRoute;
 
 // src/routes/interactions.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var interactions = new Hono2;
 var LogWaSchema = exports_external.object({
@@ -29025,7 +29022,7 @@ interactions.post("/wa", zValidator("json", LogWaSchema), async (c) => {
 var interactions_default = interactions;
 
 // src/routes/agent.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var agentRoute = new Hono2;
 agentRoute.get("/stats", rbacMiddleware(), async (c) => {
@@ -29234,7 +29231,7 @@ agentRoute.get("/birthdays", rbacMiddleware(), async (c) => {
 var agent_default = agentRoute;
 
 // src/routes/admin-logs.ts
-init_src2();
+init_dist();
 init_drizzle_orm();
 var adminLogs = new Hono2;
 adminLogs.use("*", rbacMiddleware("security"));
@@ -29245,7 +29242,7 @@ adminLogs.get("/logs", async (c) => {
   try {
     let query;
     if (target === "user") {
-      const { userActivityLogs: userActivityLogs2 } = await Promise.resolve().then(() => (init_src2(), exports_src));
+      const { userActivityLogs: userActivityLogs2 } = await Promise.resolve().then(() => (init_dist(), exports_dist));
       query = db2.select({
         id: userActivityLogs2.id,
         userId: userActivityLogs2.userId,

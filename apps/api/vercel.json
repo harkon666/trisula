@@ -1,6 +1,6 @@
 {
   "framework": null,
-  "buildCommand": "bun run build && mkdir -p public",
+  "buildCommand": "bun run build && mkdir -p public && echo 'API is running' > public/index.html",
   "rewrites": [
     {
       "source": "/(.*)",

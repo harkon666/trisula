@@ -1,6 +1,5 @@
 {
     "framework": null,
     "buildCommand": "cd ../.. && npx turbo run build --filter=api",
-    "installCommand": "cd ../.. && bun install",
-    "outputDirectory": "dist"
+    "installCommand": "cd ../.. && bun install"
 }

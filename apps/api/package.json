@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "build": "bun build src/index.ts --outdir=./ --target=bun",
+    "build": "tsup",
     "start": "bun run index.js",
     "check-types": "tsc --noEmit",
     "lint": "eslint ."

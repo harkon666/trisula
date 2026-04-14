@@ -1,10 +1,9 @@
 {
   "framework": null,
-  "buildCommand": "cd ../.. && bunx turbo run build --filter=api && cd apps/api && mkdir -p public && echo 'API is running' > public/index.html",
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/api/index.ts"
+      "destination": "/api/serverless.js"
     }
   ]
 }

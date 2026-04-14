@@ -1,6 +1,4 @@
 {
-    "root": "../..",
-    "buildCommand": "bun run build",
     "installCommand": "bun install",
     "rewrites": [
         {

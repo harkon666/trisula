@@ -1,4 +1,5 @@
-import { handle } from 'hono/vercel';
 import app from './index.js';
 
-export default handle(app);
+export default async (request: Request) => {
+  return await app.fetch(request);
+};

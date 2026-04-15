@@ -175,7 +175,7 @@ export default function LoginPage() {
                                         onClick={() => router.push('/auth/register')}
                                         className="text-trisula-500 font-bold hover:underline underline-offset-4"
                                     >
-                                        Create Membership
+                                        Create Account
                                     </button>
                                 </p>
                             </div>

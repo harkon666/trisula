@@ -116,3 +116,26 @@ export function useAgentReminders() {
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
 }
+
+export interface AgentPolisHistory {
+    id: number;
+    polisNumber: string;
+    premiumAmount: number;
+    productName: string | null;
+    status: 'pending' | 'approved' | 'rejected';
+    rejectionReason: string | null;
+    createdAt: string;
+    updatedAt: string | null;
+    nasalName: string | null;
+}
+
+export function useAgentPolisHistory() {
+    return useQuery<AgentPolisHistory[]>({
+        queryKey: ["agent", "polis", "history"],
+        queryFn: async () => {
+            const res = await api.get("/v1/polis/agent-history");
+            return res.data.data;
+        },
+        staleTime: 1000 * 60 * 2, // 2 minutes
+    });
+}

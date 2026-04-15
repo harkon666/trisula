@@ -9,6 +9,7 @@ export interface PolisInput {
     nasabahId: string;
     agentId: string;
     premiumAmount: number;
+    productName?: string;
 }
 
 export function useAdminPolis() {
@@ -33,7 +34,7 @@ export function useAdminPolis() {
             queryClient.invalidateQueries({ queryKey: ["nasabahActivity"] });
         },
         onError: (error: any) => {
-            toast.error(error.message || "Gagal menyimpan data polis");
+            toast.error(error.response?.data?.message || "Gagal menyimpan data polis");
         },
     });
 
@@ -41,5 +42,29 @@ export function useAdminPolis() {
         submitPolis: mutation.mutate,
         isSubmitting: mutation.isPending,
         isSuccess: mutation.isSuccess,
+    };
+}
+
+export function useAdminApprovePolis() {
+    const queryClient = useQueryClient();
+
+    const mutation = useMutation({
+        mutationFn: async ({ id, status, rejectionReason }: { id: number; status: 'approved' | 'rejected'; rejectionReason?: string }) => {
+            const res = await api.patch(`/v1/polis/${id}/approve`, { status, rejectionReason });
+            return res.data;
+        },
+        onSuccess: (_data, variables) => {
+            toast.success(variables.status === 'approved' ? "Polis berhasil disetujui" : "Polis ditolak");
+            queryClient.invalidateQueries({ queryKey: ["admin", "polis"] });
+            queryClient.invalidateQueries({ queryKey: ["admin", "polis", "pending"] });
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Gagal memproses polis");
+        },
+    });
+
+    return {
+        approvePolis: mutation.mutate,
+        isSubmitting: mutation.isPending,
     };
 }

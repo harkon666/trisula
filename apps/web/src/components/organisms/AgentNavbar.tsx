@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/src/hooks/useAuth";
 import { Button } from "@/src/components/atoms";
-import { LogOut, Home, Users, PieChart, Bell, AlertTriangle } from "lucide-react";
+import { LogOut, Home, Bell, FileText, Search } from "lucide-react";
 import { useAgentReminders } from "@/src/hooks/useAgentDashboard";
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -50,18 +50,28 @@ export function AgentNavbar() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <Link href="/dashboard/agent">
                         <Button variant="ghost" size="sm" className="gap-2 text-zinc-400 hover:text-white">
                             <Home className="w-4 h-4" />
                             <span className="hidden sm:inline">Overview</span>
                         </Button>
                     </Link>
-                    {/* Placeholder for future links */}
-                    {/* <Button variant="ghost" size="sm" className="gap-2 text-zinc-400 hover:text-white">
-                        <Users className="w-4 h-4" />
-                        <span className="hidden sm:inline">Nasabah</span>
-                    </Button> */}
+
+                    <Link href="/dashboard/agent/input-polis">
+                        <Button variant="ghost" size="sm" className="gap-2 text-zinc-400 hover:text-white">
+                            <FileText className="w-4 h-4" />
+                            <span className="hidden md:inline">Input Polis</span>
+                        </Button>
+                    </Link>
+
+                    <Link href="/dashboard/agent/track-polis">
+                        <Button variant="ghost" size="sm" className="gap-2 text-zinc-400 hover:text-white">
+                            <Search className="w-4 h-4" />
+                            <span className="hidden md:inline">Track Polis</span>
+                        </Button>
+                    </Link>
+
                     {/* Reminder Bell */}
                     <div className="relative" ref={dropdownRef}>
                         <Button

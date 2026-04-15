@@ -100,6 +100,9 @@ polisRoute.post('/agent-input', rbacMiddleware(), zValidator('json', AgentPolisS
             nasabahId: data.nasabahId,
             agentId: user.id,
             premiumAmount: data.premiumAmount,
+            productName: data.productName,
+            status: 'pending',
+            inputBy: user.id,
         }).returning();
 
         return c.json({ success: true, message: "Polis berhasil diinput dan menunggu persetujuan admin", data: newPolis }, 201);
@@ -126,12 +129,23 @@ polisRoute.patch('/:id/approve', rbacMiddleware('polis'), zValidator('json', App
         const [polis] = await db.select().from(polisData).where(eq(polisData.id, parseInt(polisId))).limit(1);
         if (!polis) return c.json({ success: false, message: "Polis tidak ditemukan" }, 404);
 
+        // Update the polis status
+        await db.update(polisData)
+            .set({
+                status: status,
+                rejectionReason: status === 'rejected' ? rejectionReason : null,
+                updatedAt: new Date(),
+            })
+            .where(eq(polisData.id, parseInt(polisId)));
+
+        // If approved, award points to nasabah
         if (status === 'approved') {
             const pointsToAward = Math.floor(polis.premiumAmount / 1000);
             if (pointsToAward > 0) {
                 await PointsService.addPoints(polis.nasabahId, pointsToAward, 'purchase', `Point reward dari Polis #${polis.polisNumber}`);
             }
         }
+
         return c.json({ success: true, message: status === 'approved' ? "Polis disetujui" : "Polis ditolak" });
     } catch (error: any) {
         console.error("Approve/Reject Polis Error:", error);
@@ -150,6 +164,9 @@ polisRoute.get('/', rbacMiddleware('polis'), async (c) => {
             id: polisData.id,
             polisNumber: polisData.polisNumber,
             premiumAmount: polisData.premiumAmount,
+            productName: polisData.productName,
+            status: polisData.status,
+            rejectionReason: polisData.rejectionReason,
             createdAt: polisData.createdAt,
             NasabahName: profiles.fullName,
             agentId: polisData.agentId,
@@ -162,6 +179,36 @@ polisRoute.get('/', rbacMiddleware('polis'), async (c) => {
         return c.json({ success: true, data: list });
     } catch (error) {
         console.error("Fetch Polis Error:", error);
+        return c.json({ success: false, message: "Internal Server Error" }, 500);
+    }
+});
+
+/**
+ * @route   GET /api/v1/polis/pending
+ * @desc    List Pending Polis for Admin Approval
+ * @access  Admin, Super Admin
+ */
+polisRoute.get('/pending', rbacMiddleware('polis'), async (c) => {
+    try {
+        const pendingList = await db.select({
+            id: polisData.id,
+            polisNumber: polisData.polisNumber,
+            premiumAmount: polisData.premiumAmount,
+            productName: polisData.productName,
+            status: polisData.status,
+            createdAt: polisData.createdAt,
+            nasalName: profiles.fullName,
+            agentId: polisData.agentId,
+        })
+            .from(polisData)
+            .leftJoin(users, eq(polisData.nasabahId, users.id))
+            .leftJoin(profiles, eq(users.id, profiles.userId))
+            .where(eq(polisData.status, 'pending'))
+            .orderBy(desc(polisData.createdAt))
+            .limit(50);
+        return c.json({ success: true, data: pendingList });
+    } catch (error) {
+        console.error("Fetch Pending Polis Error:", error);
         return c.json({ success: false, message: "Internal Server Error" }, 500);
     }
 });
@@ -186,6 +233,42 @@ polisRoute.get('/my-polis', rbacMiddleware(), async (c) => {
         return c.json({ success: true, data: list });
     } catch (error) {
         console.error("My Polis Error:", error);
+        return c.json({ success: false, message: "Internal Server Error" }, 500);
+    }
+});
+
+/**
+ * @route   GET /api/v1/polis/agent-history
+ * @desc    Agent's polis input history with status (pending/approved/rejected)
+ * @access  Agent
+ */
+polisRoute.get('/agent-history', rbacMiddleware(), async (c) => {
+    const user = c.get('user');
+
+    if (user.role !== 'agent') {
+        return c.json({ success: false, message: "Unauthorized" }, 403);
+    }
+
+    try {
+        const history = await db.select({
+            id: polisData.id,
+            polisNumber: polisData.polisNumber,
+            premiumAmount: polisData.premiumAmount,
+            productName: polisData.productName,
+            status: polisData.status,
+            rejectionReason: polisData.rejectionReason,
+            createdAt: polisData.createdAt,
+            updatedAt: polisData.updatedAt,
+            nasalName: profiles.fullName,
+        })
+            .from(polisData)
+            .leftJoin(users, eq(polisData.nasabahId, users.id))
+            .leftJoin(profiles, eq(users.id, profiles.userId))
+            .where(eq(polisData.agentId, user.id))
+            .orderBy(desc(polisData.createdAt));
+        return c.json({ success: true, data: history });
+    } catch (error) {
+        console.error("Agent Polis History Error:", error);
         return c.json({ success: false, message: "Internal Server Error" }, 500);
     }
 });

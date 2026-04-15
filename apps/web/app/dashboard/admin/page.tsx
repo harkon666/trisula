@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation"; // Added navigation hooks
 import RoleGuard from "@/src/components/auth/RoleGuard";
 import { PageEntrance } from "@/src/components/ui/GsapContext";
-import { AdminRedeemTable, AdminPolisForm, AdminCodeManager, AdminRewardManager, AdminProductManager, AdminUserManager, AdminAnnouncementManager, AdminLoginHistory, AdminWatchdogTable, GlobalWatchdogAlert, GlobalPolisReminderAlert, AdminAgentLeaderboard } from "@/src/components/organisms";
+import { AdminRedeemTable, AdminPolisForm, AdminPolisApprovalList, AdminCodeManager, AdminRewardManager, AdminProductManager, AdminUserManager, AdminAnnouncementManager, AdminLoginHistory, AdminWatchdogTable, GlobalWatchdogAlert, GlobalPolisReminderAlert, AdminAgentLeaderboard } from "@/src/components/organisms";
 import { Activity, ShieldPlus, UserPlus, LayoutDashboard, LogOut, Ticket, Package, Users, Megaphone, History as HistoryIcon, ChevronLeft, ChevronRight, ShieldAlert, Trophy } from "lucide-react";
 import { useAuth } from "@/src/hooks/useAuth";
 
@@ -22,7 +22,7 @@ export default function AdminDashboard() {
         { id: "users", label: "User Base", icon: Users, component: <AdminUserManager />, allowedRoles: ['super_admin'] },
         { id: "products", label: "Product Catalog", icon: Package, component: <AdminProductManager />, allowedRoles: ['super_admin'] },
         { id: "watchdog", label: "Watchdog Monitor", icon: ShieldAlert, component: <AdminWatchdogTable />, allowedRoles: ['super_admin', 'admin'] },
-        { id: "polis", label: "Polis Entry", icon: ShieldPlus, component: <AdminPolisForm />, allowedRoles: ['admin', 'super_admin'] },
+        { id: "polis", label: "Polis Entry", icon: ShieldPlus, component: <div className="space-y-8"><AdminPolisApprovalList /><AdminPolisForm /></div>, allowedRoles: ['admin', 'super_admin'] },
         { id: "codes", label: "Agent Codes", icon: UserPlus, component: <AdminCodeManager />, allowedRoles: ['admin', 'super_admin'] },
         { id: "rewards", label: "Voucher Catalog", icon: Ticket, component: <AdminRewardManager />, allowedRoles: ['super_admin'] },
         { id: "announcements", label: "Announcements", icon: Megaphone, component: <AdminAnnouncementManager />, allowedRoles: ['super_admin', 'admin'] },

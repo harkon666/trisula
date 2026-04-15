@@ -39,7 +39,7 @@ const AgentSchema = z.object({
     email: z.string().email("Email tidak valid"),
     whatsapp: z.string().min(10, "Nomor WhatsApp tidak valid"),
     dateOfBirth: z.string().min(1, "Tanggal lahir wajib diisi"),
-    activationCode: z.string().min(5, "Kode Aktivasi wajib diisi"),
+    activationCode: z.string().min(5, "Agent Code wajib diisi"),
 }).superRefine(({ confirmPassword, password }, ctx) => {
     if (confirmPassword !== password) {
         ctx.addIssue({
@@ -112,7 +112,7 @@ export default function RegisterPage() {
             const response = await api.post('/v1/auth/register/agent', data);
             if (response.data.success && response.data.token) {
                 login(response.data.token, response.data.user);
-                toast.success("Registrasi Partner Berhasil!");
+                toast.success("Registrasi Agent Berhasil!");
                 router.push("/dashboard/agent");
             } else {
                 toast.error(response.data.message || "Gagal mendaftar");
@@ -146,13 +146,13 @@ export default function RegisterPage() {
                                 onClick={() => setActiveTab('nasabah')}
                                 className={`flex-1 py-3 text-sm font-bold uppercase tracking-widest rounded-lg transition-all relative z-10 ${activeTab === 'nasabah' ? 'text-midnight-950' : 'text-zinc-500 hover:text-white'}`}
                             >
-                                Member
+                                Nasabah
                             </button>
                             <button
                                 onClick={() => setActiveTab('agent')}
                                 className={`flex-1 py-3 text-sm font-bold uppercase tracking-widest rounded-lg transition-all relative z-10 ${activeTab === 'agent' ? 'text-midnight-950' : 'text-zinc-500 hover:text-white'}`}
                             >
-                                Partner
+                                Agent
                             </button>
 
                             {/* Animated Background for Active Tab */}
@@ -180,7 +180,7 @@ export default function RegisterPage() {
                                     <InputField label="Date of Birth" name="dateOfBirth" type="date" register={nasabahForm.register} error={nasabahForm.formState.errors.dateOfBirth} className="[color-scheme:dark]" />
                                     <InputField label="Referral Agent ID (Required)" name="referredByAgentId" register={nasabahForm.register} error={nasabahForm.formState.errors.referredByAgentId} placeholder="SULTAN01" className="bg-trisula-500/10 border-trisula-500/30 focus:border-trisula-500/50 placeholder:text-trisula-500/30 text-trisula-200" />
 
-                                    <SubmitButton isSubmitting={isSubmitting} label="Register as Member" />
+                                    <SubmitButton isSubmitting={isSubmitting} label="Register as Nasabah" />
                                 </motion.form>
                             ) : (
                                 <motion.form
@@ -202,7 +202,7 @@ export default function RegisterPage() {
                                     <InputField label="Date of Birth" name="dateOfBirth" type="date" register={agentForm.register} error={agentForm.formState.errors.dateOfBirth} className="[color-scheme:dark]" />
                                     <InputField label="Activation Code (Required)" name="activationCode" register={agentForm.register} error={agentForm.formState.errors.activationCode} placeholder="CODE-12345" className="bg-ice-500/10 border-ice-500/30 focus:border-ice-500/50 placeholder:text-ice-500/30 text-ice-200" />
 
-                                    <SubmitButton isSubmitting={isSubmitting} label="Register as Partner" />
+                                    <SubmitButton isSubmitting={isSubmitting} label="Register as Agent" />
                                 </motion.form>
                             )}
                         </AnimatePresence>

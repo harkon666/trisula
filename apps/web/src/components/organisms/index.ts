@@ -29,5 +29,6 @@ export * from "./GlobalAnnouncementTrigger";
 export * from "./AdminLoginHistory";
 export * from "./AdminWatchdogTable";
 export * from "./GlobalWatchdogAlert";
+export * from "./GlobalPolisReminderAlert";
 export * from "./AdminPermissionsEditor";
 export * from "./AdminAgentLeaderboard";

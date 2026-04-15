@@ -150,10 +150,10 @@ agentRoute.get('/chart/growth', rbacMiddleware(), async (c) => {
         // We aggregate profiles.userId by Month, filtered by referredByAgentId
 
         // Raw SQL for aggregation is often easier for timestamps
-        const growthData = await db.execute(sql`
-            SELECT 
+        const growthDataRaw = await db.execute(sql`
+            SELECT
                 TO_CHAR(u.created_at, 'Mon') as name,
-                COUNT(u.id) as value
+                COUNT(u.id)::int as value
             FROM ${profiles} p
             JOIN ${users} u ON p.user_id = u.id
             WHERE p.referred_by_agent_id = ${user.userId}
@@ -162,7 +162,8 @@ agentRoute.get('/chart/growth', rbacMiddleware(), async (c) => {
             LIMIT 6
         `);
 
-        return c.json({ success: true, data: growthData });
+        const chartData = (growthDataRaw as any).rows || [];
+        return c.json({ success: true, data: chartData });
 
     } catch (error) {
         console.error("Agent Chart Error:", error);
@@ -323,19 +324,34 @@ agentRoute.get('/reminders', rbacMiddleware(), async (c) => {
         const reminders = agentPolis.map(p => {
             if (!p.createdAt) return null;
 
-            // Calculate months difference
+            // Calculate months difference for annual reminder
             let months = (now.getFullYear() - p.createdAt.getFullYear()) * 12;
             months -= p.createdAt.getMonth();
             months += now.getMonth();
-
-            // Limit to 1, 2, 3 months left from a 12-month anniversary
             const monthsLeft = 12 - months;
 
-            if (monthsLeft === 1 || monthsLeft === 2 || monthsLeft === 3) {
+            // Calculate days until 1 year anniversary
+            const anniversaryDate = new Date(p.createdAt);
+            anniversaryDate.setFullYear(anniversaryDate.getFullYear() + 1);
+            const daysUntilAnniversary = Math.ceil((anniversaryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+            // H-7 reminder: 7 days before polis anniversary (1 year)
+            if (daysUntilAnniversary <= 7 && daysUntilAnniversary > 0) {
                 return {
                     ...p,
-                    monthsLeft,
-                    message: `Polis #${p.polisNumber} atas nama ${p.nasabahName} jatuh tempo dalam ${monthsLeft} bulan.`
+                    daysLeft: daysUntilAnniversary,
+                    type: 'h7',
+                    message: `Polis #${p.polisNumber} atas nama ${p.nasabahName} jatuh tempo dalam ${daysUntilAnniversary} hari.`
+                };
+            }
+            // Monthly reminders: 1, 2, 3 months (showing as days remaining until 1 year)
+            if (monthsLeft === 1 || monthsLeft === 2 || monthsLeft === 3) {
+                const daysRemaining = Math.ceil(daysUntilAnniversary);
+                return {
+                    ...p,
+                    daysLeft: daysRemaining,
+                    type: 'monthly',
+                    message: `Polis #${p.polisNumber} atas nama ${p.nasabahName} jatuh tempo dalam ${daysRemaining} hari.`
                 };
             }
             return null;

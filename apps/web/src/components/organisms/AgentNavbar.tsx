@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/src/hooks/useAuth";
 import { Button } from "@/src/components/atoms";
-import { LogOut, Home, Users, PieChart, Bell } from "lucide-react";
+import { LogOut, Home, Users, PieChart, Bell, AlertTriangle } from "lucide-react";
 import { useAgentReminders } from "@/src/hooks/useAgentDashboard";
 import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -92,18 +92,54 @@ export function AgentNavbar() {
                                     <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
                                         {reminders && reminders.length > 0 ? (
                                             <div className="p-2 space-y-1">
-                                                {reminders.map((r, i) => (
-                                                    <div key={i} className="p-3 hover:bg-white/5 rounded-xl transition-colors">
-                                                        <div className="flex items-start justify-between gap-3 mb-1">
-                                                            <p className="text-sm font-bold text-white">{r.nasabahName}</p>
-                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 whitespace-nowrap">
-                                                                {r.monthsLeft} Bulan
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-xs text-zinc-400 mb-1">Polis #{r.polisNumber}</p>
-                                                        <p className="text-[10px] text-zinc-500">{r.message}</p>
-                                                    </div>
-                                                ))}
+                                                {/* Group by category */}
+                                                {(() => {
+                                                    const h7 = reminders.filter(r => r.daysLeft !== undefined && r.daysLeft <= 7);
+                                                    const oneMonth = reminders.filter(r => r.daysLeft !== undefined && r.daysLeft > 7 && r.daysLeft <= 30);
+                                                    const twoMonths = reminders.filter(r => r.daysLeft !== undefined && r.daysLeft > 30 && r.daysLeft <= 60);
+                                                    const threeMonths = reminders.filter(r => r.daysLeft !== undefined && r.daysLeft > 60);
+
+                                                    return (
+                                                        <>
+                                                            {h7.length > 0 && (
+                                                                <div className="space-y-1">
+                                                                    <div className="flex items-center gap-2 px-3 py-1">
+                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-red-400">7 Hari</span>
+                                                                        <div className="flex-1 h-px bg-red-400/20" />
+                                                                    </div>
+                                                                    {h7.map((r, i) => <ReminderItem key={i} r={r} />)}
+                                                                </div>
+                                                            )}
+                                                            {oneMonth.length > 0 && (
+                                                                <div className="space-y-1">
+                                                                    <div className="flex items-center gap-2 px-3 py-1">
+                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-orange-400">1 Bulan</span>
+                                                                        <div className="flex-1 h-px bg-orange-400/20" />
+                                                                    </div>
+                                                                    {oneMonth.map((r, i) => <ReminderItem key={i} r={r} />)}
+                                                                </div>
+                                                            )}
+                                                            {twoMonths.length > 0 && (
+                                                                <div className="space-y-1">
+                                                                    <div className="flex items-center gap-2 px-3 py-1">
+                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400">2 Bulan</span>
+                                                                        <div className="flex-1 h-px bg-yellow-400/20" />
+                                                                    </div>
+                                                                    {twoMonths.map((r, i) => <ReminderItem key={i} r={r} />)}
+                                                                </div>
+                                                            )}
+                                                            {threeMonths.length > 0 && (
+                                                                <div className="space-y-1">
+                                                                    <div className="flex items-center gap-2 px-3 py-1">
+                                                                        <span className="text-[10px] font-black uppercase tracking-widest text-green-400">3 Bulan</span>
+                                                                        <div className="flex-1 h-px bg-green-400/20" />
+                                                                    </div>
+                                                                    {threeMonths.map((r, i) => <ReminderItem key={i} r={r} />)}
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    );
+                                                })()}
                                             </div>
                                         ) : (
                                             <div className="p-8 text-center">
@@ -132,5 +168,20 @@ export function AgentNavbar() {
                 </div>
             </div>
         </nav>
+    );
+}
+
+function ReminderItem({ r }: { r: any }) {
+    return (
+        <div className="p-3 hover:bg-white/5 rounded-xl transition-colors">
+            <div className="flex items-start justify-between gap-3 mb-1">
+                <p className="text-sm font-bold text-white">{r.nasabahName}</p>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap">
+                    {r.daysLeft || r.monthsLeft * 30} Hari
+                </span>
+            </div>
+            <p className="text-xs text-zinc-400 mb-1">Polis #{r.polisNumber}</p>
+            <p className="text-[10px] text-zinc-500">{r.message}</p>
+        </div>
     );
 }

@@ -23,7 +23,8 @@ dashboardRoute.get('/stats', rbacMiddleware(), async (c) => {
             userCount,
             redeemPendingCount,
             polisCount,
-            totalPointsDistributed
+            totalPointsDistributed,
+            totalOmsetResult
         ] = await Promise.all([
             // 1. Total Users
             db.select({ count: count() }).from(users),
@@ -36,10 +37,13 @@ dashboardRoute.get('/stats', rbacMiddleware(), async (c) => {
 
             // 4. Total Points (Approximation from Ledger where amount > 0)
             // or sum of all user points? Let's do sum of current user points
-            db.select({ total: sql<number>`sum(${users.pointsBalance})` }).from(users)
+            db.select({ total: sql<number>`sum(${users.pointsBalance})` }).from(users),
+
+            // 5. Total Omset (Sum of all premiumAmount from polis)
+            db.select({ total: sql<number>`COALESCE(sum(${polisData.premiumAmount}), 0)` }).from(polisData)
         ]);
 
-        // 5. Recent Admin Actions (Audit Log)
+        // 6. Recent Admin Actions (Audit Log)
         const recentActions = await db.select()
             .from(adminActions)
             .orderBy(desc(adminActions.createdAt))
@@ -52,6 +56,7 @@ dashboardRoute.get('/stats', rbacMiddleware(), async (c) => {
                 pendingRedemptions: redeemPendingCount[0]?.count || 0,
                 totalPolis: polisCount[0]?.count || 0,
                 outstandingPoints: totalPointsDistributed[0]?.total || 0,
+                totalOmset: totalOmsetResult[0]?.total || 0,
                 recentActivity: recentActions
             }
         });

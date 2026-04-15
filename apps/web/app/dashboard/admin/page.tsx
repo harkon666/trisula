@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation"; // Added navigation hooks
 import RoleGuard from "@/src/components/auth/RoleGuard";
 import { PageEntrance } from "@/src/components/ui/GsapContext";
-import { AdminRedeemTable, AdminPolisForm, AdminCodeManager, AdminRewardManager, AdminProductManager, AdminUserManager, AdminAnnouncementManager, AdminLoginHistory, AdminWatchdogTable, GlobalWatchdogAlert, AdminAgentLeaderboard } from "@/src/components/organisms";
+import { AdminRedeemTable, AdminPolisForm, AdminCodeManager, AdminRewardManager, AdminProductManager, AdminUserManager, AdminAnnouncementManager, AdminLoginHistory, AdminWatchdogTable, GlobalWatchdogAlert, GlobalPolisReminderAlert, AdminAgentLeaderboard } from "@/src/components/organisms";
 import { Activity, ShieldPlus, UserPlus, LayoutDashboard, LogOut, Ticket, Package, Users, Megaphone, History as HistoryIcon, ChevronLeft, ChevronRight, ShieldAlert, Trophy } from "lucide-react";
 import { useAuth } from "@/src/hooks/useAuth";
 
@@ -188,10 +188,13 @@ export default function AdminDashboard() {
                 </main>
             </PageEntrance>
 
-            {/* Only show Alert if NOT on Watchdog tab */}
+            {/* Only show Watchdog Alert if NOT on Watchdog tab */}
             {activeSection !== 'watchdog' && (
                 <GlobalWatchdogAlert onFocus={() => setActiveSection('watchdog')} />
             )}
+
+            {/* Polis Reminder Alert - always visible if there are reminders */}
+            <GlobalPolisReminderAlert onFocus={() => setActiveSection('polis')} />
 
         </RoleGuard>
     );

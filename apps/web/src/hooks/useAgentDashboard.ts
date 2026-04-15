@@ -99,6 +99,8 @@ export interface ReminderData {
     id: number;
     polisNumber: string;
     createdAt: string;
+    daysLeft?: number;
+    type?: 'h7' | 'monthly';
     nasabahName: string | null;
     monthsLeft: number;
     message: string;

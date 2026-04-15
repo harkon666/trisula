@@ -11,28 +11,28 @@ revisi
 
 ----
 
-pada dashboard/admin ada kumulatif omset yang dihitung dari tiap nasabah dari polis
+pada dashboard/admin ada kumulatif omset yang dihitung dari tiap nasabah dari polis (done)
 
-Ketika agent jual premi/polis maka perlu nama polisnya/produknya, nilai polis/premi. nanti ketika dijual otomatis terupload, kalau misal ada nilai yang berbeda nanti akan di reject di catatan.
+Ketika agent jual premi/polis maka perlu nama polisnya/produknya, nilai polis/premi. nanti ketika dijual otomatis terupload, kalau misal ada nilai yang berbeda nanti akan di reject di catatan. (done)
 
-- notif reminder jatuh tempo pembayaran polis juga diterima oleh superadmin, dan agent
+- notif reminder jatuh tempo pembayaran polis juga diterima oleh superadmin, dan agent (done)
 
-- pada dashboard agent ada riwayat atau grafik profit dari nasabah, bisa dari polis, dan jual barang.
+- pada dashboard agent ada riwayat atau grafik profit dari nasabah, bisa dari polis, dan jual barang. (pending - perlu bikin component grafik)
 
-- activation code sama nama partner dirubah jadi agent code dan agent
+- activation code sama nama partner dirubah jadi agent code dan agent (done)
 
-- ada email confirmation, baru  bisa masuk dashboard
+- ada email confirmation, baru  bisa masuk dashboard (menunggu respon owner - jangan dikerjakan dulu)
 
-- ada nasabah asli yang udah polis
+- ada nasabah asli yang udah polis (done - existing feature)
 
-- Total Commission = total point
+- Total Commission = total point (done)
 
-- Invite New Nasabah = Invite new user
+- Invite New Nasabah = Invite New User (done)
 
-- ditambah h-7 untuk reminder
+- ditambah h-7 untuk reminder (done)
 
-- reward = redeem
+- reward = redeem (done)
 
-- Survey/feedback dari nasabah, kalau di submit nanti dapet poin (menunggu respon dari owner jangan dikerjakan dulu)
+- Survey/feedback dari nasabah, kalau di submit nanti dapet poin (menunggu respon dari owner - jangan dikerjakan dulu)
 
-- Agent nanti ada tempat untuk input polis nasabah, nanti ketika diinput akan di cek sama admin apakah sesuai atau tidak, kalau sesuai approve, kalau tidak maka tidak di approve
+- Agent nanti ada tempat untuk input polis nasabah, nanti ketika diinput akan di cek sama admin apakah sesuai atau tidak, kalau sesuai approve, kalau tidak maka tidak di approve (done)

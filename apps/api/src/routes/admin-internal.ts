@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { db, users, profiles, waInteractions, adminActions } from '@repo/database'; // Added waInteractions, adminActions
+import { db, users, profiles, waInteractions, adminActions, polisData } from '@repo/database';
 import { eq, and, desc } from 'drizzle-orm';
 import { rbacMiddleware } from '../middlewares/rbac';
 
@@ -238,6 +238,99 @@ internal.patch('/watchdog/resolve/:id', rbacMiddleware('watchdog'), async (c) =>
             console.error(error.stack);
         }
         return c.json({ success: false, message: "Failed to resolve alert", error: String(error) }, 500);
+    }
+});
+
+/**
+ * @route   GET /admin/internal/polis/reminders
+ * @desc    Get polis jatuh tempo reminders for admin notification
+ * @access  Super Admin, Admin
+ */
+internal.get('/polis/reminders', rbacMiddleware('polis'), async (c) => {
+    try {
+        const now = new Date();
+        const allPolis = await db.select({
+            id: polisData.id,
+            polisNumber: polisData.polisNumber,
+            createdAt: polisData.createdAt,
+            premiumAmount: polisData.premiumAmount,
+            productName: polisData.productName,
+            status: polisData.status,
+            agentId: polisData.agentId,
+            nasabahId: polisData.nasabahId,
+        })
+            .from(polisData)
+            .where(eq(polisData.status, 'approved'));
+
+        const reminders = [];
+
+        for (const p of allPolis) {
+            if (!p.createdAt) continue;
+
+            // Calculate days until 1 year anniversary
+            const anniversaryDate = new Date(p.createdAt);
+            anniversaryDate.setFullYear(anniversaryDate.getFullYear() + 1);
+            const daysUntilAnniversary = Math.ceil((anniversaryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+            // Calculate months left
+            let months = (now.getFullYear() - p.createdAt.getFullYear()) * 12;
+            months -= p.createdAt.getMonth();
+            months += now.getMonth();
+            const monthsLeft = 12 - months;
+
+            // Get nasambah name
+            const [nasabahProfile] = await db.select({ fullName: profiles.fullName })
+                .from(profiles)
+                .where(eq(profiles.userId, p.nasabahId))
+                .limit(1);
+
+            const nasabahName = nasabahProfile?.fullName || 'Unknown';
+
+            // Get agent name
+            const [agentProfile] = await db.select({ fullName: profiles.fullName })
+                .from(profiles)
+                .where(eq(profiles.userId, p.agentId))
+                .limit(1);
+
+            const agentName = agentProfile?.fullName || 'Unknown';
+
+            // H-7 reminder: 7 days before polis anniversary (1 year)
+            if (daysUntilAnniversary <= 7 && daysUntilAnniversary > 0) {
+                reminders.push({
+                    id: p.id,
+                    polisNumber: p.polisNumber,
+                    nasabahName,
+                    agentName,
+                    daysLeft: daysUntilAnniversary,
+                    type: 'h7',
+                    message: `Polis #${p.polisNumber} atas nama ${nasabahName} jatuh tempo dalam ${daysUntilAnniversary} hari.`,
+                    premiumAmount: p.premiumAmount,
+                    productName: p.productName,
+                });
+            }
+            // Monthly reminders: 1, 2, 3 months (showing as days remaining until 1 year)
+            if (monthsLeft === 1 || monthsLeft === 2 || monthsLeft === 3) {
+                reminders.push({
+                    id: p.id,
+                    polisNumber: p.polisNumber,
+                    nasabahName,
+                    agentName,
+                    daysLeft: Math.ceil(daysUntilAnniversary),
+                    type: 'monthly',
+                    message: `Polis #${p.polisNumber} atas nama ${nasabahName} jatuh tempo dalam ${Math.ceil(daysUntilAnniversary)} hari.`,
+                    premiumAmount: p.premiumAmount,
+                    productName: p.productName,
+                });
+            }
+        }
+
+        // Sort by daysLeft (closest first)
+        reminders.sort((a, b) => a.daysLeft - b.daysLeft);
+
+        return c.json({ success: true, data: reminders });
+    } catch (error) {
+        console.error("Polis Reminders Error:", error);
+        return c.json({ success: false, message: "Failed to fetch polis reminders" }, 500);
     }
 });
 

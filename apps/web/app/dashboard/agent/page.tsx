@@ -4,7 +4,6 @@ import { useAuth } from "@/src/hooks/useAuth";
 import { AgentNavbar } from "@/src/components/organisms/AgentNavbar";
 import { ReferralTable } from "@/src/components/organisms/ReferralTable";
 import { EarningsChart } from "@/src/components/molecules/EarningsChart";
-import { WatchdogAlert } from "@/src/components/molecules/WatchdogAlert";
 import { BirthdayWidget } from "@/src/components/organisms/BirthdayWidget";
 import { useAgentStats } from "@/src/hooks/useAgentDashboard";
 import { Button } from "@/src/components/atoms";
@@ -63,7 +62,6 @@ export default function AgentDashboard() {
         <RoleGuard allowedRoles={['agent']}>
             <div ref={containerRef} className="min-h-screen bg-midnight-950 text-white pb-20">
                 <AgentNavbar />
-                <WatchdogAlert />
 
                 <main className="pt-28 max-w-7xl mx-auto px-6">
                     {/* Header */}
@@ -94,7 +92,7 @@ export default function AgentDashboard() {
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <CreditCard className="w-16 h-16 text-emerald-500" />
                             </div>
-                            <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Total Commission</p>
+                            <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-2">Total Point</p>
                             <h3 className="text-4xl font-black text-emerald-400 flex items-baseline gap-1">
                                 <span className="text-lg">pts</span>
                                 {isLoading ? "..." : (stats?.totalCommission || 0).toLocaleString('id-ID')}
@@ -124,7 +122,7 @@ export default function AgentDashboard() {
                         <div className="lg:col-span-1 flex flex-col gap-6">
                             <div className="flex-1 p-8 rounded-[2rem] bg-gradient-to-br from-trisula-900/20 to-midnight-900/50 border border-trisula-500/20 flex flex-col justify-center items-center text-center relative overflow-hidden min-h-[250px]">
                                 <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-                                <h4 className="text-xl font-bold text-white mb-2 relative z-10">Invite New Nasabah</h4>
+                                <h4 className="text-xl font-bold text-white mb-2 relative z-10">Invite New User</h4>
                                 <p className="text-zinc-400 text-sm mb-6 relative z-10">Share your unique agent code to start earning commissions.</p>
 
                                 <div className="bg-black/30 p-4 rounded-xl mb-4 w-full border border-white/5 relative z-10 flex items-center justify-between group cursor-pointer" onClick={handleCopyCode}>

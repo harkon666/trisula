@@ -91,8 +91,12 @@ export const polisData = pgTable("polis_data", {
     nasabahId: uuid("nasabah_id").references(() => users.id).notNull(),
     polisNumber: text("polis_number").unique().notNull(),
     premiumAmount: integer("premium_amount").notNull(),
+    productName: text("product_name"),
     inputBy: uuid("input_by_admin_id").references(() => users.id),
+    status: text("status").default("pending"),
+    rejectionReason: text("rejection_reason"),
     createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at"),
 });
 
 // 9. Redeem Requests (Manajemen Status Servis)

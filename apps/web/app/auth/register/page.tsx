@@ -17,9 +17,13 @@ import { motion, AnimatePresence } from "framer-motion";
 const NasabahSchema = z.object({
     fullName: z.string().min(2, "Nama terlalu pendek"),
     password: z.string().min(6, "Password minimal 6 karakter"),
-    confirmPassword: z.string().min(6, "Konfirmasi password minimal 6 karakter"),
-    email: z.string().email("Email tidak valid"),
-    whatsapp: z.string().min(10, "Nomor WhatsApp tidak valid").regex(/^0/, "Nomor WhatsApp harus diawali dengan 0"),
+    confirmPassword: z.string().min(6, "Password minimal 6 karakter"),
+    email: z.string().email("Format email tidak valid").min(1, "Email wajib diisi"),
+    whatsapp: z.string()
+        .min(10, "Nomor WhatsApp minimal 10 digit")
+        .max(14, "Nomor WhatsApp maksimal 14 digit")
+        .regex(/^0/, "Nomor WhatsApp harus diawali dengan 0")
+        .regex(/^\d+$/, "Nomor WhatsApp hanya boleh berisi angka"),
     dateOfBirth: z.string().min(1, "Tanggal lahir wajib diisi"),
     referredByAgentId: z.string().min(4, "ID Agent Referral wajib diisi"),
 }).superRefine(({ confirmPassword, password }, ctx) => {
@@ -35,11 +39,15 @@ const NasabahSchema = z.object({
 const AgentSchema = z.object({
     fullName: z.string().min(2, "Nama terlalu pendek"),
     password: z.string().min(6, "Password minimal 6 karakter"),
-    confirmPassword: z.string().min(6, "Konfirmasi password minimal 6 karakter"),
-    email: z.string().email("Email tidak valid"),
-    whatsapp: z.string().min(10, "Nomor WhatsApp tidak valid").regex(/^0/, "Nomor WhatsApp harus diawali dengan 0"),
+    confirmPassword: z.string().min(6, "Password minimal 6 karakter"),
+    email: z.string().email("Format email tidak valid").min(1, "Email wajib diisi"),
+    whatsapp: z.string()
+        .min(8, "Nomor WhatsApp minimal 8 digit")
+        .max(14, "Nomor WhatsApp maksimal 14 digit")
+        .regex(/^0/, "Nomor WhatsApp harus diawali dengan 0")
+        .regex(/^\d+$/, "Nomor WhatsApp hanya boleh berisi angka"),
     dateOfBirth: z.string().min(1, "Tanggal lahir wajib diisi"),
-    activationCode: z.string().min(5, "Agent Code wajib diisi"),
+    activationCode: z.string().min(5, "Kode aktivasi wajib diisi"),
 }).superRefine(({ confirmPassword, password }, ctx) => {
     if (confirmPassword !== password) {
         ctx.addIssue({

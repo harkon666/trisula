@@ -22,6 +22,9 @@ export const users = pgTable("users", {
     role: roleEnum("role").notNull(),
     pointsBalance: integer("points_balance").notNull().default(0),
     isActive: boolean("is_active").default(false),
+    isEmailVerified: boolean("is_email_verified").default(false),
+    emailVerificationToken: text("email_verification_token"),
+    emailVerificationExpiresAt: timestamp("email_verification_expires_at"),
     additionalMetadata: jsonb("additional_metadata").default({}), // Field dinamis Admin
     createdAt: timestamp("created_at").defaultNow(),
 });

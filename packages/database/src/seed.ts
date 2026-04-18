@@ -105,6 +105,7 @@ async function seed() {
                 role: u.role as any,
                 pointsBalance: u.balance,
                 isActive: true,
+                isEmailVerified: true, // Seeded users are pre-verified
                 additionalMetadata: (u as any).additionalMetadata || {}
             }).returning();
 

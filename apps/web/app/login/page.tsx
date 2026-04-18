@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/src/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '@/src/lib/api-client';
@@ -19,12 +19,21 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { login, isAuthenticated, user } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [showVerifiedMessage, setShowVerifiedMessage] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
+
+    useEffect(() => {
+        if (searchParams.get('verified') === 'true') {
+            setShowVerifiedMessage(true);
+            setTimeout(() => setShowVerifiedMessage(false), 5000);
+        }
+    }, [searchParams]);
 
     const {
         register,
@@ -78,7 +87,6 @@ export default function LoginPage() {
 
     const onSubmit = async (data: LoginForm) => {
         setLoading(true);
-        // Clear previous session cache
         queryClient.removeQueries();
         queryClient.clear();
 
@@ -89,8 +97,6 @@ export default function LoginPage() {
                 toast.success("Login Berhasil! Selamat datang di Trisula.");
                 login(response.data.token, response.data.user);
 
-                // Redirect logic based on role
-                // Redirect logic based on role
                 const role = response.data.user.role;
                 if (['admin', 'super_admin'].includes(role)) {
                     router.push('/dashboard/admin');
@@ -112,7 +118,6 @@ export default function LoginPage() {
 
     return (
         <div ref={containerRef} className="min-h-screen bg-midnight-950 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-            {/* Premium Glow Background */}
             <div className="absolute inset-0 bg-gradient-to-b from-midnight-950 via-midnight-900 to-midnight-950 pointer-events-none" />
             <div className="glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-trisula-500/10 blur-[150px] rounded-full pointer-events-none opacity-0" />
 
@@ -128,6 +133,14 @@ export default function LoginPage() {
                     <GoldCard className="p-1">
                         <div className="bg-midnight-900/90 backdrop-blur-xl rounded-[28px] p-8 md:p-10 border border-white/5 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
                             <h2 className="text-2xl font-bold text-white mb-8">Sign In</h2>
+
+                            {showVerifiedMessage && (
+                                <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
+                                    <p className="text-green-400 text-sm font-medium text-center">
+                                        Email berhasil diverifikasi! Silakan login dengan Agent ID Anda.
+                                    </p>
+                                </div>
+                            )}
 
                             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                                 <div className="space-y-2">
@@ -193,7 +206,6 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            {/* Decorative Bottom Left Element */}
             <div className="absolute bottom-10 left-10 opacity-10 flex flex-col gap-1">
                 <div className="w-12 h-1 bg-trisula-500" />
                 <div className="w-8 h-1 bg-trisula-500" />
@@ -203,5 +215,17 @@ export default function LoginPage() {
                 TRISULA PRIORITY
             </p>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-midnight-950 flex items-center justify-center">
+                <div className="w-10 h-10 border-2 border-trisula-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
     );
 }

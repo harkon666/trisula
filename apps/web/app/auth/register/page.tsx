@@ -19,7 +19,7 @@ const NasabahSchema = z.object({
     password: z.string().min(6, "Password minimal 6 karakter"),
     confirmPassword: z.string().min(6, "Konfirmasi password minimal 6 karakter"),
     email: z.string().email("Email tidak valid"),
-    whatsapp: z.string().min(10, "Nomor WhatsApp tidak valid"),
+    whatsapp: z.string().min(10, "Nomor WhatsApp tidak valid").regex(/^0/, "Nomor WhatsApp harus diawali dengan 0"),
     dateOfBirth: z.string().min(1, "Tanggal lahir wajib diisi"),
     referredByAgentId: z.string().min(4, "ID Agent Referral wajib diisi"),
 }).superRefine(({ confirmPassword, password }, ctx) => {
@@ -37,7 +37,7 @@ const AgentSchema = z.object({
     password: z.string().min(6, "Password minimal 6 karakter"),
     confirmPassword: z.string().min(6, "Konfirmasi password minimal 6 karakter"),
     email: z.string().email("Email tidak valid"),
-    whatsapp: z.string().min(10, "Nomor WhatsApp tidak valid"),
+    whatsapp: z.string().min(10, "Nomor WhatsApp tidak valid").regex(/^0/, "Nomor WhatsApp harus diawali dengan 0"),
     dateOfBirth: z.string().min(1, "Tanggal lahir wajib diisi"),
     activationCode: z.string().min(5, "Agent Code wajib diisi"),
 }).superRefine(({ confirmPassword, password }, ctx) => {
@@ -110,10 +110,17 @@ export default function RegisterPage() {
 
         try {
             const response = await api.post('/v1/auth/register/agent', data);
-            if (response.data.success && response.data.token) {
-                login(response.data.token, response.data.user);
-                toast.success("Registrasi Agent Berhasil!");
-                router.push("/dashboard/agent");
+            if (response.data.success) {
+                if (response.data.requiresEmailVerification) {
+                    // Agent needs to verify email first
+                    // Store email for resend functionality
+                    sessionStorage.setItem('pendingVerificationEmail', data.email);
+                    router.push("/auth/verification-sent");
+                } else if (response.data.token) {
+                    login(response.data.token, response.data.user);
+                    toast.success("Registrasi Agent Berhasil!");
+                    router.push("/dashboard/agent");
+                }
             } else {
                 toast.error(response.data.message || "Gagal mendaftar");
             }
@@ -198,7 +205,7 @@ export default function RegisterPage() {
                                         <InputField label="Password" name="password" type="password" register={agentForm.register} error={agentForm.formState.errors.password} placeholder="••••••••" />
                                         <InputField label="Confirm Password" name="confirmPassword" type="password" register={agentForm.register} error={agentForm.formState.errors.confirmPassword} placeholder="••••••••" />
                                     </div>
-                                    <InputField label="WhatsApp" name="whatsapp" register={agentForm.register} error={agentForm.formState.errors.whatsapp} placeholder="628123456789" />
+                                    <InputField label="WhatsApp" name="whatsapp" register={agentForm.register} error={agentForm.formState.errors.whatsapp} placeholder="08123456789" />
                                     <InputField label="Date of Birth" name="dateOfBirth" type="date" register={agentForm.register} error={agentForm.formState.errors.dateOfBirth} className="[color-scheme:dark]" />
                                     <InputField label="Activation Code (Required)" name="activationCode" register={agentForm.register} error={agentForm.formState.errors.activationCode} placeholder="CODE-12345" className="bg-ice-500/10 border-ice-500/30 focus:border-ice-500/50 placeholder:text-ice-500/30 text-ice-200" />
 
